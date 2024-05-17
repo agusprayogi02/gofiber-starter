@@ -1,4 +1,4 @@
-module learn-fiber
+module learn-gofiber
 
 go 1.22.3
 
