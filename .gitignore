@@ -1,2 +1,3 @@
 .env
-certs/*.pem
+asset/certs/*.pem
+asset/*.db

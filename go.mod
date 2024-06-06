@@ -1,4 +1,4 @@
-module learn-gofiber
+module starter-gofiber
 
 go 1.22.3
 
@@ -6,7 +6,10 @@ require github.com/gofiber/fiber/v2 v2.52.4
 
 require (
 	github.com/MicahParks/keyfunc/v2 v2.1.0 // indirect
+	github.com/casbin/casbin/v2 v2.91.0 // indirect
+	github.com/casbin/govaluate v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
+	github.com/gofiber/contrib/casbin v1.0.14 // indirect
 	github.com/gofiber/contrib/jwt v1.0.9 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect

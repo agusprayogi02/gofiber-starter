@@ -1,10 +1,9 @@
 package middleware
 
 import (
-	"learn-gofiber/config"
-
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
+	"starter-gofiber/config"
 )
 
 func AuthMiddleware(app *fiber.App) {

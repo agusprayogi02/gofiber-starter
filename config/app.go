@@ -1,6 +1,7 @@
 package config
 
 import (
+	"github.com/gofiber/fiber/v2/middleware/logger"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -10,6 +11,7 @@ import (
 
 func App(app *fiber.App) {
 	app.Use(cors.New())
+	app.Use(logger.New())
 	app.Use(limiter.New(limiter.Config{
 		Next: func(c *fiber.Ctx) bool {
 			return c.IP() == "127.0.0.1"

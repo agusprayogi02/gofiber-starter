@@ -1,27 +1,24 @@
 package main
 
 import (
-	"learn-gofiber/config"
-	"learn-gofiber/middleware"
+	"starter-gofiber/config"
+	"starter-gofiber/router"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
 	config.LoadConfig()
+	config.LoadPermissions()
 	config.LoadStorage()
 	config.LoadDB()
 
 	app := fiber.New()
 	config.App(app)
-	middleware.AuthMiddleware(app)
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, World!")
-	})
-	app.Get("/hello/:name", func(c *fiber.Ctx) error {
-		return c.SendString("Hello, " + c.Params("name") + "!")
-	})
-	app.Static("/", "./public")
+	router.AppRouter(app)
 
-	app.Listen(":3000")
+	err := app.Listen(":" + config.ENV.PORT)
+	if err != nil {
+		panic(err)
+	}
 }

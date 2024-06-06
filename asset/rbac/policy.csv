@@ -1,0 +1,5 @@
+p, admin, files, write
+p, admin, files, read
+p, admin, files, update
+p, admin, files, delete
+p, admin, files, list

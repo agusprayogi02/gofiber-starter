@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"starter-gofiber/entity"
 	"strings"
 
 	"gorm.io/driver/postgres"
@@ -24,6 +25,11 @@ func LoadDB() {
 			},
 		),
 	})
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.AutoMigrate(entity.User{})
 	if err != nil {
 		panic(err)
 	}
