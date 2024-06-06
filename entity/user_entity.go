@@ -2,11 +2,18 @@ package entity
 
 import "gorm.io/gorm"
 
+type UserRole string
+
+const (
+	AdminR UserRole = "admin"
+	UserR  UserRole = "user"
+)
+
 type User struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Role     string `json:"role"`
+	ID       uint     `gorm:"type:primaryKey;autoIncrement"`
+	Name     string   `gorm:"type:varchar(200);not null"`
+	Email    string   `gorm:"type:varchar(200);uniqueIndex;not null"`
+	Password string   `gorm:"type:varchar(150);not null"`
+	Role     UserRole `gorm:"type:user_role;default:user"`
 	gorm.Model
 }

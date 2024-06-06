@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"starter-gofiber/entity"
 	"strings"
+
+	"starter-gofiber/entity"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -13,6 +14,17 @@ import (
 )
 
 var DB *gorm.DB
+
+func createEnum(db *gorm.DB) error {
+	return db.Exec(`
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+                CREATE TYPE user_role AS ENUM ('admin', 'user');
+            END IF;
+        END$$;
+    `).Error
+}
 
 func LoadDB() {
 	url := strings.Split(ENV.DB_URL, ":")
@@ -25,6 +37,11 @@ func LoadDB() {
 			},
 		),
 	})
+	if err != nil {
+		panic(err)
+	}
+
+	err = createEnum(db)
 	if err != nil {
 		panic(err)
 	}

@@ -22,4 +22,6 @@ func AppRouter(app *fiber.App) {
 			"message": "Server is running",
 		})
 	})
+
+	NewUser(app)
 }
