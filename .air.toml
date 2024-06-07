@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 [build]
   args_bin = []
   bin = "tmp/main"
-  cmd = "go build -o ./tmp/main ."
+  cmd = "go run ."
   delay = 1000
   exclude_dir = [".git","assets", "tmp", "vendor", "testdata"]
   exclude_file = []
@@ -38,7 +38,7 @@ tmp_dir = "tmp"
   main_only = false
   time = false
 
-[misc]k
+[misc]
   clean_on_exit = true
 
 [screen]

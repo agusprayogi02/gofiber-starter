@@ -5,6 +5,8 @@ import (
 	"github.com/gofiber/contrib/casbin"
 	"github.com/gofiber/fiber/v2"
 	"starter-gofiber/config"
+	"starter-gofiber/dto"
+	"starter-gofiber/helper"
 )
 
 var Authz *casbin.Middleware
@@ -17,9 +19,10 @@ func AppRouter(app *fiber.App) {
 	static := app.Group(config.STATIC_PATH, Authz.RequiresRoles([]string{"admin"}))
 	static.Static("/", "./public")
 
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.JSON(fiber.Map{
-			"message": "Server is running",
+	app.Get("/ping", func(c *fiber.Ctx) error {
+		return c.JSON(dto.SuccessResponse{
+			Message:   "pong",
+			Timestamp: helper.TimeNow(),
 		})
 	})
 

@@ -24,3 +24,9 @@ func (u *UserRepository) ExistEmail(email string) bool {
 	u.db.Where("email = ?", email).First(&user)
 	return user.ID != 0
 }
+
+func (u *UserRepository) FindByEmail(email string) (*entity.User, error) {
+	var user *entity.User
+	err := u.db.Where("email = ?", email).First(&user).Error
+	return user, err
+}

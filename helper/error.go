@@ -3,7 +3,6 @@ package helper
 import (
 	"github.com/gofiber/fiber/v2"
 	"starter-gofiber/dto"
-	"time"
 )
 
 type NotFoundError struct {
@@ -66,6 +65,6 @@ func ErrorHelper(c *fiber.Ctx, err error) error {
 
 	return c.Status(statusCode).JSON(dto.ErrorResponse{
 		Message:   err.Error(),
-		Timestamp: time.Now().Format(time.RFC3339),
+		Timestamp: TimeNow(),
 	})
 }
