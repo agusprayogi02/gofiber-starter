@@ -23,15 +23,3 @@ type User struct {
 	Role     UserRole `gorm:"type:user_role;default:user"`
 	gorm.Model
 }
-
-//
-//func (u *User) ToResponse() dto.UserResponse {
-//	return dto.UserResponse{
-//		ID:        u.ID,
-//		Name:      u.Name,
-//		Email:     u.Email,
-//		Role:      u.Role.String(),
-//		CreatedAt: u.CreatedAt.Format(config.FORMAT_TIME),
-//		UpdatedAt: u.UpdatedAt.Format(config.FORMAT_TIME),
-//	}
-//}
