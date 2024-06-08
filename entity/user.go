@@ -1,26 +1,10 @@
 package entity
 
 import (
-	"encoding/json"
-	"fmt"
 	"gorm.io/gorm"
 )
 
 type UserRole string
-
-func (role *UserRole) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return err
-	}
-	*role = UserRole(s)
-	switch *role {
-	case AdminR, UserR:
-		return nil
-	default:
-		return fmt.Errorf("invalid role: %s", s)
-	}
-}
 
 func (role UserRole) String() string {
 	return string(role)
@@ -39,3 +23,15 @@ type User struct {
 	Role     UserRole `gorm:"type:user_role;default:user"`
 	gorm.Model
 }
+
+//
+//func (u *User) ToResponse() dto.UserResponse {
+//	return dto.UserResponse{
+//		ID:        u.ID,
+//		Name:      u.Name,
+//		Email:     u.Email,
+//		Role:      u.Role.String(),
+//		CreatedAt: u.CreatedAt.Format(config.FORMAT_TIME),
+//		UpdatedAt: u.UpdatedAt.Format(config.FORMAT_TIME),
+//	}
+//}
