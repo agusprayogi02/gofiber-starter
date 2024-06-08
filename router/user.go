@@ -7,9 +7,10 @@ import (
 	"starter-gofiber/repository"
 )
 
-func NewUser(app *fiber.App) {
+func NewUser(app fiber.Router) {
 	repo := repository.NewUser(config.DB)
 	h := handler.NewUser(repo)
 
 	app.Post("/register", h.Register)
+	app.Post("/login", h.Login)
 }

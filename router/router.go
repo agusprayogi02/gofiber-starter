@@ -26,5 +26,6 @@ func AppRouter(app *fiber.App) {
 		})
 	})
 
-	NewUser(app)
+	api := app.Group("/api")
+	NewUser(api)
 }

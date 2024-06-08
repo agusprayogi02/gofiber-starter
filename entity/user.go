@@ -1,8 +1,30 @@
 package entity
 
-import "gorm.io/gorm"
+import (
+	"encoding/json"
+	"fmt"
+	"gorm.io/gorm"
+)
 
 type UserRole string
+
+func (role *UserRole) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	*role = UserRole(s)
+	switch *role {
+	case AdminR, UserR:
+		return nil
+	default:
+		return fmt.Errorf("invalid role: %s", s)
+	}
+}
+
+func (role UserRole) String() string {
+	return string(role)
+}
 
 const (
 	AdminR UserRole = "admin"
