@@ -2,20 +2,18 @@ package handler
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"starter-gofiber/config"
 	"starter-gofiber/dto"
-	"starter-gofiber/entity"
 	"starter-gofiber/helper"
-	"starter-gofiber/repository"
+	"starter-gofiber/service"
 )
 
 type UserHandler struct {
-	userRepo *repository.UserRepository
+	userS *service.UserService
 }
 
-func NewUser(r *repository.UserRepository) *UserHandler {
+func NewUserHandler(s *service.UserService) *UserHandler {
 	return &UserHandler{
-		userRepo: r,
+		userS: s,
 	}
 }
 
@@ -25,23 +23,8 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{Message: err.Error()})
 	}
 
-	if h.userRepo.ExistEmail(user.Email) {
-		return helper.ErrorHelper(c, &helper.BadRequestError{Message: "Email already exists"})
-	}
-
-	password, err := helper.HashPassword(user.Password)
-	if err != nil {
-		return helper.ErrorHelper(c, &helper.BadRequestError{Message: "Failed to hash password"})
-	}
-
-	userEntity := entity.User{
-		Name:     user.Name,
-		Email:    user.Email,
-		Password: password,
-	}
-
-	if err := h.userRepo.Register(userEntity); err != nil {
-		return helper.ErrorHelper(c, &helper.InternalServerError{Message: err.Error()})
+	if err := h.userS.Register(user); err != nil {
+		return helper.ErrorHelper(c, err)
 	}
 
 	res := helper.Response(dto.ResponseParams{
@@ -60,39 +43,15 @@ func (h *UserHandler) Login(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err := h.userRepo.FindByEmail(userReq.Email)
+	user, err := h.userS.Login(userReq)
 	if err != nil {
-		return helper.ErrorHelper(c, &helper.BadRequestError{
-			Message: "Email or password is wrong!",
-		})
+		return helper.ErrorHelper(c, err)
 	}
-
-	if err := helper.VerifyPassword(userReq.Password, user.Password); err != nil {
-		return helper.ErrorHelper(c, &helper.BadRequestError{
-			Message: err.Error(),
-		})
-	}
-
-	token, err := helper.GenerateJWT(c, dto.UserClaims{
-		ID:    user.ID,
-		Role:  user.Role.String(),
-		Email: user.Email,
-	})
 
 	res := helper.Response(dto.ResponseParams{
 		StatusCode: fiber.StatusOK,
 		Message:    "Login Success",
-		Data: dto.LoginResponse{
-			User: dto.UserResponse{
-				ID:        user.ID,
-				Name:      user.Name,
-				Email:     user.Email,
-				Role:      user.Role.String(),
-				CreatedAt: user.CreatedAt.Format(config.FORMAT_TIME),
-				UpdatedAt: user.UpdatedAt.Format(config.FORMAT_TIME),
-			},
-			Token: token,
-		},
+		Data:       user,
 	})
 	return c.Status(fiber.StatusOK).JSON(res)
 }

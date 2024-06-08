@@ -5,11 +5,13 @@ import (
 	"starter-gofiber/config"
 	"starter-gofiber/handler"
 	"starter-gofiber/repository"
+	"starter-gofiber/service"
 )
 
 func NewUser(app fiber.Router) {
-	repo := repository.NewUser(config.DB)
-	h := handler.NewUser(repo)
+	repo := repository.NewUserRepository(config.DB)
+	s := service.NewUserService(repo)
+	h := handler.NewUserHandler(s)
 
 	app.Post("/register", h.Register)
 	app.Post("/login", h.Login)
