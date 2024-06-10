@@ -11,6 +11,13 @@ type UserClaims struct {
 	Role  string `json:"role"`
 }
 
+func (r UserClaims) FromEntity(u entity.User) UserClaims {
+	r.ID = u.ID
+	r.Email = u.Email
+	r.Role = u.Role.String()
+	return r
+}
+
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required;email"`
 	Password string `json:"password" binding:"required;min=6"`

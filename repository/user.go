@@ -16,7 +16,7 @@ func NewUserRepository(d *gorm.DB) *UserRepository {
 }
 
 func (u *UserRepository) Register(m entity.User) error {
-	return u.db.Create(m).Error
+	return u.db.Create(&m).Error
 }
 
 func (u *UserRepository) ExistEmail(email string) error {

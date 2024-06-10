@@ -17,7 +17,7 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 }
 
 func (s *UserService) Register(user *dto.RegisterRequest) error {
-	if err := s.userR.ExistEmail(user.Email); err != nil {
+	if err := s.userR.ExistEmail(user.Email); err == nil {
 		return &helper.BadRequestError{Message: "Email already exists"}
 	}
 
@@ -50,11 +50,7 @@ func (s *UserService) Login(req *dto.LoginRequest) (resp *dto.LoginResponse, err
 		}
 	}
 
-	token, err := helper.GenerateJWT(dto.UserClaims{
-		ID:    user.ID,
-		Role:  user.Role.String(),
-		Email: user.Email,
-	})
+	token, err := helper.GenerateJWT(dto.UserClaims{}.FromEntity(*user))
 	resp = &dto.LoginResponse{
 		Token: token,
 		User:  dto.UserResponse{}.FromEntity(*user),
