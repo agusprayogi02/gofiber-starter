@@ -2,3 +2,4 @@
 asset/certs/*.pem
 asset/*.db
 tmp/*
+/temp/*

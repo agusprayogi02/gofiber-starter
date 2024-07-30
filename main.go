@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"starter-gofiber/config"
 	"starter-gofiber/router"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 func main() {

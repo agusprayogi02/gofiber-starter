@@ -3,7 +3,7 @@ package config
 import (
 	"fmt"
 
-	"github.com/gofiber/storage/sqlite3"
+	"github.com/gofiber/storage/sqlite3/v2"
 )
 
 var STORAGE *sqlite3.Storage
