@@ -15,6 +15,7 @@ type Config struct {
 	DB_PASS         string
 	DB_URL          string
 	DB_NAME         string
+	DB_TYPE         string
 	LOCATION_CERT   string
 	NGROK_AUTHTOKEN string
 }
