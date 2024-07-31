@@ -37,14 +37,20 @@ func LoadDB() {
 		dsn := fmt.Sprintf("host=%v user=%v password=%v dbname=%v port=%v sslmode=disable TimeZone=UTC", url[0], ENV.DB_USER, ENV.DB_PASS, ENV.DB_NAME, url[len(url)-1])
 		dial = postgres.Open(dsn)
 	}
-	db, err := gorm.Open(dial, &gorm.Config{
-		Logger: logger.New(
-			log.New(os.Stdout, "\r\n", log.LstdFlags), // Menggunakan logger bawaan dari Golang
-			logger.Config{
-				LogLevel: logger.Info, // Set level log menjadi Info untuk menampilkan semua log query
-			},
-		),
-	})
+	var logConfig *gorm.Config
+	if ENV.ENV_TYPE == "dev" {
+		logConfig = &gorm.Config{
+			Logger: logger.New(
+				log.New(os.Stdout, "\r\n", log.LstdFlags),
+				logger.Config{
+					LogLevel: logger.Info, // Set level log menjadi Info untuk menampilkan semua log query
+				},
+			),
+		}
+	} else {
+		logConfig = &gorm.Config{}
+	}
+	db, err := gorm.Open(dial, logConfig)
 	if err != nil {
 		panic(err)
 	}

@@ -10,6 +10,7 @@ import (
 )
 
 type Config struct {
+	ENV_TYPE        string
 	PORT            string
 	DB_USER         string
 	DB_PASS         string
