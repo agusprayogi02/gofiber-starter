@@ -6,17 +6,17 @@ import (
 	"starter-gofiber/repository"
 )
 
-type UserService struct {
+type AuthService struct {
 	userR *repository.UserRepository
 }
 
-func NewUserService(repo *repository.UserRepository) *UserService {
-	return &UserService{
+func NewAuthService(repo *repository.UserRepository) *AuthService {
+	return &AuthService{
 		userR: repo,
 	}
 }
 
-func (s *UserService) Register(user *dto.RegisterRequest) error {
+func (s *AuthService) Register(user *dto.RegisterRequest) error {
 	if err := s.userR.ExistEmail(user.Email); err == nil {
 		return &helper.BadRequestError{Message: "Email already exists"}
 	}
@@ -29,14 +29,14 @@ func (s *UserService) Register(user *dto.RegisterRequest) error {
 	userEntity := user.ToEntity()
 	userEntity.Password = password
 
-	err = s.userR.Register(userEntity)
+	err = s.userR.Create(userEntity)
 	if err != nil {
 		return &helper.InternalServerError{Message: err.Error()}
 	}
 	return nil
 }
 
-func (s *UserService) Login(req *dto.LoginRequest) (resp *dto.LoginResponse, err error) {
+func (s *AuthService) Login(req *dto.LoginRequest) (resp *dto.LoginResponse, err error) {
 	user, err := s.userR.FindByEmail(req.Email)
 	if err != nil {
 		return nil, &helper.BadRequestError{

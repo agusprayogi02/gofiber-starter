@@ -1,17 +1,18 @@
 package router
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"starter-gofiber/config"
 	"starter-gofiber/handler"
 	"starter-gofiber/repository"
 	"starter-gofiber/service"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-func NewUser(app fiber.Router) {
+func NewAuthentication(app fiber.Router) {
 	repo := repository.NewUserRepository(config.DB)
-	s := service.NewUserService(repo)
-	h := handler.NewUserHandler(s)
+	s := service.NewAuthService(repo)
+	h := handler.NewAuthHandler(s)
 
 	app.Post("/register", h.Register)
 	app.Post("/login", h.Login)

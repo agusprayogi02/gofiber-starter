@@ -1,23 +1,24 @@
 package handler
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"starter-gofiber/dto"
 	"starter-gofiber/helper"
 	"starter-gofiber/service"
+
+	"github.com/gofiber/fiber/v2"
 )
 
-type UserHandler struct {
-	userS *service.UserService
+type AuthHandler struct {
+	userS *service.AuthService
 }
 
-func NewUserHandler(s *service.UserService) *UserHandler {
-	return &UserHandler{
+func NewAuthHandler(s *service.AuthService) *AuthHandler {
+	return &AuthHandler{
 		userS: s,
 	}
 }
 
-func (h *UserHandler) Register(c *fiber.Ctx) error {
+func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	var user *dto.RegisterRequest
 	if err := c.BodyParser(&user); err != nil {
 		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{Message: err.Error()})
@@ -35,7 +36,7 @@ func (h *UserHandler) Register(c *fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(res)
 }
 
-func (h *UserHandler) Login(c *fiber.Ctx) error {
+func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var userReq *dto.LoginRequest
 	if err := c.BodyParser(&userReq); err != nil {
 		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
