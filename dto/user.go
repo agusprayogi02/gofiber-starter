@@ -1,8 +1,8 @@
 package dto
 
 import (
-	"starter-gofiber/config"
 	"starter-gofiber/entity"
+	"starter-gofiber/variables"
 )
 
 type UserClaims struct {
@@ -53,8 +53,8 @@ func (r UserResponse) FromEntity(u entity.User) UserResponse {
 	r.Name = u.Name
 	r.Email = u.Email
 	r.Role = u.Role.String()
-	r.CreatedAt = u.CreatedAt.Format(config.FORMAT_TIME)
-	r.UpdatedAt = u.UpdatedAt.Format(config.FORMAT_TIME)
+	r.CreatedAt = u.CreatedAt.Format(variables.FORMAT_TIME)
+	r.UpdatedAt = u.UpdatedAt.Format(variables.FORMAT_TIME)
 	return r
 }
 

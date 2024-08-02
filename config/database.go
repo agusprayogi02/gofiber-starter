@@ -34,7 +34,7 @@ func LoadDB() {
 		dsn := fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8mb4&parseTime=True&loc=Local", ENV.DB_USER, ENV.DB_PASS, ENV.DB_URL, ENV.DB_NAME)
 		dial = mysql.Open(dsn)
 	} else {
-		dsn := fmt.Sprintf("host=%v user=%v password=%v dbname=%v port=%v sslmode=disable TimeZone=UTC", url[0], ENV.DB_USER, ENV.DB_PASS, ENV.DB_NAME, url[len(url)-1])
+		dsn := fmt.Sprintf("host=%v port=%v user=%v password=%v dbname=%v sslmode=disable TimeZone=UTC", url[0], url[len(url)-1], ENV.DB_USER, ENV.DB_PASS, ENV.DB_NAME)
 		dial = postgres.Open(dsn)
 	}
 	var logConfig *gorm.Config
@@ -60,7 +60,7 @@ func LoadDB() {
 		panic(err)
 	}
 
-	err = db.AutoMigrate(entity.User{})
+	err = db.AutoMigrate(entity.User{}, entity.Post{})
 	if err != nil {
 		panic(err)
 	}

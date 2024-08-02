@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/casbin/casbin/v2"
 	"log"
+
+	"github.com/casbin/casbin/v2"
 )
 
 var (

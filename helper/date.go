@@ -1,10 +1,11 @@
 package helper
 
 import (
-	"starter-gofiber/config"
 	"time"
+
+	"starter-gofiber/variables"
 )
 
 func TimeNow() string {
-	return time.Now().Format(config.FORMAT_TIME)
+	return time.Now().Format(variables.FORMAT_TIME)
 }

@@ -28,12 +28,10 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		return helper.ErrorHelper(c, err)
 	}
 
-	res := helper.Response(dto.ResponseParams{
+	return helper.Response(dto.ResponseResult{
 		StatusCode: fiber.StatusCreated,
 		Message:    "User registered successfully",
-	})
-
-	return c.Status(fiber.StatusCreated).JSON(res)
+	}, c)
 }
 
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
@@ -49,10 +47,9 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 		return helper.ErrorHelper(c, err)
 	}
 
-	res := helper.Response(dto.ResponseParams{
+	return helper.Response(dto.ResponseResult{
 		StatusCode: fiber.StatusOK,
 		Message:    "Login Success",
 		Data:       user,
-	})
-	return c.Status(fiber.StatusOK).JSON(res)
+	}, c)
 }

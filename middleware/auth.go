@@ -1,16 +1,22 @@
 package middleware
 
 import (
+	"starter-gofiber/helper"
+
 	jwtware "github.com/gofiber/contrib/jwt"
 	"github.com/gofiber/fiber/v2"
-	"starter-gofiber/config"
 )
 
-func AuthMiddleware(app *fiber.App) {
-	app.Use(jwtware.New(jwtware.Config{
+func AuthMiddleware() func(*fiber.Ctx) error {
+	privateKey := helper.GetPrivateKey()
+	return jwtware.New(jwtware.Config{
+		ContextKey: "user",
 		SigningKey: jwtware.SigningKey{
-			Key:    config.PRIVATE_KEY.Public(),
+			Key:    privateKey.Public(),
 			JWTAlg: jwtware.RS256,
 		},
-	}))
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			return helper.ErrorHelper(c, &helper.UnauthorizedError{Message: err.Error()})
+		},
+	})
 }

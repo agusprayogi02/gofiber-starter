@@ -1,8 +1,9 @@
 package helper
 
 import (
-	"github.com/gofiber/fiber/v2"
 	"starter-gofiber/dto"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type NotFoundError struct {
@@ -23,6 +24,7 @@ type UnauthorizedError struct {
 
 type UnprocessableEntityError struct {
 	Message string
+	Data    interface{}
 }
 
 func (e *NotFoundError) Error() string {
@@ -59,11 +61,18 @@ func ErrorHelper(c *fiber.Ctx, err error) error {
 		statusCode = fiber.StatusUnauthorized
 	case *UnprocessableEntityError:
 		statusCode = fiber.StatusUnprocessableEntity
+		return c.Status(statusCode).JSON(dto.ErrorResponse{
+			Code:      statusCode,
+			Message:   err.Error(),
+			Data:      err.(*UnprocessableEntityError).Data,
+			Timestamp: TimeNow(),
+		})
 	default:
 		statusCode = fiber.StatusInternalServerError
 	}
 
 	return c.Status(statusCode).JSON(dto.ErrorResponse{
+		Code:      statusCode,
 		Message:   err.Error(),
 		Timestamp: TimeNow(),
 	})

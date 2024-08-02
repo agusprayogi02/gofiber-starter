@@ -51,9 +51,8 @@ func (s *AuthService) Login(req *dto.LoginRequest) (resp *dto.LoginResponse, err
 	}
 
 	token, err := helper.GenerateJWT(dto.UserClaims{}.FromEntity(*user))
-	resp = &dto.LoginResponse{
+	return &dto.LoginResponse{
 		Token: token,
 		User:  dto.UserResponse{}.FromEntity(*user),
-	}
-	return resp, nil
+	}, nil
 }

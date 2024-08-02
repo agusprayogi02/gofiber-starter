@@ -7,7 +7,7 @@ services:
       - 3000:3000
     volumes:
       - .:/usr/src/starter-api
-    command: go run main.go
+    command: air cmd/main.go -b 0.0.0.0
   db:
     image: postgres:alpine
     environment:

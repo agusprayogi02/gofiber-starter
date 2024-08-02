@@ -1,13 +1,17 @@
 package helper
 
-import "starter-gofiber/dto"
+import (
+	"starter-gofiber/dto"
+
+	"github.com/gofiber/fiber/v2"
+)
 
 type ResponseWithData struct {
-	Code     int           `json:"code"`
-	Status   string        `json:"status"`
-	Message  string        `json:"message"`
-	Paginate *dto.Paginate `json:"paginate,omitempty"`
-	Data     any           `json:"data"`
+	Code     int             `json:"code"`
+	Status   string          `json:"status"`
+	Message  string          `json:"message"`
+	Paginate *dto.Pagination `json:"paginate,omitempty"`
+	Data     any             `json:"data"`
 }
 
 type ResponseWithoutData struct {
@@ -16,7 +20,7 @@ type ResponseWithoutData struct {
 	Message string `json:"message"`
 }
 
-func Response(p dto.ResponseParams) any {
+func Response(p dto.ResponseResult, c *fiber.Ctx) error {
 	var response any
 	var status string
 
@@ -42,5 +46,5 @@ func Response(p dto.ResponseParams) any {
 		}
 	}
 
-	return response
+	return c.Status(p.StatusCode).JSON(response)
 }
