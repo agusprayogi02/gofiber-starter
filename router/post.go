@@ -21,4 +21,7 @@ func NewPostRouter(app fiber.Router) {
 	post.Use(middleware.AuthMiddleware())
 	post.Get("", h.All)
 	post.Post("", h.Create)
+	post.Put("/:id", h.Update)
+	post.Delete("/:id", h.Delete)
+	post.Get("/:id", h.GetByID)
 }

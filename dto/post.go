@@ -20,6 +20,13 @@ type PostRequest struct {
 	UserID uint   `json:"user_id" validate:"required"`
 }
 
+type PostUpdateRequest struct {
+	ID     uint    `json:"id" validate:"required"`
+	Tweet  string  `json:"tweet" validate:"required,max=500"`
+	Photo  *string `json:"photo"`
+	UserID uint    `json:"user_id" validate:"required"`
+}
+
 func (r PostRequest) ToEntity() entity.Post {
 	return entity.Post{
 		Tweet:  r.Tweet,

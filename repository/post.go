@@ -24,7 +24,7 @@ func (u *PostRepository) Create(m entity.Post) (entity.Post, error) {
 }
 
 func (u *PostRepository) FindId(id uint) (post *entity.Post, err error) {
-	err = u.db.Where("id = ?", id).First(&post).Error
+	err = u.db.Preload("User").Where("id = ?", id).First(&post).Error
 	return post, err
 }
 
@@ -44,6 +44,6 @@ func (u *PostRepository) Delete(id uint) error {
 }
 
 func (u *PostRepository) FindByUserId(userId uint) (posts []entity.Post, err error) {
-	err = u.db.Where(&entity.Post{UserID: userId}).Find(&posts).Error
+	err = u.db.Preload("User").Where(&entity.Post{UserID: userId}).Find(&posts).Error
 	return posts, err
 }
