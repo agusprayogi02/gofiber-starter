@@ -13,6 +13,9 @@ func main() {
 	config.LoadPermissions()
 	config.LoadStorage()
 	config.LoadDB()
+	if config.ENV.DB_2_ENABLE {
+		config.LoadDB2()
+	}
 
 	app := fiber.New(fiber.Config{
 		JSONEncoder: json.Marshal,

@@ -12,6 +12,13 @@ type Config struct {
 	DB_URL          string
 	DB_NAME         string
 	DB_TYPE         string
+	DB_GEN          bool
+	DB_2_ENABLE     bool
+	DB_2_URL        string
+	DB_2_NAME       string
+	DB_2_TYPE       string
+	DB_2_USER       string
+	DB_2_PASS       string
 	LOCATION_CERT   string
 	NGROK_AUTHTOKEN string
 }
