@@ -19,6 +19,7 @@ type Config struct {
 	DB_2_TYPE       string
 	DB_2_USER       string
 	DB_2_PASS       string
+	DB_2_GEN        bool
 	LOCATION_CERT   string
 	NGROK_AUTHTOKEN string
 }

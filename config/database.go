@@ -37,9 +37,11 @@ func LoadDB() {
 	} else if ENV.DB_TYPE == "postgres" {
 		dsn := fmt.Sprintf("host=%v port=%v user=%v password=%v dbname=%v sslmode=disable TimeZone=UTC", url[0], url[len(url)-1], ENV.DB_USER, ENV.DB_PASS, ENV.DB_NAME)
 		dial = postgres.Open(dsn)
-	} else {
+	} else if ENV.DB_TYPE == "sql server" {
 		dsn := fmt.Sprintf("sqlserver://%v:%v@%v?database=%v&connection+timeout=30", ENV.DB_USER, ENV.DB_PASS, ENV.DB_URL, ENV.DB_NAME)
 		dial = sqlserver.Open(dsn)
+	} else {
+		panic("database is not supported")
 	}
 	var logConfig *gorm.Config
 	if ENV.ENV_TYPE == "dev" {
@@ -82,9 +84,14 @@ func LoadDB2() {
 	if ENV.DB_2_TYPE == "mysql" {
 		dsn := fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8mb4&parseTime=True&loc=Local", ENV.DB_2_USER, ENV.DB_2_PASS, ENV.DB_2_URL, ENV.DB_2_NAME)
 		dial = mysql.Open(dsn)
-	} else {
+	} else if ENV.DB_2_TYPE == "postgres" {
 		dsn := fmt.Sprintf("host=%v port=%v user=%v password=%v dbname=%v sslmode=disable TimeZone=UTC", url[0], url[len(url)-1], ENV.DB_2_USER, ENV.DB_2_PASS, ENV.DB_2_NAME)
 		dial = postgres.Open(dsn)
+	} else if ENV.DB_2_TYPE == "sql server" {
+		dsn := fmt.Sprintf("sqlserver://%v:%v@%v?database=%v&connection+timeout=30", ENV.DB_2_USER, ENV.DB_2_PASS, ENV.DB_2_URL, ENV.DB_2_NAME)
+		dial = sqlserver.Open(dsn)
+	} else {
+		panic("database is not supported")
 	}
 	var logConfig *gorm.Config
 	if ENV.ENV_TYPE == "dev" {
@@ -104,10 +111,12 @@ func LoadDB2() {
 		panic(err)
 	}
 
-	if ENV.DB_GEN {
-		err = createEnum(db)
-		if err != nil {
-			panic(err)
+	if ENV.DB_2_GEN {
+		if ENV.DB_2_TYPE == "postgres" {
+			err = createEnum(db)
+			if err != nil {
+				panic(err)
+			}
 		}
 
 		err = db.AutoMigrate(entity.User{}, entity.Post{})
