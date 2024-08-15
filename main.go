@@ -10,7 +10,9 @@ import (
 )
 
 func main() {
-	config.LoadConfig()
+	config.LoadConfig() // required first, because it will load .env file
+
+	config.LoadTimezone()
 	config.LoadPermissions()
 	config.LoadStorage()
 	config.LoadDB()

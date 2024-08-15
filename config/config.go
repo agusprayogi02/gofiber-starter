@@ -20,6 +20,7 @@ type Config struct {
 	DB_2_USER       string
 	DB_2_PASS       string
 	DB_2_GEN        bool
+	TIMEZONE        string
 	LOCATION_CERT   string
 	NGROK_AUTHTOKEN string
 }
