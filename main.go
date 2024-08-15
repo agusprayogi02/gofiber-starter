@@ -2,6 +2,7 @@ package main
 
 import (
 	"starter-gofiber/config"
+	"starter-gofiber/helper"
 	"starter-gofiber/router"
 
 	"github.com/goccy/go-json"
@@ -18,8 +19,9 @@ func main() {
 	}
 
 	app := fiber.New(fiber.Config{
-		JSONEncoder: json.Marshal,
-		JSONDecoder: json.Unmarshal,
+		JSONEncoder:  json.Marshal,
+		JSONDecoder:  json.Unmarshal,
+		ErrorHandler: helper.ErrorHelper,
 	})
 	config.App(app)
 	router.AppRouter(app)

@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/contrib/casbin"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 var Authz *casbin.Middleware
@@ -25,6 +26,7 @@ func AppRouter(app *fiber.App) {
 	static := app.Group(variables.STATIC_PATH, Authz.RequiresRoles([]string{variables.ADMIN_ROLE, variables.USER_ROLE}))
 	static.Static("/", "./public")
 	app.Static("/favicon.ico", "./public/favicon.ico")
+	app.Use(recover.New())
 
 	app.Get("/ping", func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(dto.SuccessResponse{

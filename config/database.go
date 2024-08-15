@@ -38,7 +38,7 @@ func LoadDB() {
 		dsn := fmt.Sprintf("host=%v port=%v user=%v password=%v dbname=%v sslmode=disable TimeZone=UTC", url[0], url[len(url)-1], ENV.DB_USER, ENV.DB_PASS, ENV.DB_NAME)
 		dial = postgres.Open(dsn)
 	} else if ENV.DB_TYPE == "sql server" {
-		dsn := fmt.Sprintf("sqlserver://%v:%v@%v?database=%v&connection+timeout=30", ENV.DB_USER, ENV.DB_PASS, ENV.DB_URL, ENV.DB_NAME)
+		dsn := fmt.Sprintf("sqlserver://%v:%v@%v?database=%v&connection+timeout=30&TrustServerCertificate=false&encrypt=true", ENV.DB_USER, ENV.DB_PASS, ENV.DB_URL, ENV.DB_NAME)
 		dial = sqlserver.Open(dsn)
 	} else {
 		panic("database is not supported")

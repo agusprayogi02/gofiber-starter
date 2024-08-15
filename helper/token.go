@@ -44,7 +44,7 @@ func GenerateJWT(user dto.UserClaims) (string, error) {
 	}
 
 	// Create token
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	token := jwt.NewWithClaims(jwt.SigningMethodPS256, claims)
 
 	// Generate encoded token and send it as response.
 	return token.SignedString(GetPrivateKey())

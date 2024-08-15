@@ -6,7 +6,6 @@ import (
 	"starter-gofiber/service"
 	"starter-gofiber/variables"
 
-	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -27,16 +26,16 @@ func (h *PostHandler) All(c *fiber.Ctx) error {
 	}
 
 	if err := c.ParamsParser(&params); err != nil {
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
+		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
-		})
+		}
 	}
 
 	posts, err := h.service.All(&params)
 	if err != nil {
-		return helper.ErrorHelper(c, &helper.BadRequestError{
+		return &helper.BadRequestError{
 			Message: err.Error(),
-		})
+		}
 	}
 
 	return helper.Response(dto.ResponseResult{
@@ -52,48 +51,30 @@ func (h *PostHandler) Create(c *fiber.Ctx) error {
 
 	file, err := c.FormFile("photo")
 	if err != nil {
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
+		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
-		})
+		}
 	}
 
 	fileName, err := helper.UploadFile(c, file, variables.POST_PATH)
 	if err != nil {
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
+		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
-		})
+		}
 	}
 
 	post.Photo = fileName
 	post.UserID = uint(helper.GetUserIDFormToken(c))
 
-	var errors []*helper.IError
 	if err := c.BodyParser(&post); err != nil {
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
+		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
-		})
-	}
-
-	err = helper.Validator.Struct(post)
-	if err != nil {
-		for _, err := range err.(validator.ValidationErrors) {
-			var el helper.IError
-			el.Field = err.Field()
-			el.Tag = err.Tag()
-			el.Value = err.Param()
-			errors = append(errors, &el)
 		}
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
-			Message: err.Error(),
-			Data:    errors,
-		})
 	}
 
 	rest, err := h.service.Create(&post)
 	if err != nil {
-		return helper.ErrorHelper(c, &helper.BadRequestError{
-			Message: err.Error(),
-		})
+		return err
 	}
 
 	return helper.Response(dto.ResponseResult{
@@ -108,57 +89,41 @@ func (h *PostHandler) Update(c *fiber.Ctx) error {
 
 	id, err := c.ParamsInt("id")
 	if err != nil {
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
+		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
-		})
+		}
 	}
 
 	post.ID = uint(id)
 	file, err := c.FormFile("photo")
 	if err != nil && err != fiber.ErrNotFound {
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
+		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
-		})
+		}
 	}
 
 	if file != nil {
 		fileName, err := helper.UploadFile(c, file, variables.POST_PATH)
 		if err != nil {
-			return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
+			return &helper.UnprocessableEntityError{
 				Message: err.Error(),
-			})
+			}
 		}
 		post.Photo = &fileName
 	}
 	post.UserID = uint(helper.GetUserIDFormToken(c))
 
-	var errors []*helper.IError
 	if err := c.BodyParser(&post); err != nil {
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
+		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
-		})
-	}
-
-	err = helper.Validator.Struct(post)
-	if err != nil {
-		for _, err := range err.(validator.ValidationErrors) {
-			var el helper.IError
-			el.Field = err.Field()
-			el.Tag = err.Tag()
-			el.Value = err.Param()
-			errors = append(errors, &el)
 		}
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
-			Message: err.Error(),
-			Data:    errors,
-		})
 	}
 
 	rest, err := h.service.Update(&post)
 	if err != nil {
-		return helper.ErrorHelper(c, &helper.BadRequestError{
+		return &helper.BadRequestError{
 			Message: err.Error(),
-		})
+		}
 	}
 
 	return helper.Response(dto.ResponseResult{
@@ -171,16 +136,16 @@ func (h *PostHandler) Update(c *fiber.Ctx) error {
 func (h *PostHandler) Delete(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
+		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
-		})
+		}
 	}
 
 	err = h.service.Delete(uint(id))
 	if err != nil {
-		return helper.ErrorHelper(c, &helper.BadRequestError{
+		return &helper.BadRequestError{
 			Message: err.Error(),
-		})
+		}
 	}
 	return helper.Response(dto.ResponseResult{
 		StatusCode: fiber.StatusOK,
@@ -191,16 +156,16 @@ func (h *PostHandler) Delete(c *fiber.Ctx) error {
 func (h *PostHandler) GetByID(c *fiber.Ctx) error {
 	id, err := c.ParamsInt("id")
 	if err != nil {
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
+		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
-		})
+		}
 	}
 
 	rest, err := h.service.GetByID(uint(id))
 	if err != nil {
-		return helper.ErrorHelper(c, &helper.BadRequestError{
+		return &helper.BadRequestError{
 			Message: err.Error(),
-		})
+		}
 	}
 
 	return helper.Response(dto.ResponseResult{

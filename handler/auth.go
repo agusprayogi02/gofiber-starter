@@ -21,11 +21,11 @@ func NewAuthHandler(s *service.AuthService) *AuthHandler {
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	var user *dto.RegisterRequest
 	if err := c.BodyParser(&user); err != nil {
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{Message: err.Error()})
+		return &helper.UnprocessableEntityError{Message: err.Error()}
 	}
 
 	if err := h.userS.Register(user); err != nil {
-		return helper.ErrorHelper(c, err)
+		return err
 	}
 
 	return helper.Response(dto.ResponseResult{
@@ -37,14 +37,14 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	var userReq *dto.LoginRequest
 	if err := c.BodyParser(&userReq); err != nil {
-		return helper.ErrorHelper(c, &helper.UnprocessableEntityError{
+		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
-		})
+		}
 	}
 
 	user, err := h.userS.Login(userReq)
 	if err != nil {
-		return helper.ErrorHelper(c, err)
+		return err
 	}
 
 	return helper.Response(dto.ResponseResult{

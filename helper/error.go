@@ -1,6 +1,8 @@
 package helper
 
 import (
+	"errors"
+
 	"starter-gofiber/dto"
 
 	"github.com/gofiber/fiber/v2"
@@ -62,7 +64,10 @@ func ErrorHelper(c *fiber.Ctx, err error) error {
 	case *UnprocessableEntityError:
 		statusCode = fiber.StatusUnprocessableEntity
 	default:
-		statusCode = fiber.StatusInternalServerError
+		var e *fiber.Error
+		if errors.As(err, &e) {
+			statusCode = e.Code
+		}
 	}
 
 	rest := dto.ErrorResponse{

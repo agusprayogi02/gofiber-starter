@@ -2,7 +2,10 @@ package service
 
 import (
 	"starter-gofiber/dto"
+	"starter-gofiber/helper"
 	"starter-gofiber/repository"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type PostService struct {
@@ -28,9 +31,29 @@ func (s *PostService) All(paginate *dto.Pagination) (*[]dto.PostResponse, error)
 	return &result, nil
 }
 
-func (s *PostService) Create(post *dto.PostRequest) (dto.PostResponse, error) {
+func (s *PostService) Create(post *dto.PostRequest) (*dto.PostResponse, error) {
+	var errors []*helper.IError
+
+	err := helper.Validator.Struct(post)
+	if err != nil {
+		for _, err := range err.(validator.ValidationErrors) {
+			var el helper.IError
+			el.Field = err.Field()
+			el.Tag = err.Tag()
+			el.Value = err.Param()
+			errors = append(errors, &el)
+		}
+		return nil, &helper.UnprocessableEntityError{
+			Message: err.Error(),
+			Data:    errors,
+		}
+	}
+
 	rest, err := s.repo.Create(post.ToEntity())
-	return dto.PostResponse{}.FromEntity(rest), err
+	r := dto.PostResponse{}.FromEntity(rest)
+	return &r, &helper.BadRequestError{
+		Message: err.Error(),
+	}
 }
 
 func (s *PostService) GetByID(id uint) (dto.PostResponse, error) {
@@ -38,10 +61,28 @@ func (s *PostService) GetByID(id uint) (dto.PostResponse, error) {
 	return dto.PostResponse{}.FromEntity(*rest), err
 }
 
-func (s *PostService) Update(post *dto.PostUpdateRequest) (dto.PostResponse, error) {
+func (s *PostService) Update(post *dto.PostUpdateRequest) (*dto.PostResponse, error) {
+	var errors []*helper.IError
+
+	err := helper.Validator.Struct(post)
+	if err != nil {
+		for _, err := range err.(validator.ValidationErrors) {
+			var el helper.IError
+			el.Field = err.Field()
+			el.Tag = err.Tag()
+			el.Value = err.Param()
+			errors = append(errors, &el)
+		}
+		return nil, &helper.UnprocessableEntityError{
+			Message: err.Error(),
+			Data:    errors,
+		}
+	}
 	rest, err := s.repo.FindId(post.ID)
 	if err != nil {
-		return dto.PostResponse{}, err
+		return nil, &helper.BadRequestError{
+			Message: "This item does not exist",
+		}
 	}
 
 	rest.Tweet = post.Tweet
@@ -51,7 +92,10 @@ func (s *PostService) Update(post *dto.PostUpdateRequest) (dto.PostResponse, err
 	rest.UserID = post.UserID
 
 	err = s.repo.Update(*rest, post.ID)
-	return dto.PostResponse{}.FromEntity(*rest), err
+	r := dto.PostResponse{}.FromEntity(*rest)
+	return &r, &helper.BadRequestError{
+		Message: err.Error(),
+	}
 }
 
 func (s *PostService) Delete(id uint) error {
