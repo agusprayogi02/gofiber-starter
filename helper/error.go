@@ -61,19 +61,18 @@ func ErrorHelper(c *fiber.Ctx, err error) error {
 		statusCode = fiber.StatusUnauthorized
 	case *UnprocessableEntityError:
 		statusCode = fiber.StatusUnprocessableEntity
-		return c.Status(statusCode).JSON(dto.ErrorResponse{
-			Code:      statusCode,
-			Message:   err.Error(),
-			Data:      err.(*UnprocessableEntityError).Data,
-			Timestamp: TimeNow(),
-		})
 	default:
 		statusCode = fiber.StatusInternalServerError
 	}
 
-	return c.Status(statusCode).JSON(dto.ErrorResponse{
+	rest := dto.ErrorResponse{
 		Code:      statusCode,
 		Message:   err.Error(),
 		Timestamp: TimeNow(),
-	})
+	}
+	if statusCode == fiber.StatusUnprocessableEntity {
+		rest.Data = err.(*UnprocessableEntityError).Data
+	}
+
+	return c.Status(statusCode).JSON(rest)
 }
