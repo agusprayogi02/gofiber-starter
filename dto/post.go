@@ -3,12 +3,14 @@ package dto
 import (
 	"starter-gofiber/entity"
 	"starter-gofiber/variables"
+
+	"github.com/gofiber/fiber/v2/log"
 )
 
 type PostResponse struct {
 	ID        uint          `json:"id"`
 	Tweet     string        `json:"tweet"`
-	Photo     string        `json:"photo"`
+	Photo     *string       `json:"photo"`
 	UserID    uint          `json:"user_id"`
 	User      *UserResponse `json:"user"`
 	CreatedAt string        `json:"created_at"`
@@ -36,13 +38,19 @@ func (r PostRequest) ToEntity() entity.Post {
 }
 
 func (r PostResponse) FromEntity(p entity.Post) PostResponse {
+	log.Debug("FromEntity user 1")
 	r.ID = p.ID
 	r.Tweet = p.Tweet
-	r.Photo = *p.Photo
+	r.Photo = p.Photo
 	r.UserID = p.UserID
-	user := UserResponse{}.FromEntity(p.User)
-	r.User = &user
+	if p.User != nil {
+		log.Debug("FromEntity user 2")
+		user := UserResponse{}.FromEntity(*p.User)
+		r.User = &user
+	}
+	log.Debug("FromEntity user 3")
 	r.CreatedAt = p.CreatedAt.Format(variables.FORMAT_TIME)
 	r.UpdatedAt = p.UpdatedAt.Format(variables.FORMAT_TIME)
+	log.Debug("FromEntity user 4")
 	return r
 }

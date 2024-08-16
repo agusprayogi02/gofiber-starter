@@ -20,6 +20,10 @@ func NewPostRepository(d *gorm.DB) *PostRepository {
 
 func (u *PostRepository) Create(m entity.Post) (entity.Post, error) {
 	err := u.db.Create(&m).Error
+	if err != nil {
+		return entity.Post{}, err
+	}
+	err = u.db.Model(&entity.User{}).Where("id = ?", m.UserID).First(&m.User).Error
 	return m, err
 }
 

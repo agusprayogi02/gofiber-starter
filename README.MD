@@ -29,3 +29,29 @@ type User struct {
 ```
 5. Run `air` to start the server with live reload.
 6. if you want to run in the docker container, run `docker-compose up -d` and then `docker ps` to check the container is running.
+
+## Warning
+
+- Untuk `Order` pada helper digunakan untuk menandai urutan dari error yang muncul.
+	- Keterangan kode huruf pertama: 
+		- S: Service
+		- H: Handler
+		- R: Repository
+		- U: Util
+	- Contoh:
+		- S1: Ada pada service dengan error handling pertama
+
+## Aturan
+- jika ada error pada `service`, `util` wajib mengembalikan error menggunakan `helper` contoh: 
+```go
+dto.PostResponse{}, &helper.BadRequestError{
+	Message: err.Error(),
+	Order:   "S1",
+}
+```
+- Agar pada `handler` tinggal return error, contoh:
+```go
+if err != nil {
+	return err
+}
+```

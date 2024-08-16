@@ -4,6 +4,7 @@ import (
 	"starter-gofiber/dto"
 	"starter-gofiber/helper"
 	"starter-gofiber/repository"
+	"starter-gofiber/variables"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -21,7 +22,10 @@ func NewPostService(repo *repository.PostRepository) *PostService {
 func (s *PostService) All(paginate *dto.Pagination) (*[]dto.PostResponse, error) {
 	posts, err := s.repo.All(paginate)
 	if err != nil {
-		return nil, err
+		return nil, &helper.BadRequestError{
+			Message: err.Error(),
+			Order:   "S1",
+		}
 	}
 
 	var result []dto.PostResponse
@@ -46,25 +50,38 @@ func (s *PostService) Create(post *dto.PostRequest) (*dto.PostResponse, error) {
 		return nil, &helper.UnprocessableEntityError{
 			Message: err.Error(),
 			Data:    errors,
+			Order:   "S1",
 		}
 	}
 
 	rest, err := s.repo.Create(post.ToEntity())
 	r := dto.PostResponse{}.FromEntity(rest)
-	return &r, &helper.BadRequestError{
-		Message: err.Error(),
+
+	if err != nil {
+		return nil, &helper.BadRequestError{
+			Message: err.Error(),
+			Order:   "S2",
+		}
 	}
+
+	return &r, nil
 }
 
 func (s *PostService) GetByID(id uint) (dto.PostResponse, error) {
 	rest, err := s.repo.FindId(id)
-	return dto.PostResponse{}.FromEntity(*rest), err
+	if err != nil {
+		return dto.PostResponse{}, &helper.BadRequestError{
+			Message: err.Error(),
+			Order:   "S1",
+		}
+	}
+	return dto.PostResponse{}.FromEntity(*rest), nil
 }
 
-func (s *PostService) Update(post *dto.PostUpdateRequest) (*dto.PostResponse, error) {
+func (s *PostService) Update(upp *dto.PostUpdateRequest) (*dto.PostResponse, error) {
 	var errors []*helper.IError
 
-	err := helper.Validator.Struct(post)
+	err := helper.Validator.Struct(upp)
 	if err != nil {
 		for _, err := range err.(validator.ValidationErrors) {
 			var el helper.IError
@@ -76,28 +93,55 @@ func (s *PostService) Update(post *dto.PostUpdateRequest) (*dto.PostResponse, er
 		return nil, &helper.UnprocessableEntityError{
 			Message: err.Error(),
 			Data:    errors,
+			Order:   "S1",
 		}
 	}
-	rest, err := s.repo.FindId(post.ID)
+	post, err := s.repo.FindId(upp.ID)
 	if err != nil {
 		return nil, &helper.BadRequestError{
 			Message: "This item does not exist",
+			Order:   "S2",
 		}
 	}
 
-	rest.Tweet = post.Tweet
-	if post.Photo != nil {
-		rest.Photo = post.Photo
+	// delete old photo
+	if upp.Photo != nil {
+		if err := helper.DeleteFile(post.Photo, variables.POST_PATH); err != nil {
+			return nil, err
+		}
+		post.Photo = upp.Photo
 	}
-	rest.UserID = post.UserID
+	post.Tweet = upp.Tweet
+	if upp.Photo != nil {
+		post.Photo = upp.Photo
+	}
+	post.UserID = upp.UserID
 
-	err = s.repo.Update(*rest, post.ID)
-	r := dto.PostResponse{}.FromEntity(*rest)
-	return &r, &helper.BadRequestError{
-		Message: err.Error(),
+	err = s.repo.Update(*post, upp.ID)
+	r := dto.PostResponse{}.FromEntity(*post)
+
+	if err != nil {
+		return nil, &helper.BadRequestError{
+			Message: err.Error(),
+			Order:   "S3",
+		}
 	}
+	return &r, nil
 }
 
 func (s *PostService) Delete(id uint) error {
+	post, err := s.repo.FindId(id)
+	if err != nil {
+		return &helper.BadRequestError{
+			Message: err.Error(),
+			Order:   "S1",
+		}
+	}
+	if err := helper.DeleteFile(post.Photo, variables.POST_PATH); err != nil {
+		return &helper.BadRequestError{
+			Message: err.Error(),
+			Order:   "S2",
+		}
+	}
 	return s.repo.Delete(id)
 }

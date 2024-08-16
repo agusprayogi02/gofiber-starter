@@ -7,6 +7,6 @@ type Post struct {
 	Tweet  string  `gorm:"type:varchar(500)"`
 	Photo  *string `gorm:"type:varchar(150)"`
 	UserID uint
-	User   User `gorm:"foreignKey:UserID"`
+	User   *User `gorm:"foreignKey:UserID"`
 	gorm.Model
 }

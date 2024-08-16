@@ -28,14 +28,13 @@ func (h *PostHandler) All(c *fiber.Ctx) error {
 	if err := c.ParamsParser(&params); err != nil {
 		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
+			Order:   "H1",
 		}
 	}
 
 	posts, err := h.service.All(&params)
 	if err != nil {
-		return &helper.BadRequestError{
-			Message: err.Error(),
-		}
+		return err
 	}
 
 	return helper.Response(dto.ResponseResult{
@@ -53,22 +52,26 @@ func (h *PostHandler) Create(c *fiber.Ctx) error {
 	if err != nil {
 		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
+			Order:   "H1",
 		}
 	}
 
 	fileName, err := helper.UploadFile(c, file, variables.POST_PATH)
 	if err != nil {
-		return &helper.UnprocessableEntityError{
-			Message: err.Error(),
-		}
+		return err
 	}
 
 	post.Photo = fileName
-	post.UserID = uint(helper.GetUserIDFormToken(c))
+	token, err := helper.GetUserFromToken(c)
+	if err != nil {
+		return err
+	}
+	post.UserID = token.ID
 
 	if err := c.BodyParser(&post); err != nil {
 		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
+			Order:   "H2",
 		}
 	}
 
@@ -91,6 +94,7 @@ func (h *PostHandler) Update(c *fiber.Ctx) error {
 	if err != nil {
 		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
+			Order:   "H1",
 		}
 	}
 
@@ -99,31 +103,34 @@ func (h *PostHandler) Update(c *fiber.Ctx) error {
 	if err != nil && err != fiber.ErrNotFound {
 		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
+			Order:   "H2",
 		}
 	}
 
 	if file != nil {
 		fileName, err := helper.UploadFile(c, file, variables.POST_PATH)
 		if err != nil {
-			return &helper.UnprocessableEntityError{
-				Message: err.Error(),
-			}
+			return err
 		}
 		post.Photo = &fileName
 	}
-	post.UserID = uint(helper.GetUserIDFormToken(c))
+
+	token, err := helper.GetUserFromToken(c)
+	if err != nil {
+		return err
+	}
+	post.UserID = token.ID
 
 	if err := c.BodyParser(&post); err != nil {
 		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
+			Order:   "H3",
 		}
 	}
 
 	rest, err := h.service.Update(&post)
 	if err != nil {
-		return &helper.BadRequestError{
-			Message: err.Error(),
-		}
+		return err
 	}
 
 	return helper.Response(dto.ResponseResult{
@@ -138,14 +145,13 @@ func (h *PostHandler) Delete(c *fiber.Ctx) error {
 	if err != nil {
 		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
+			Order:   "H1",
 		}
 	}
 
 	err = h.service.Delete(uint(id))
 	if err != nil {
-		return &helper.BadRequestError{
-			Message: err.Error(),
-		}
+		return err
 	}
 	return helper.Response(dto.ResponseResult{
 		StatusCode: fiber.StatusOK,
@@ -158,14 +164,13 @@ func (h *PostHandler) GetByID(c *fiber.Ctx) error {
 	if err != nil {
 		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
+			Order:   "H1",
 		}
 	}
 
 	rest, err := h.service.GetByID(uint(id))
 	if err != nil {
-		return &helper.BadRequestError{
-			Message: err.Error(),
-		}
+		return err
 	}
 
 	return helper.Response(dto.ResponseResult{

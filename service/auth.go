@@ -18,12 +18,12 @@ func NewAuthService(repo *repository.UserRepository) *AuthService {
 
 func (s *AuthService) Register(user *dto.RegisterRequest) error {
 	if err := s.userR.ExistEmail(user.Email); err == nil {
-		return &helper.BadRequestError{Message: "Email already exists"}
+		return &helper.BadRequestError{Message: "Email already exists", Order: "S1"}
 	}
 
 	password, err := helper.HashPassword(user.Password)
 	if err != nil {
-		return &helper.BadRequestError{Message: "Failed to hash password"}
+		return &helper.BadRequestError{Message: "Failed to hash password", Order: "S2"}
 	}
 
 	userEntity := user.ToEntity()
@@ -31,7 +31,7 @@ func (s *AuthService) Register(user *dto.RegisterRequest) error {
 
 	err = s.userR.Create(userEntity)
 	if err != nil {
-		return &helper.InternalServerError{Message: err.Error()}
+		return &helper.InternalServerError{Message: err.Error(), Order: "S3"}
 	}
 	return nil
 }
@@ -41,16 +41,24 @@ func (s *AuthService) Login(req *dto.LoginRequest) (resp *dto.LoginResponse, err
 	if err != nil {
 		return nil, &helper.BadRequestError{
 			Message: "Email not registered!",
+			Order:   "S1",
 		}
 	}
 
 	if err := helper.VerifyPassword(user.Password, req.Password); err != nil {
 		return nil, &helper.BadRequestError{
 			Message: "Password is wrong!",
+			Order:   "S2",
 		}
 	}
 
 	token, err := helper.GenerateJWT(dto.UserClaims{}.FromEntity(*user))
+	if err != nil {
+		return nil, &helper.InternalServerError{
+			Message: err.Error(),
+			Order:   "S3",
+		}
+	}
 	return &dto.LoginResponse{
 		Token: token,
 		User:  dto.UserResponse{}.FromEntity(*user),

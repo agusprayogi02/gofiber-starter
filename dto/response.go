@@ -1,10 +1,11 @@
 package dto
 
 type ErrorResponse struct {
-	Code      int    `json:"code"`
-	Message   string `json:"message"`
-	Data      any    `json:"data"`
-	Timestamp string `json:"timestamp"`
+	Code      int     `json:"code"`
+	Order     *string `json:"order"`
+	Message   string  `json:"message"`
+	Data      any     `json:"data"`
+	Timestamp string  `json:"timestamp"`
 }
 
 type SuccessResponse struct {

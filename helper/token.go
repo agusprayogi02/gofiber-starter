@@ -2,6 +2,7 @@ package helper
 
 import (
 	"crypto/rsa"
+	"errors"
 	"os"
 	"time"
 
@@ -28,19 +29,29 @@ func GetPrivateKey() *rsa.PrivateKey {
 	return PK
 }
 
-func GetUserIDFormToken(c *fiber.Ctx) float64 {
-	user := c.Locals("user").(*jwt.Token)
-	claims := user.Claims.(jwt.MapClaims)
-	return claims["id"].(float64)
+func GetUserFromToken(c *fiber.Ctx) (*dto.CustomClaims, error) {
+	token := c.Locals("user").(*jwt.Token)
+
+	if claim, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		c := dto.CustomClaims{}.FromToken(claim)
+		return &c, nil
+	} else {
+		return nil, &UnauthorizedError{
+			Message: errors.New("Token Tidak Valid " + token.Raw).Error(),
+		}
+	}
 }
 
 func GenerateJWT(user dto.UserClaims) (string, error) {
 	// Create the Claims
-	claims := jwt.MapClaims{
-		"id":    user.ID,
-		"email": user.Email,
-		"role":  user.Role,
-		"exp":   time.Now().Add(time.Hour * 24 * 7).Unix(),
+	claims := dto.CustomClaims{
+		ID:    user.ID,
+		Email: user.Email,
+		Role:  user.Role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
+			Issuer:    "Starter-Gofiber",
+		},
 	}
 
 	// Create token
