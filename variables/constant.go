@@ -1,6 +1,9 @@
 package variables
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 var (
 	STATIC_PATH = "/storage"
@@ -9,3 +12,7 @@ var (
 	ADMIN_ROLE  = "admin"
 	USER_ROLE   = "user"
 )
+
+func GenerateStatic(paths []string) string {
+	return STATIC_PATH + strings.Join(paths, "")
+}

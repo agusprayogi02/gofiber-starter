@@ -4,6 +4,7 @@ import (
 	"starter-gofiber/config"
 	"starter-gofiber/dto"
 	"starter-gofiber/helper"
+	"starter-gofiber/middleware"
 	"starter-gofiber/variables"
 
 	fileadapter "github.com/casbin/casbin/v2/persist/file-adapter"
@@ -23,7 +24,8 @@ func AppRouter(app *fiber.App) {
 	if config.ENV.ENV_TYPE == "dev" {
 		app.Use(logger.New())
 	}
-	static := app.Group(variables.STATIC_PATH, Authz.RequiresRoles([]string{variables.ADMIN_ROLE, variables.USER_ROLE}))
+	static := app.Group(variables.STATIC_PATH, middleware.AuthMiddleware())
+	// static.Use(Authz.RequiresRoles([]string{variables.ADMIN_ROLE, variables.USER_ROLE}))
 	static.Static("/", "./public")
 	app.Static("/favicon.ico", "./public/favicon.ico")
 	if config.ENV.ENV_TYPE != "dev" {

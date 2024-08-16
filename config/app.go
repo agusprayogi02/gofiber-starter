@@ -3,6 +3,9 @@ package config
 import (
 	"time"
 
+	"starter-gofiber/dto"
+	"starter-gofiber/variables"
+
 	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	"github.com/gofiber/fiber/v2"
@@ -22,9 +25,14 @@ func App(app *fiber.App) {
 			return c.Get("x-forwarded-for")
 		},
 		LimitReached: func(c *fiber.Ctx) error {
-			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
-				"message": "Too many requests",
-			})
+			msg := "C-LimitReached"
+			err := dto.ErrorResponse{
+				Code:      fiber.StatusTooManyRequests,
+				Order:     &msg,
+				Message:   "Too many requests",
+				Timestamp: time.Now().Format(variables.FORMAT_TIME),
+			}
+			return c.Status(fiber.StatusTooManyRequests).JSON(err)
 		},
 		Storage: STORAGE,
 	}))

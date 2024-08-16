@@ -42,7 +42,7 @@ type User struct {
 		- S1: Ada pada service dengan error handling pertama
 
 ## Aturan
-- jika ada error pada `service`, `util` wajib mengembalikan error menggunakan `helper` contoh: 
+- jika ada error pada `service`, `util`, `helper` wajib mengembalikan error menggunakan `helper` contoh: 
 ```go
 dto.PostResponse{}, &helper.BadRequestError{
 	Message: err.Error(),

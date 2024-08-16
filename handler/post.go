@@ -100,14 +100,7 @@ func (h *PostHandler) Update(c *fiber.Ctx) error {
 
 	post.ID = uint(id)
 	file, err := c.FormFile("photo")
-	if err != nil && err != fiber.ErrNotFound {
-		return &helper.UnprocessableEntityError{
-			Message: err.Error(),
-			Order:   "H2",
-		}
-	}
-
-	if file != nil {
+	if err == nil {
 		fileName, err := helper.UploadFile(c, file, variables.POST_PATH)
 		if err != nil {
 			return err
@@ -124,7 +117,7 @@ func (h *PostHandler) Update(c *fiber.Ctx) error {
 	if err := c.BodyParser(&post); err != nil {
 		return &helper.UnprocessableEntityError{
 			Message: err.Error(),
-			Order:   "H3",
+			Order:   "H2",
 		}
 	}
 
