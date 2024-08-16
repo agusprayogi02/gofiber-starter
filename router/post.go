@@ -19,9 +19,10 @@ func NewPostRouter(app fiber.Router) {
 
 	// JWT Middleware
 	post.Use(middleware.AuthMiddleware())
-	post.Get("", h.All)
-	post.Post("", h.Create)
-	post.Put("/:id", h.Update)
-	post.Delete("/:id", h.Delete)
-	post.Get("/:id", h.GetByID)
+	authz := middleware.LoadAuthzMiddleware()
+	post.Get("", authz.RequiresPermissions([]string{"post:list"}), h.All)
+	post.Post("", authz.RequiresPermissions([]string{"post:create"}), h.Create)
+	post.Put("/:id", authz.RequiresPermissions([]string{"post:update"}), h.Update)
+	post.Delete("/:id", authz.RequiresPermissions([]string{"post:delete"}), h.Delete)
+	post.Get("/:id", authz.RequiresPermissions([]string{"post:read"}), h.GetByID)
 }

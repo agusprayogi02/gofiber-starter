@@ -55,3 +55,7 @@ if err != nil {
 	return err
 }
 ```
+
+## Authz
+- Authz dibuat dengan `casbin` library.
+	- https://github.com/gofiber/contrib/blob/main/casbin/casbin_test.go

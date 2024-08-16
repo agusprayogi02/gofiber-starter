@@ -27,6 +27,10 @@ type UnauthorizedError struct {
 	Message string
 	Order   string
 }
+type ForbiddenError struct {
+	Message string
+	Order   string
+}
 
 type UnprocessableEntityError struct {
 	Message string
@@ -43,6 +47,10 @@ func (e *BadRequestError) Error() string {
 }
 
 func (e *InternalServerError) Error() string {
+	return e.Message
+}
+
+func (e *ForbiddenError) Error() string {
 	return e.Message
 }
 
@@ -71,6 +79,9 @@ func ErrorHelper(c *fiber.Ctx, err error) error {
 	case *UnauthorizedError:
 		statusCode = fiber.StatusUnauthorized
 		order = err.(*UnauthorizedError).Order
+	case *ForbiddenError:
+		statusCode = fiber.StatusForbidden
+		order = err.(*ForbiddenError).Order
 	case *UnprocessableEntityError:
 		statusCode = fiber.StatusUnprocessableEntity
 		order = err.(*UnprocessableEntityError).Order
