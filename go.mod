@@ -4,6 +4,7 @@ go 1.23
 
 require (
 	github.com/casbin/casbin/v2 v2.98.0
+	github.com/casbin/xorm-adapter/v3 v3.4.0
 	github.com/go-playground/validator/v10 v10.22.0
 	github.com/goccy/go-json v0.10.3
 	github.com/gofiber/contrib/casbin v1.0.15
@@ -19,16 +20,12 @@ require (
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/MicahParks/keyfunc/v2 v2.1.0 // indirect
-	github.com/casbin/casbin v1.9.1 // indirect
 	github.com/casbin/govaluate v1.2.0 // indirect
-	github.com/casbin/xorm-adapter v1.0.0 // indirect
-	github.com/casbin/xorm-adapter/v3 v3.4.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.5 // indirect
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-sql-driver/mysql v1.8.1 // indirect
-	github.com/go-xorm/xorm v0.7.9 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
@@ -55,7 +52,6 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/syndtr/goleveldb v1.0.0 // indirect
-	go.uber.org/atomic v1.11.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/exp v0.0.0-20240808152545-0cdaa3abc0fa // indirect
 	golang.org/x/mod v0.20.0 // indirect
@@ -66,8 +62,7 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	xorm.io/builder v0.3.13 // indirect
-	xorm.io/core v0.7.3 // indirect
-	xorm.io/xorm v1.3.2 // indirect
+	xorm.io/xorm v1.3.9 // indirect
 )
 
 require (

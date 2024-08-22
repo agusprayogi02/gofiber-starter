@@ -2,6 +2,7 @@ package helper
 
 import (
 	"errors"
+	"fmt"
 
 	"starter-gofiber/dto"
 
@@ -63,45 +64,40 @@ func (e *UnprocessableEntityError) Error() string {
 }
 
 func ErrorHelper(c *fiber.Ctx, err error) error {
-	var statusCode int
 	var order string
-
-	switch err.(type) {
-	case *NotFoundError:
-		statusCode = fiber.StatusNotFound
-		order = err.(*NotFoundError).Order
-	case *BadRequestError:
-		statusCode = fiber.StatusBadRequest
-		order = err.(*BadRequestError).Order
-	case *InternalServerError:
-		statusCode = fiber.StatusInternalServerError
-		order = err.(*InternalServerError).Order
-	case *UnauthorizedError:
-		statusCode = fiber.StatusUnauthorized
-		order = err.(*UnauthorizedError).Order
-	case *ForbiddenError:
-		statusCode = fiber.StatusForbidden
-		order = err.(*ForbiddenError).Order
-	case *UnprocessableEntityError:
-		statusCode = fiber.StatusUnprocessableEntity
-		order = err.(*UnprocessableEntityError).Order
-	default:
-		var e *fiber.Error
-		if errors.As(err, &e) {
-			statusCode = e.Code
-			order = e.Message
-		}
-	}
-
 	rest := dto.ErrorResponse{
-		Code:      statusCode,
-		Order:     &order,
 		Message:   err.Error(),
 		Timestamp: TimeNow(),
 	}
-	if statusCode == fiber.StatusUnprocessableEntity {
-		rest.Data = err.(*UnprocessableEntityError).Data
-	}
 
-	return c.Status(statusCode).JSON(rest)
+	switch err.(type) {
+	case *NotFoundError:
+		rest.Code = fiber.StatusNotFound
+		order = err.(*NotFoundError).Order
+	case *BadRequestError:
+		rest.Code = fiber.StatusBadRequest
+		order = err.(*BadRequestError).Order
+	case *InternalServerError:
+		rest.Code = fiber.StatusInternalServerError
+		order = err.(*InternalServerError).Order
+	case *UnauthorizedError:
+		rest.Code = fiber.StatusUnauthorized
+		order = err.(*UnauthorizedError).Order
+	case *ForbiddenError:
+		rest.Code = fiber.StatusForbidden
+		order = err.(*ForbiddenError).Order
+	case *UnprocessableEntityError:
+		rest.Code = fiber.StatusUnprocessableEntity
+		order = err.(*UnprocessableEntityError).Order
+		rest.Data = err.(*UnprocessableEntityError).Data
+	default:
+		var e *fiber.Error
+		if errors.As(err, &e) {
+			rest.Code = e.Code
+			order = fmt.Sprintf("Handling Error: %s", e.Message)
+		}
+	}
+	rest.Order = &order
+
+	return c.Status(rest.Code).JSON(rest)
 }
