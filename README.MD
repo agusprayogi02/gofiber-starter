@@ -10,6 +10,13 @@ Backend Golang With Fiber Framework
 - Docker (optional)
 - Open ssl -> untuk generate token jwt
 
+### OS Windows (wajib install gcc)
+- Install `msys2` link di sini => [msys2](https://www.msys2.org/docs/installer/0)
+- buka `msys2` shell
+- lakukan perintah `pacman -Syu` untuk memperbarui paket
+- lakukan perintah `pacman -S mingw-w64-x86_64-gcc` untuk menginstall gcc
+- setting environment variable `CGO_ENABLED=1` dan juga `C:\msys64\mingw64\bin`
+
 ### Installation
 1. Install `air` for live reload,
 ```bash
