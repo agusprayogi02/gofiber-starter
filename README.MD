@@ -16,8 +16,11 @@ Backend Golang With Fiber Framework
 go install github.com/air-verse/air@latest
 ```
 2. Copy `.env.example` to `.env` and fill the values.
-3. Membuat certificate pemakai untuk open ssl
-	- Masuk ke folder `assets/certs` 
+3. Membuat certificate menggunakan open ssl
+	- Masuk ke folder `assets/certs`, 
+		```bash
+		cd assets/certs
+		```
 	- buat private key
 		```bash
 		openssl genpkey -algorithm RSA -out private_key.pem -aes256
@@ -28,7 +31,7 @@ go install github.com/air-verse/air@latest
 		```
 	- Buat Self-Signed Certificate
 		```bash
-		openssl x509 -req -days 365 -in csr.pem -signkey private_key.pem -out certificate.pem
+		openssl x509 -req -days 365 -in public_key.pem -signkey private_key.pem -out certificate.pem
 		```
 	- Verifikasi Sertifikat
 		```bash
@@ -36,7 +39,7 @@ go install github.com/air-verse/air@latest
 		```
 	- Masukkan kedalam file `.env` dengan format:
 		```bash
-		LOCATION_CERT=assets/certs/certificate.pem
+		LOCATION_CERT="assets/certs/certificate.pem"
 		```
 3. Change config on .env file, like database connection string.
 4. For `Sql Server` change Enum Data Type on `entity/user.go` like: 
@@ -65,9 +68,9 @@ type User struct {
 		- S1: Ada pada service dengan error handling pertama
 
 ## Aturan
-- jika ada error pada `service`, `util`, `helper` wajib mengembalikan error menggunakan `helper` contoh: 
+- jika ada error pada `service`, `util`, `helper` wajib mengembalikan error menggunakan `helper` error handling contoh: 
 ```go
-dto.PostResponse{}, &helper.BadRequestError{
+return nil, &helper.BadRequestError{
 	Message: err.Error(),
 	Order:   "S1",
 }
