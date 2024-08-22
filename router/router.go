@@ -17,11 +17,11 @@ import (
 )
 
 func AppRouter(app *fiber.App) {
-	adapter, err := xormadapter.NewAdapter("sqlite3", fmt.Sprintf("./asset/%s_storage.db", config.ENV.DB_NAME), true)
+	adapter, err := xormadapter.NewAdapter("sqlite3", fmt.Sprintf("./assets/%s_storage.db", config.ENV.DB_NAME), true)
 	if err != nil {
 		panic(err)
 	}
-	enforcer, err := casbin.NewEnforcer("./asset/rbac/model.conf", adapter)
+	enforcer, err := casbin.NewEnforcer("./assets/rbac/model.conf", adapter)
 	if err != nil {
 		panic(err)
 	}

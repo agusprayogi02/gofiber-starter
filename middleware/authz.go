@@ -12,12 +12,12 @@ import (
 )
 
 func LoadAuthzMiddleware() *casbin.Middleware {
-	adapter, err := xormadapter.NewAdapter("sqlite3", fmt.Sprintf("./asset/%s_storage.db", config.ENV.DB_NAME), true)
+	adapter, err := xormadapter.NewAdapter("sqlite3", fmt.Sprintf("./assets/%s_storage.db", config.ENV.DB_NAME), true)
 	if err != nil {
 		panic(err)
 	}
 	return casbin.New(casbin.Config{
-		ModelFilePath: "./asset/rbac/model.conf",
+		ModelFilePath: "./assets/rbac/model.conf",
 		PolicyAdapter: adapter,
 		Lookup: func(c *fiber.Ctx) string {
 			token, err := helper.GetUserFromToken(c)

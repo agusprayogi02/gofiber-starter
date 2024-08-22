@@ -15,7 +15,7 @@ var (
 )
 
 func LoadPermissions() {
-	e, err := casbin.NewEnforcer("./asset/rbac/model.conf", "./asset/rbac/policy.csv")
+	e, err := casbin.NewEnforcer("./assets/rbac/model.conf", "./assets/rbac/policy.csv")
 	if err != nil {
 		return
 	}

@@ -1,6 +1,6 @@
 .env
-asset/certs/*.pem
-asset/*.db
+assets/certs/*.pem
+assets/*.db
 tmp/*
 /temp/*
 /public/**/

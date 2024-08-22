@@ -8,6 +8,7 @@ Backend Golang With Fiber Framework
 
 - Go 1.20 or higher
 - Docker (optional)
+- Open ssl -> untuk generate token jwt
 
 ### Installation
 1. Install `air` for live reload,
@@ -15,6 +16,28 @@ Backend Golang With Fiber Framework
 go install github.com/air-verse/air@latest
 ```
 2. Copy `.env.example` to `.env` and fill the values.
+3. Membuat certificate pemakai untuk open ssl
+	- Masuk ke folder `assets/certs` 
+	- buat private key
+		```bash
+		openssl genpkey -algorithm RSA -out private_key.pem -aes256
+		```
+	- buat public key
+		```bash
+		openssl req -new -key private_key.pem -out public_key.pem
+		```
+	- Buat Self-Signed Certificate
+		```bash
+		openssl x509 -req -days 365 -in csr.pem -signkey private_key.pem -out certificate.pem
+		```
+	- Verifikasi Sertifikat
+		```bash
+		openssl x509 -in certificate.pem -text -noout
+		```
+	- Masukkan kedalam file `.env` dengan format:
+		```bash
+		LOCATION_CERT=assets/certs/certificate.pem
+		```
 3. Change config on .env file, like database connection string.
 4. For `Sql Server` change Enum Data Type on `entity/user.go` like: 
 ```go
