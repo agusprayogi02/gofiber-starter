@@ -10,13 +10,6 @@ Backend Golang With Fiber Framework
 - Docker (optional)
 - Open ssl -> untuk generate token jwt
 
-### OS Windows (wajib install gcc)
-- Install `msys2` link di sini => [msys2](https://www.msys2.org/docs/installer/0)
-- buka `msys2` shell
-- lakukan perintah `pacman -Syu` untuk memperbarui paket
-- lakukan perintah `pacman -S mingw-w64-x86_64-gcc` untuk menginstall gcc
-- setting environment variable `CGO_ENABLED=1` dan juga `C:\msys64\mingw64\bin`
-
 ### Installation
 1. Install `air` for live reload,
 ```bash
@@ -24,25 +17,10 @@ go install github.com/air-verse/air@latest
 ```
 2. Copy `.env.example` to `.env` and fill the values.
 3. Membuat certificate menggunakan open ssl
-	- Masuk ke folder `assets/certs`, 
-		```bash
-		cd assets/certs
-		```
+	- Masuk ke folder `assets/certs` 
 	- buat private key
 		```bash
-		openssl genpkey -algorithm RSA -out private_key.pem -aes256
-		```
-	- buat public key
-		```bash
-		openssl req -new -key private_key.pem -out public_key.pem
-		```
-	- Buat Self-Signed Certificate
-		```bash
-		openssl x509 -req -days 365 -in public_key.pem -signkey private_key.pem -out certificate.pem
-		```
-	- Verifikasi Sertifikat
-		```bash
-		openssl x509 -in certificate.pem -text -noout
+		openssl genpkey -algorithm RSA -out certificate.pem -pkeyopt rsa_keygen_bits:4096
 		```
 	- Masukkan kedalam file `.env` dengan format:
 		```bash
@@ -88,6 +66,11 @@ if err != nil {
 	return err
 }
 ```
+
+## Rilis Production dengan docker
+- pada file `.env` ganti `ENV_TYPE="prod"`
+- ganti file `docker-composer.yml` dan `Dockerfile` dengan yang ada didalam folder `assets/docker/prod`, jangan lupa menyesuaikan configurasi yang akan digunakan 
+
 
 ## Authz
 - Authz dibuat dengan `casbin` library.
