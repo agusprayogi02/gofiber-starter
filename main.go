@@ -20,11 +20,16 @@ func main() {
 		config.LoadDB2()
 	}
 
-	app := fiber.New(fiber.Config{
+	conf := fiber.Config{
 		JSONEncoder:  json.Marshal,
 		JSONDecoder:  json.Unmarshal,
 		ErrorHandler: helper.ErrorHelper,
-	})
+	}
+	if config.ENV.ENV_TYPE == "prod" {
+		conf.Prefork = true
+	}
+
+	app := fiber.New(conf)
 	config.App(app)
 	router.AppRouter(app)
 

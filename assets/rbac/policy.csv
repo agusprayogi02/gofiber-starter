@@ -3,3 +3,8 @@ p, admin, files, read
 p, admin, files, update
 p, admin, files, delete
 p, admin, files, list
+p, admin, post, create
+p, admin, post, read
+p, admin, post, update
+p, admin, post, delete
+p, admin, post, list

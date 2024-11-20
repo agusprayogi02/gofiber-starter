@@ -1,8 +1,6 @@
 package router
 
 import (
-	"fmt"
-
 	"starter-gofiber/config"
 	"starter-gofiber/dto"
 	"starter-gofiber/helper"
@@ -10,18 +8,13 @@ import (
 	"starter-gofiber/variables"
 
 	"github.com/casbin/casbin/v2"
-	xormadapter "github.com/casbin/xorm-adapter/v3"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
 func AppRouter(app *fiber.App) {
-	adapter, err := xormadapter.NewAdapter("sqlite3", fmt.Sprintf("./assets/%s_storage.db", config.ENV.DB_NAME), true)
-	if err != nil {
-		panic(err)
-	}
-	enforcer, err := casbin.NewEnforcer("./assets/rbac/model.conf", adapter)
+	enforcer, err := casbin.NewEnforcer("./assets/rbac/model.conf", "assets/rbac/policy.csv")
 	if err != nil {
 		panic(err)
 	}
