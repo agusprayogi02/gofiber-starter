@@ -1,24 +1,17 @@
 package middleware
 
 import (
-	"fmt"
-
-	"starter-gofiber/config"
 	"starter-gofiber/helper"
 
-	xormadapter "github.com/casbin/xorm-adapter/v3"
+	fileadapter "github.com/casbin/casbin/v2/persist/file-adapter"
 	"github.com/gofiber/contrib/casbin"
 	"github.com/gofiber/fiber/v2"
 )
 
 func LoadAuthzMiddleware() *casbin.Middleware {
-	adapter, err := xormadapter.NewAdapter("sqlite3", fmt.Sprintf("./assets/%s_storage.db", config.ENV.DB_NAME), true)
-	if err != nil {
-		panic(err)
-	}
 	return casbin.New(casbin.Config{
 		ModelFilePath: "./assets/rbac/model.conf",
-		PolicyAdapter: adapter,
+		PolicyAdapter: fileadapter.NewAdapter("./assets/rbac/policy.csv"),
 		Lookup: func(c *fiber.Ctx) string {
 			token, err := helper.GetUserFromToken(c)
 			if err != nil {
