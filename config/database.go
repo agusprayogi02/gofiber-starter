@@ -31,16 +31,17 @@ func createEnum(db *gorm.DB) error {
 func LoadDB() {
 	url := strings.Split(ENV.DB_URL, ":")
 	var dial gorm.Dialector
-	if ENV.DB_TYPE == "mysql" {
+	switch ENV.DB_TYPE {
+	case "mysql":
 		dsn := fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8mb4&parseTime=True&loc=Local", ENV.DB_USER, ENV.DB_PASS, ENV.DB_URL, ENV.DB_NAME)
 		dial = mysql.Open(dsn)
-	} else if ENV.DB_TYPE == "postgres" {
+	case "postgres":
 		dsn := fmt.Sprintf("host=%v port=%v user=%v password=%v dbname=%v sslmode=disable TimeZone=UTC", url[0], url[len(url)-1], ENV.DB_USER, ENV.DB_PASS, ENV.DB_NAME)
 		dial = postgres.Open(dsn)
-	} else if ENV.DB_TYPE == "sql server" {
+	case "sql server":
 		dsn := fmt.Sprintf("sqlserver://%v:%v@%v?database=%v&connection+timeout=30&TrustServerCertificate=false&encrypt=true", ENV.DB_USER, ENV.DB_PASS, ENV.DB_URL, ENV.DB_NAME)
 		dial = sqlserver.Open(dsn)
-	} else {
+	default:
 		panic("database is not supported")
 	}
 	var logConfig *gorm.Config
@@ -81,16 +82,17 @@ func LoadDB() {
 func LoadDB2() {
 	url := strings.Split(ENV.DB_2_URL, ":")
 	var dial gorm.Dialector
-	if ENV.DB_2_TYPE == "mysql" {
+	switch ENV.DB_2_TYPE {
+	case "mysql":
 		dsn := fmt.Sprintf("%v:%v@tcp(%v)/%v?charset=utf8mb4&parseTime=True&loc=Local", ENV.DB_2_USER, ENV.DB_2_PASS, ENV.DB_2_URL, ENV.DB_2_NAME)
 		dial = mysql.Open(dsn)
-	} else if ENV.DB_2_TYPE == "postgres" {
+	case "postgres":
 		dsn := fmt.Sprintf("host=%v port=%v user=%v password=%v dbname=%v sslmode=disable TimeZone=UTC", url[0], url[len(url)-1], ENV.DB_2_USER, ENV.DB_2_PASS, ENV.DB_2_NAME)
 		dial = postgres.Open(dsn)
-	} else if ENV.DB_2_TYPE == "sql server" {
+	case "sql server":
 		dsn := fmt.Sprintf("sqlserver://%v:%v@%v?database=%v&connection+timeout=30", ENV.DB_2_USER, ENV.DB_2_PASS, ENV.DB_2_URL, ENV.DB_2_NAME)
 		dial = sqlserver.Open(dsn)
-	} else {
+	default:
 		panic("database is not supported")
 	}
 	var logConfig *gorm.Config
