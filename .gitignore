@@ -4,3 +4,7 @@ assets/*.db
 tmp/*
 /temp/*
 /public/**/
+
+# Test coverage files
+coverage.out
+coverage.html

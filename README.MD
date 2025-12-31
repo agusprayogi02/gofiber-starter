@@ -91,9 +91,13 @@ Lihat [docs/API_AUTH.md](docs/API_AUTH.md) untuk dokumentasi lengkap endpoint au
 
 ### 2. Testing
 - [x] **Integration Tests** - Testing end-to-end untuk API endpoints
-- [ ] **Test Coverage Report** - Setup coverage report dengan minimal threshold
+- [x] **Test Coverage Report** - Setup coverage report dengan minimal threshold (Current: 23.2%)
 - [x] **Mock Database** - Setup mock untuk testing database operations
 - [x] **API Testing Collection** - Postman collection untuk manual testing
+
+### Dokumentasi
+Lihat [docs/TESTING.md](docs/TESTING.md) untuk dokumentasi lengkap dari testing
+Lihat [docs/TEST_COVERAGE.md](docs/TEST_COVERAGE.md) untuk dokumentasi lengkap test coverage report.
 
 ### 3. Documentation
 - [x] **Postman Collection** - Export collection untuk API testing
