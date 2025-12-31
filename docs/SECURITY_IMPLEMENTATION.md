@@ -569,6 +569,4 @@ app.Use("/api/internal", middleware.IPWhitelistMiddleware(internalIPs))
 
 ---
 
-**Authored by**: GitHub Copilot
-**Date**: 2025-01-XX
-**Version**: 1.0.0
+**Last Updated**: December 31, 2025

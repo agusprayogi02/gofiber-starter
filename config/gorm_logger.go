@@ -3,9 +3,8 @@ package config
 import (
 	"context"
 	"fmt"
-	"time"
-
 	"starter-gofiber/helper"
+	"time"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm/logger"

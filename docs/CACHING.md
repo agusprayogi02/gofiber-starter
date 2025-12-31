@@ -698,6 +698,4 @@ helper.CacheFlush() // Use with caution!
 
 ---
 
-**Authored by**: GitHub Copilot  
-**Version**: 1.0.0  
 **Last Updated**: January 2026

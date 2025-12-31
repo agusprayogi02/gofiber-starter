@@ -32,6 +32,13 @@ type Config struct {
 	REDIS_PASSWORD string
 	REDIS_DB       int
 	REDIS_ENABLE   bool
+
+	// Read Replica Configuration
+	DB_READ_HOST string
+	DB_READ_PORT string
+	DB_READ_USER string
+	DB_READ_PASS string
+	DB_READ_NAME string
 }
 
 var ENV *Config

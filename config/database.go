@@ -88,16 +88,26 @@ func LoadDB() {
 		}
 	}
 
-	// Configure connection pool
+	// Configure connection pool with optimized settings
 	sqlDB, err := db.DB()
 	if err != nil {
 		panic(err)
 	}
 
-	// Set connection pool settings
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetConnMaxLifetime(time.Hour)
+	// Set connection pool settings based on environment
+	if ENV.ENV_TYPE == "prod" {
+		// Production settings - higher limits
+		sqlDB.SetMaxIdleConns(25)           // Minimum idle connections
+		sqlDB.SetMaxOpenConns(200)          // Maximum open connections
+		sqlDB.SetConnMaxLifetime(time.Hour) // Connection lifetime
+		sqlDB.SetConnMaxIdleTime(10 * time.Minute)
+	} else {
+		// Development settings - conservative limits
+		sqlDB.SetMaxIdleConns(10)
+		sqlDB.SetMaxOpenConns(50)
+		sqlDB.SetConnMaxLifetime(30 * time.Minute)
+		sqlDB.SetConnMaxIdleTime(5 * time.Minute)
+	}
 
 	DB = db
 }
@@ -163,15 +173,26 @@ func LoadDB2() {
 		}
 	}
 
-	// Configure connection pool for DB2
+	// Configure connection pool for DB2 with optimized settings
 	sqlDB, err := db.DB()
 	if err != nil {
 		panic(err)
 	}
 
-	sqlDB.SetMaxIdleConns(10)
-	sqlDB.SetMaxOpenConns(100)
-	sqlDB.SetConnMaxLifetime(time.Hour)
+	// Set connection pool settings based on environment
+	if ENV.ENV_TYPE == "prod" {
+		// Production settings - higher limits
+		sqlDB.SetMaxIdleConns(25)
+		sqlDB.SetMaxOpenConns(200)
+		sqlDB.SetConnMaxLifetime(time.Hour)
+		sqlDB.SetConnMaxIdleTime(10 * time.Minute)
+	} else {
+		// Development settings - conservative limits
+		sqlDB.SetMaxIdleConns(10)
+		sqlDB.SetMaxOpenConns(50)
+		sqlDB.SetConnMaxLifetime(30 * time.Minute)
+		sqlDB.SetConnMaxIdleTime(5 * time.Minute)
+	}
 
 	DB2 = db
 }
