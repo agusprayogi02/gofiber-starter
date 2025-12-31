@@ -6,6 +6,7 @@ import (
 
 	"starter-gofiber/config"
 	"starter-gofiber/helper"
+	"starter-gofiber/middleware"
 	"starter-gofiber/router"
 
 	"github.com/goccy/go-json"
@@ -32,6 +33,11 @@ func main() {
 		helper.Fatal("Failed to initialize private key", zap.Error(err))
 	}
 
+	// Initialize encryption for sensitive data
+	if err := helper.InitEncryption(config.ENV.ENCRYPTION_KEY); err != nil {
+		helper.Fatal("Failed to initialize encryption", zap.Error(err))
+	}
+
 	// Initialize Sentry for error tracking
 	if err := helper.InitSentry(config.ENV.SENTRY_DSN, config.ENV.ENV_TYPE); err != nil {
 		helper.Warn("Failed to initialize Sentry", zap.Error(err))
@@ -53,6 +59,9 @@ func main() {
 		}
 		return config.DB.DB()
 	})
+
+	// Initialize API Key middleware
+	middleware.InitAPIKeyMiddleware(config.DB)
 
 	conf := fiber.Config{
 		JSONEncoder:  json.Marshal,

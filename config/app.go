@@ -13,6 +13,12 @@ import (
 )
 
 func App(app *fiber.App) {
+	// HTTPS redirect (production only)
+	app.Use(middleware.HTTPSRedirectMiddleware())
+
+	// Security headers (Helmet-like)
+	app.Use(middleware.SecurityHeadersMiddleware())
+
 	// CORS middleware
 	app.Use(cors.New())
 
@@ -25,7 +31,11 @@ func App(app *fiber.App) {
 	// Prometheus metrics middleware
 	app.Use(middleware.PrometheusMiddleware())
 
-	// Rate limiter
+	// CSRF protection for state-changing requests
+	// Note: Skip for API endpoints, use for web forms
+	// app.Use(middleware.CSRFMiddleware())
+
+	// Global rate limiter
 	app.Use(limiter.New(limiter.Config{
 		Next: func(c *fiber.Ctx) bool {
 			return c.IP() == "127.0.0.1"
@@ -47,4 +57,8 @@ func App(app *fiber.App) {
 		},
 		Storage: STORAGE,
 	}))
+
+	// Per-user rate limiter (100 requests per minute)
+	userRateLimiter := middleware.NewUserRateLimiter(100, 1*time.Minute)
+	app.Use(userRateLimiter.Middleware())
 }

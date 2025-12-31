@@ -24,6 +24,7 @@ type Config struct {
 	LOCATION_CERT   string
 	NGROK_AUTHTOKEN string
 	SENTRY_DSN      string
+	ENCRYPTION_KEY  string
 }
 
 var ENV *Config

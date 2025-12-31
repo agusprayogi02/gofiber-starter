@@ -81,6 +81,7 @@ func LoadDB() {
 			entity.RefreshToken{},
 			entity.PasswordReset{},
 			entity.EmailVerification{},
+			entity.APIKey{},
 		)
 		if err != nil {
 			panic(err)
@@ -155,6 +156,7 @@ func LoadDB2() {
 			entity.RefreshToken{},
 			entity.PasswordReset{},
 			entity.EmailVerification{},
+			entity.APIKey{},
 		)
 		if err != nil {
 			panic(err)

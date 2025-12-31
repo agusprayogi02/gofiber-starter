@@ -39,6 +39,11 @@ type UnprocessableEntityError struct {
 	Order   string
 }
 
+type TooManyRequestsError struct {
+	Message string
+	Order   string
+}
+
 func (e *NotFoundError) Error() string {
 	return e.Message
 }
@@ -60,6 +65,10 @@ func (e *UnauthorizedError) Error() string {
 }
 
 func (e *UnprocessableEntityError) Error() string {
+	return e.Message
+}
+
+func (e *TooManyRequestsError) Error() string {
 	return e.Message
 }
 
@@ -90,6 +99,9 @@ func ErrorHelper(c *fiber.Ctx, err error) error {
 		rest.Code = fiber.StatusUnprocessableEntity
 		order = err.Order
 		rest.Data = err.Data
+	case *TooManyRequestsError:
+		rest.Code = fiber.StatusTooManyRequests
+		order = err.Order
 	default:
 		var e *fiber.Error
 		if errors.As(err, &e) {
