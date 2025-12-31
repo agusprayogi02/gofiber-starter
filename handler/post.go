@@ -80,6 +80,9 @@ func (h *PostHandler) Create(c *fiber.Ctx) error {
 		return err
 	}
 
+	// Invalidate posts list cache
+	helper.InvalidateCollection("posts")
+
 	return helper.Response(dto.ResponseResult{
 		Data:       rest,
 		StatusCode: fiber.StatusCreated,
@@ -125,7 +128,9 @@ func (h *PostHandler) Update(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
+	// Invalidate related cache
+	helper.InvalidateRelated("post", id)
+	helper.InvalidateCollection("posts")
 	return helper.Response(dto.ResponseResult{
 		Data:       rest,
 		StatusCode: fiber.StatusOK,

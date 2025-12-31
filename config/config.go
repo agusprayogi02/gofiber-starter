@@ -25,6 +25,13 @@ type Config struct {
 	NGROK_AUTHTOKEN string
 	SENTRY_DSN      string
 	ENCRYPTION_KEY  string
+
+	// Redis Configuration
+	REDIS_HOST     string
+	REDIS_PORT     string
+	REDIS_PASSWORD string
+	REDIS_DB       int
+	REDIS_ENABLE   bool
 }
 
 var ENV *Config

@@ -52,6 +52,17 @@ func main() {
 		config.LoadDB2()
 	}
 
+	// Initialize Redis cache
+	if config.ENV.REDIS_ENABLE {
+		client, err := config.InitRedis()
+		if err != nil {
+			helper.Warn("Failed to initialize Redis", zap.Error(err))
+		} else {
+			helper.InitRedisClient(client)
+			defer helper.CloseRedis()
+		}
+	}
+
 	// Start database metrics updater
 	helper.StartDBMetricsUpdater(func() (*sql.DB, error) {
 		if config.DB == nil {

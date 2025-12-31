@@ -4,6 +4,7 @@ assets/*.db
 tmp/*
 /temp/*
 /public/**/
+bin/*
 
 # Test coverage files
 coverage.out
