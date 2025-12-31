@@ -1,8 +1,9 @@
 package repository
 
 import (
-	"gorm.io/gorm"
 	"starter-gofiber/entity"
+
+	"gorm.io/gorm"
 )
 
 type UserRepository struct {
@@ -29,4 +30,14 @@ func (u *UserRepository) FindByEmail(email string) (*entity.User, error) {
 	var user *entity.User
 	err := u.db.Where("email = ?", email).First(&user).Error
 	return user, err
+}
+
+func (u *UserRepository) FindByID(id uint) (*entity.User, error) {
+	var user *entity.User
+	err := u.db.Where("id = ?", id).First(&user).Error
+	return user, err
+}
+
+func (u *UserRepository) Update(user *entity.User) error {
+	return u.db.Save(user).Error
 }

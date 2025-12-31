@@ -70,7 +70,13 @@ func LoadDB() {
 			}
 		}
 
-		err = db.AutoMigrate(entity.User{}, entity.Post{})
+		err = db.AutoMigrate(
+			entity.User{},
+			entity.Post{},
+			entity.RefreshToken{},
+			entity.PasswordReset{},
+			entity.EmailVerification{},
+		)
 		if err != nil {
 			panic(err)
 		}
@@ -121,7 +127,13 @@ func LoadDB2() {
 			}
 		}
 
-		err = db.AutoMigrate(entity.User{}, entity.Post{})
+		err = db.AutoMigrate(
+			entity.User{},
+			entity.Post{},
+			entity.RefreshToken{},
+			entity.PasswordReset{},
+			entity.EmailVerification{},
+		)
 		if err != nil {
 			panic(err)
 		}

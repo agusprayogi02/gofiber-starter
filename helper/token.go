@@ -49,7 +49,7 @@ func GenerateJWT(user dto.UserClaims) (string, error) {
 		Email: user.Email,
 		Role:  user.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 1)), // Short-lived: 1 hour
 			Issuer:    "Starter-Gofiber",
 		},
 	}
@@ -58,5 +58,35 @@ func GenerateJWT(user dto.UserClaims) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodPS256, claims)
 
 	// Generate encoded token and send it as response.
+	return token.SignedString(GetPrivateKey())
+}
+
+func GenerateRefreshToken(user dto.UserClaims) (string, error) {
+	// Create the Claims for refresh token
+	claims := dto.CustomClaims{
+		ID:    user.ID,
+		Email: user.Email,
+		Role:  user.Role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 30)), // Long-lived: 30 days
+			Issuer:    "Starter-Gofiber-Refresh",
+		},
+	}
+
+	// Create token
+	token := jwt.NewWithClaims(jwt.SigningMethodPS256, claims)
+
+	// Generate encoded token
+	return token.SignedString(GetPrivateKey())
+}
+
+func GenerateRandomToken() (string, error) {
+	// Create token with random claims
+	claims := jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+		Issuer:    "Starter-Gofiber-Token",
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodPS256, claims)
 	return token.SignedString(GetPrivateKey())
 }

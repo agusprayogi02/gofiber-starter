@@ -59,6 +59,53 @@ func (r UserResponse) FromEntity(u entity.User) UserResponse {
 }
 
 type LoginResponse struct {
-	User  UserResponse `json:"user"`
-	Token string       `json:"token"`
+	User         UserResponse `json:"user"`
+	Token        string       `json:"token"`
+	RefreshToken string       `json:"refresh_token"`
+}
+
+type RefreshTokenRequest struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
+type RefreshTokenResponse struct {
+	Token        string `json:"token"`
+	RefreshToken string `json:"refresh_token"`
+}
+
+type ForgotPasswordRequest struct {
+	Email string `json:"email" binding:"required;email"`
+}
+
+type ResetPasswordRequest struct {
+	Token       string `json:"token" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required;min=6"`
+}
+
+type ChangePasswordRequest struct {
+	OldPassword string `json:"old_password" binding:"required"`
+	NewPassword string `json:"new_password" binding:"required;min=6"`
+}
+
+type VerifyEmailRequest struct {
+	Token string `json:"token" binding:"required"`
+}
+
+type SessionResponse struct {
+	ID        uint   `json:"id"`
+	DeviceID  string `json:"device_id,omitempty"`
+	IPAddress string `json:"ip_address"`
+	UserAgent string `json:"user_agent,omitempty"`
+	CreatedAt string `json:"created_at"`
+	ExpiresAt string `json:"expires_at"`
+}
+
+func (r SessionResponse) FromEntity(t entity.RefreshToken) SessionResponse {
+	r.ID = t.ID
+	r.DeviceID = t.DeviceID
+	r.IPAddress = t.IPAddress
+	r.UserAgent = t.UserAgent
+	r.CreatedAt = t.CreatedAt.Format(variables.FORMAT_TIME)
+	r.ExpiresAt = t.ExpiresAt.Format(variables.FORMAT_TIME)
+	return r
 }

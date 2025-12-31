@@ -75,3 +75,195 @@ if err != nil {
 ## Authz
 - Authz dibuat dengan `casbin` library.
 	- https://github.com/gofiber/contrib/blob/main/casbin/casbin_test.go
+
+## Fitur yang Masih Kurang
+
+### 1. Authentication & Authorization
+- [x] **Refresh Token** - Implementasi refresh token untuk memperpanjang sesi pengguna tanpa harus login ulang
+- [x] **Logout** - Endpoint untuk logout dan invalidasi token
+- [x] **Forgot Password** - Fitur reset password via email (backend ready, perlu email service)
+- [x] **Email Verification** - Verifikasi email setelah registrasi (backend ready, perlu email service)
+- [x] **Change Password** - Endpoint untuk ubah password user yang sudah login
+- [x] **Session Management** - Manage active sessions pengguna
+
+### Dokumentasi
+Lihat [docs/API_AUTH.md](docs/API_AUTH.md) untuk dokumentasi lengkap endpoint authentication.
+
+### 2. Testing
+- [ ] **Unit Tests** - Testing untuk service layer, repository, dan helper functions
+- [ ] **Integration Tests** - Testing end-to-end untuk API endpoints
+- [ ] **Test Coverage Report** - Setup coverage report dengan minimal threshold
+- [ ] **Mock Database** - Setup mock untuk testing database operations
+- [ ] **API Testing Collection** - Postman/Thunder Client collection untuk manual testing
+
+### 3. Documentation
+- [ ] **API Documentation** - Swagger/OpenAPI documentation untuk semua endpoints
+- [ ] **Postman Collection** - Export collection untuk API testing
+- [ ] **Architecture Documentation** - Dokumentasi arsitektur dan design pattern yang digunakan
+- [ ] **Deployment Guide** - Panduan deploy ke berbagai platform (AWS, GCP, Heroku, dll)
+- [ ] **Contributing Guide** - Guidelines untuk kontributor
+- [ ] **LICENSE File** - Tambahkan license file (MIT, Apache, dll)
+
+### 4. Logging & Monitoring
+- [ ] **Structured Logging** - Implementasi structured logging (zap/logrus) menggantikan log.Print
+- [ ] **Request ID Tracking** - Trace request dengan unique ID
+- [ ] **Access Logs** - Logging untuk semua incoming requests dengan detail lengkap
+- [ ] **Error Tracking** - Integration dengan Sentry atau service sejenis
+- [ ] **Performance Monitoring** - APM tools integration
+- [ ] **Health Check Endpoint** - `/health` endpoint untuk container orchestration
+- [ ] **Metrics Endpoint** - Prometheus metrics `/metrics`
+- [ ] **Database Query Logging** - Logging slow queries
+
+### 5. Security
+- [ ] **API Rate Limiting per User** - Rate limit berdasarkan user ID/IP (sudah ada global, tapi belum per user)
+- [ ] **CSRF Protection** - Cross-Site Request Forgery protection
+- [ ] **Content Security Policy** - CSP headers configuration
+- [ ] **SQL Injection Prevention** - Prepared statements validation
+- [ ] **XSS Protection** - Input sanitization
+- [ ] **HTTPS Redirect** - Auto redirect HTTP ke HTTPS
+- [ ] **Helmet Middleware** - Security headers configuration
+- [ ] **API Key Authentication** - Alternative auth method untuk external services
+- [ ] **IP Whitelist/Blacklist** - Restrict access by IP
+- [ ] **Encryption at Rest** - Sensitive data encryption di database
+
+### 6. Caching
+- [ ] **Redis Integration** - Caching layer dengan Redis
+- [ ] **Cache Middleware** - Response caching untuk GET requests
+- [ ] **Query Result Caching** - Cache database query results
+- [ ] **Cache Invalidation Strategy** - Proper cache invalidation mechanism
+
+### 7. Database
+- [ ] **Database Migration System** - Proper migration tool (golang-migrate, gorm/migrator)
+- [ ] **Seeder** - Database seeder untuk development/testing
+- [ ] **Database Backup Scripts** - Automated backup mechanism
+- [ ] **Connection Pooling Configuration** - Optimal connection pool settings
+- [ ] **Read Replica Support** - Load balancing untuk read operations
+- [ ] **Soft Delete Support** - Soft delete implementation untuk semua entities
+- [ ] **Audit Log** - Track semua perubahan data (who, when, what)
+
+### 8. File Management
+- [ ] **File Validation** - Validate file type, size, dan content
+- [ ] **Multiple File Upload** - Support upload multiple files sekaligus
+- [ ] **Cloud Storage Integration** - AWS S3/Google Cloud Storage integration
+- [ ] **Image Processing** - Resize, compress, thumbnail generation
+- [ ] **CDN Integration** - Serve static files via CDN
+- [ ] **File Versioning** - Keep track of file versions
+
+### 9. API Features
+- [ ] **API Versioning** - `/api/v1`, `/api/v2` structure
+- [ ] **Response Compression** - Gzip compression untuk response
+- [ ] **Pagination Cursor-based** - Alternative untuk offset pagination
+- [ ] **GraphQL Support** - GraphQL endpoint (optional)
+- [ ] **Webhook System** - Trigger webhooks untuk events tertentu
+- [ ] **Bulk Operations** - Bulk create/update/delete endpoints
+- [ ] **Export Data** - Export ke CSV/Excel/PDF
+- [ ] **Search & Filter** - Advanced search dengan multiple filters
+- [ ] **Sorting** - Multiple field sorting support
+
+### 10. Real-time Features
+- [ ] **WebSocket Support** - Real-time communication
+- [ ] **Server-Sent Events (SSE)** - Push notifications ke client
+- [ ] **Pub/Sub System** - Event-driven architecture
+
+### 11. Background Jobs
+- [ ] **Job Queue** - Background job processing (Asynq, Machinery)
+- [ ] **Scheduled Tasks** - Cron jobs untuk periodic tasks
+- [ ] **Email Queue** - Async email sending
+- [ ] **Retry Mechanism** - Auto retry failed jobs
+- [ ] **Job Dashboard** - Monitor job status dan history
+
+### 12. Email System
+- [ ] **Email Templates** - HTML email templates
+- [ ] **Email Service Integration** - SendGrid/Mailgun/AWS SES
+- [ ] **Email Queue** - Async email processing
+- [ ] **Email Verification** - Template untuk verify email
+- [ ] **Password Reset Email** - Template untuk reset password
+- [ ] **Newsletter System** - Bulk email sending
+
+### 13. DevOps & CI/CD
+- [ ] **Makefile** - Common tasks automation
+- [ ] **GitHub Actions/GitLab CI** - Automated testing & deployment
+- [ ] **Docker Optimization** - Multi-stage build, smaller image size
+- [ ] **Docker Compose for Testing** - Separate compose untuk testing
+- [ ] **Kubernetes Manifests** - K8s deployment files
+- [ ] **Helm Charts** - Kubernetes package manager
+- [ ] **Pre-commit Hooks** - Automated checks sebelum commit
+- [ ] **Code Linting** - golangci-lint integration
+- [ ] **Code Formatting** - Automated formatting dengan gofmt/goimports
+
+### 14. Performance
+- [ ] **Database Indexing** - Proper indexes untuk queries
+- [ ] **Query Optimization** - Analyze dan optimize slow queries
+- [ ] **Connection Pooling** - Optimize database connections
+- [ ] **Lazy Loading** - Load relations on demand
+- [ ] **Response Pagination** - Limit response size
+- [ ] **Request Timeout** - Timeout configuration untuk all requests
+
+### 15. User Management
+- [ ] **User Profile** - Get/Update user profile
+- [ ] **Avatar Upload** - Profile picture management
+- [ ] **User Preferences** - Settings/preferences per user
+- [ ] **User Activity Log** - Track user activities
+- [ ] **User Roles & Permissions CRUD** - Manage roles via API
+- [ ] **User Impersonation** - Admin impersonate user (for support)
+- [ ] **Account Deactivation** - Soft delete user accounts
+
+### 16. Notification System
+- [ ] **In-app Notifications** - Notification center
+- [ ] **Push Notifications** - Firebase/OneSignal integration
+- [ ] **Email Notifications** - Automated email notifications
+- [ ] **SMS Notifications** - Twilio/Nexmo integration
+- [ ] **Notification Preferences** - User can choose notification channels
+
+### 17. Admin Panel Features
+- [ ] **Admin Dashboard** - Statistics dan metrics
+- [ ] **User Management** - CRUD users from admin
+- [ ] **Content Moderation** - Approve/reject user content
+- [ ] **System Settings** - Configurable settings via admin
+- [ ] **Audit Logs Viewer** - View system audit logs
+
+### 18. Internationalization (i18n)
+- [ ] **Multi-language Support** - Support multiple languages
+- [ ] **Translation Management** - Easy to add new translations
+- [ ] **Locale Detection** - Auto detect user locale
+- [ ] **Date/Time Localization** - Format based on locale
+
+### 19. Others
+- [ ] **Feature Flags** - Toggle features on/off without deployment
+- [ ] **A/B Testing Support** - Framework untuk A/B testing
+- [ ] **Analytics Integration** - Google Analytics, Mixpanel, dll
+- [ ] **Error Reporting** - Better error messages dengan codes
+- [ ] **Request Validation** - Comprehensive input validation
+- [ ] **GDPR Compliance** - Data export/delete for privacy compliance
+- [ ] **Graceful Shutdown** - Proper shutdown handling
+
+## Prioritas Implementasi (Rekomendasi)
+
+### High Priority (Harus Ada)
+1. Unit & Integration Tests
+2. API Documentation (Swagger)
+3. Refresh Token & Logout
+4. Database Migration System
+5. Structured Logging
+6. Health Check & Metrics
+7. Email Verification & Password Reset
+8. API Versioning
+
+### Medium Priority (Sangat Direkomendasikan)
+1. Redis Caching
+2. Background Job Queue
+3. File Validation & Cloud Storage
+4. Database Seeder & Backup
+5. CI/CD Pipeline
+6. Error Tracking (Sentry)
+7. User Profile Management
+8. Advanced Search & Filtering
+
+### Low Priority (Nice to Have)
+1. WebSocket/Real-time features
+2. GraphQL Support
+3. Multi-language Support
+4. Social Login
+5. Admin Panel Features
+6. Feature Flags
+7. A/B Testing

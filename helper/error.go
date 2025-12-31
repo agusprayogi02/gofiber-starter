@@ -70,26 +70,26 @@ func ErrorHelper(c *fiber.Ctx, err error) error {
 		Timestamp: TimeNow(),
 	}
 
-	switch err.(type) {
+	switch err := err.(type) {
 	case *NotFoundError:
 		rest.Code = fiber.StatusNotFound
-		order = err.(*NotFoundError).Order
+		order = err.Order
 	case *BadRequestError:
 		rest.Code = fiber.StatusBadRequest
-		order = err.(*BadRequestError).Order
+		order = err.Order
 	case *InternalServerError:
 		rest.Code = fiber.StatusInternalServerError
-		order = err.(*InternalServerError).Order
+		order = err.Order
 	case *UnauthorizedError:
 		rest.Code = fiber.StatusUnauthorized
-		order = err.(*UnauthorizedError).Order
+		order = err.Order
 	case *ForbiddenError:
 		rest.Code = fiber.StatusForbidden
-		order = err.(*ForbiddenError).Order
+		order = err.Order
 	case *UnprocessableEntityError:
 		rest.Code = fiber.StatusUnprocessableEntity
-		order = err.(*UnprocessableEntityError).Order
-		rest.Data = err.(*UnprocessableEntityError).Data
+		order = err.Order
+		rest.Data = err.Data
 	default:
 		var e *fiber.Error
 		if errors.As(err, &e) {
