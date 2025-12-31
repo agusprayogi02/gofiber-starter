@@ -19,6 +19,9 @@ func App(app *fiber.App) {
 	// Security headers (Helmet-like)
 	app.Use(middleware.SecurityHeadersMiddleware())
 
+	// Response compression (Gzip)
+	app.Use(middleware.CompressionDefault())
+
 	// CORS middleware
 	app.Use(cors.New())
 
