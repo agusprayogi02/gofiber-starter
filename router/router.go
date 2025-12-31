@@ -14,16 +14,19 @@ import (
 )
 
 func AppRouter(app *fiber.App) {
-	enforcer, err := casbin.NewEnforcer("./assets/rbac/model.conf", "assets/rbac/policy.csv")
-	if err != nil {
-		panic(err)
-	}
-	err = config.InitializePermission(enforcer)
-	if err != nil {
-		panic(err)
+	// Only initialize enforcer if not already set (e.g., from tests)
+	if config.Enforcer == nil {
+		enforcer, err := casbin.NewEnforcer("./assets/rbac/model.conf", "assets/rbac/policy.csv")
+		if err != nil {
+			panic(err)
+		}
+		err = config.InitializePermission(enforcer)
+		if err != nil {
+			panic(err)
+		}
 	}
 
-	if config.ENV.ENV_TYPE == "dev" {
+	if config.ENV != nil && config.ENV.ENV_TYPE == "dev" {
 		app.Use(logger.New())
 	}
 	static := app.Group(variables.STATIC_PATH, middleware.AuthMiddleware())
@@ -44,6 +47,7 @@ func AppRouter(app *fiber.App) {
 	})
 
 	api := app.Group("/api")
-	NewAuthentication(api, enforcer)
+	auth := api.Group("/auth")
+	NewAuthentication(auth, config.Enforcer)
 	NewPostRouter(api)
 }

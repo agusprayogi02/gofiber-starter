@@ -15,14 +15,16 @@ func NewPostRouter(app fiber.Router) {
 	s := service.NewPostService(repo)
 	h := handler.NewPostHandler(s)
 
-	post := app.Group("/post")
+	posts := app.Group("/posts")
 
-	// JWT Middleware
-	post.Use(middleware.AuthMiddleware())
+	// Public routes
+	posts.Get("", h.All)
+	posts.Get("/:id", h.GetByID)
+
+	// Protected routes with JWT and authorization
+	authMiddleware := middleware.AuthMiddleware()
 	authz := middleware.LoadAuthzMiddleware()
-	post.Get("", authz.RequiresPermissions([]string{"post:list"}), h.All)
-	post.Post("", authz.RequiresPermissions([]string{"post:create"}), h.Create)
-	post.Put("/:id", authz.RequiresPermissions([]string{"post:update"}), h.Update)
-	post.Delete("/:id", authz.RequiresPermissions([]string{"post:delete"}), h.Delete)
-	post.Get("/:id", authz.RequiresPermissions([]string{"post:read"}), h.GetByID)
+	posts.Post("", authMiddleware, authz.RequiresPermissions([]string{"post:create"}), h.Create)
+	posts.Put("/:id", authMiddleware, authz.RequiresPermissions([]string{"post:update"}), h.Update)
+	posts.Delete("/:id", authMiddleware, authz.RequiresPermissions([]string{"post:delete"}), h.Delete)
 }

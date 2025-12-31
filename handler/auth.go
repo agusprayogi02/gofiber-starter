@@ -90,7 +90,7 @@ func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 }
 
 func (h *AuthHandler) Logout(c *fiber.Ctx) error {
-	var req *dto.RefreshTokenRequest
+	var req *dto.LogoutRequest
 	if err := c.BodyParser(&req); err != nil {
 		return &helper.UnprocessableEntityError{
 			Message: err.Error(),

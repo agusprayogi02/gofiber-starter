@@ -65,14 +65,14 @@ func (s *AuthService) Register(user *dto.RegisterRequest) error {
 func (s *AuthService) Login(req *dto.LoginRequest, ipAddress, userAgent string) (resp *dto.LoginResponse, err error) {
 	user, err := s.userR.FindByEmail(req.Email)
 	if err != nil {
-		return nil, &helper.BadRequestError{
+		return nil, &helper.UnauthorizedError{
 			Message: "Email not registered!",
 			Order:   "S1",
 		}
 	}
 
 	if err := helper.VerifyPassword(user.Password, req.Password); err != nil {
-		return nil, &helper.BadRequestError{
+		return nil, &helper.UnauthorizedError{
 			Message: "Password is wrong!",
 			Order:   "S2",
 		}

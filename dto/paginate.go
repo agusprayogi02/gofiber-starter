@@ -29,7 +29,7 @@ func (p *Pagination) GetPage() int {
 
 func (p *Pagination) GetSort() string {
 	if p.Sort == "" {
-		p.Sort = "id desc"
+		p.Sort = "posts.id desc"
 	}
 	return p.Sort
 }

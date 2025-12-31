@@ -14,10 +14,21 @@ type PostResponse struct {
 	CreatedAt string        `json:"created_at"`
 	UpdatedAt string        `json:"updated_at"`
 }
+
 type PostRequest struct {
 	Tweet  string `json:"tweet" validate:"required,max=500"`
 	Photo  string `json:"photo"`
 	UserID uint   `json:"user_id" validate:"required"`
+}
+
+type CreatePostRequest struct {
+	Title   string `json:"title" validate:"required,min=3,max=200"`
+	Content string `json:"content" validate:"required,min=10"`
+}
+
+type UpdatePostRequest struct {
+	Title   string `json:"title" validate:"required,min=3,max=200"`
+	Content string `json:"content" validate:"required,min=10"`
 }
 
 type PostUpdateRequest struct {

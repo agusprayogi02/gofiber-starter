@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"starter-gofiber/config"
 	"starter-gofiber/helper"
 
 	fileadapter "github.com/casbin/casbin/v2/persist/file-adapter"
@@ -9,9 +10,15 @@ import (
 )
 
 func LoadAuthzMiddleware() *casbin.Middleware {
+	modelPath := "./assets/rbac/model.conf"
+	policyPath := "./assets/rbac/policy.csv"
+	if config.ENV.ENV_TYPE == "test" {
+		modelPath = "../assets/rbac/model.conf"
+		policyPath = "../assets/rbac/policy.csv"
+	}
 	return casbin.New(casbin.Config{
-		ModelFilePath: "./assets/rbac/model.conf",
-		PolicyAdapter: fileadapter.NewAdapter("./assets/rbac/policy.csv"),
+		ModelFilePath: modelPath,
+		PolicyAdapter: fileadapter.NewAdapter(policyPath),
 		Lookup: func(c *fiber.Ctx) string {
 			token, err := helper.GetUserFromToken(c)
 			if err != nil {

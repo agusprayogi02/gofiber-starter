@@ -12,9 +12,11 @@ var (
 	UPDATE_P = "update"
 	DELETE_P = "delete"
 	LIST_P   = "list"
+	Enforcer *casbin.Enforcer
 )
 
 func InitializePermission(enforcer *casbin.Enforcer) error {
+	Enforcer = enforcer
 	post, files := "post", "files"
 	enforcer.AddPermissionForUser(variables.ADMIN_ROLE, post, CREATE_P)
 	enforcer.AddPermissionForUser(variables.ADMIN_ROLE, post, READ_P)
