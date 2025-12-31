@@ -2,9 +2,8 @@ package config
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"strings"
+	"time"
 
 	"starter-gofiber/entity"
 
@@ -44,19 +43,25 @@ func LoadDB() {
 	default:
 		panic("database is not supported")
 	}
+
+	// Configure GORM with structured logging
 	var logConfig *gorm.Config
 	if ENV.ENV_TYPE == "dev" {
 		logConfig = &gorm.Config{
-			Logger: logger.New(
-				log.New(os.Stdout, "\r\n", log.LstdFlags),
-				logger.Config{
-					LogLevel: logger.Info, // Set level log menjadi Info untuk menampilkan semua log query
-				},
+			Logger: NewGormLogger(
+				200*time.Millisecond, // Slow query threshold
+				logger.Info,          // Log all queries in dev
 			),
 		}
 	} else {
-		logConfig = &gorm.Config{}
+		logConfig = &gorm.Config{
+			Logger: NewGormLogger(
+				1*time.Second, // Slow query threshold for production
+				logger.Warn,   // Only log warnings and errors in production
+			),
+		}
 	}
+
 	db, err := gorm.Open(dial, logConfig)
 	if err != nil {
 		panic(err)
@@ -82,6 +87,17 @@ func LoadDB() {
 		}
 	}
 
+	// Configure connection pool
+	sqlDB, err := db.DB()
+	if err != nil {
+		panic(err)
+	}
+
+	// Set connection pool settings
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
 	DB = db
 }
 
@@ -101,19 +117,25 @@ func LoadDB2() {
 	default:
 		panic("database is not supported")
 	}
+
+	// Configure GORM with structured logging for DB2
 	var logConfig *gorm.Config
 	if ENV.ENV_TYPE == "dev" {
 		logConfig = &gorm.Config{
-			Logger: logger.New(
-				log.New(os.Stdout, "\r\n", log.LstdFlags),
-				logger.Config{
-					LogLevel: logger.Info, // Set level log menjadi Info untuk menampilkan semua log query
-				},
+			Logger: NewGormLogger(
+				200*time.Millisecond,
+				logger.Info,
 			),
 		}
 	} else {
-		logConfig = &gorm.Config{}
+		logConfig = &gorm.Config{
+			Logger: NewGormLogger(
+				1*time.Second,
+				logger.Warn,
+			),
+		}
 	}
+
 	db, err := gorm.Open(dial, logConfig)
 	if err != nil {
 		panic(err)
@@ -138,5 +160,16 @@ func LoadDB2() {
 			panic(err)
 		}
 	}
+
+	// Configure connection pool for DB2
+	sqlDB, err := db.DB()
+	if err != nil {
+		panic(err)
+	}
+
+	sqlDB.SetMaxIdleConns(10)
+	sqlDB.SetMaxOpenConns(100)
+	sqlDB.SetConnMaxLifetime(time.Hour)
+
 	DB2 = db
 }

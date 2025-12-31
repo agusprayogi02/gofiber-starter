@@ -4,9 +4,8 @@ import (
 	"time"
 
 	"starter-gofiber/dto"
+	"starter-gofiber/middleware"
 	"starter-gofiber/variables"
-
-	"github.com/gofiber/fiber/v2/middleware/logger"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -14,7 +13,19 @@ import (
 )
 
 func App(app *fiber.App) {
-	app.Use(cors.New(), logger.New())
+	// CORS middleware
+	app.Use(cors.New())
+
+	// Structured logging middleware (replaces default logger)
+	app.Use(middleware.RequestLogger())
+
+	// Sentry error tracking middleware
+	app.Use(middleware.SentryMiddleware())
+
+	// Prometheus metrics middleware
+	app.Use(middleware.PrometheusMiddleware())
+
+	// Rate limiter
 	app.Use(limiter.New(limiter.Config{
 		Next: func(c *fiber.Ctx) bool {
 			return c.IP() == "127.0.0.1"

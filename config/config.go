@@ -23,6 +23,7 @@ type Config struct {
 	TIMEZONE        string
 	LOCATION_CERT   string
 	NGROK_AUTHTOKEN string
+	SENTRY_DSN      string
 }
 
 var ENV *Config

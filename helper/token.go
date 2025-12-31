@@ -6,7 +6,6 @@ import (
 	"os"
 	"time"
 
-	"starter-gofiber/config"
 	"starter-gofiber/dto"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,19 +13,29 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-func GetPrivateKey() *rsa.PrivateKey {
-	privateKeyData, err := os.ReadFile(config.ENV.LOCATION_CERT)
+var privateKey *rsa.PrivateKey
+
+// InitPrivateKey initializes the RSA private key
+func InitPrivateKey(certLocation string) error {
+	privateKeyData, err := os.ReadFile(certLocation)
 	if err != nil {
-		log.Fatalf("Error reading private key: %v", err)
-		panic(err)
+		return err
 	}
 
-	PK, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeyData)
+	pk, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeyData)
 	if err != nil {
-		log.Fatalf("Error parsing private key: %v", err)
-		panic(err)
+		return err
 	}
-	return PK
+
+	privateKey = pk
+	return nil
+}
+
+func GetPrivateKey() *rsa.PrivateKey {
+	if privateKey == nil {
+		log.Fatal("Private key not initialized")
+	}
+	return privateKey
 }
 
 func GetUserFromToken(c *fiber.Ctx) (*dto.CustomClaims, error) {

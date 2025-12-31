@@ -65,6 +65,8 @@ func (s *AuthService) Register(user *dto.RegisterRequest) error {
 func (s *AuthService) Login(req *dto.LoginRequest, ipAddress, userAgent string) (resp *dto.LoginResponse, err error) {
 	user, err := s.userR.FindByEmail(req.Email)
 	if err != nil {
+		// Record failed login attempt
+		helper.RecordAuthAttempt(false)
 		return nil, &helper.UnauthorizedError{
 			Message: "Email not registered!",
 			Order:   "S1",
@@ -72,6 +74,8 @@ func (s *AuthService) Login(req *dto.LoginRequest, ipAddress, userAgent string) 
 	}
 
 	if err := helper.VerifyPassword(user.Password, req.Password); err != nil {
+		// Record failed login attempt
+		helper.RecordAuthAttempt(false)
 		return nil, &helper.UnauthorizedError{
 			Message: "Password is wrong!",
 			Order:   "S2",
@@ -81,6 +85,7 @@ func (s *AuthService) Login(req *dto.LoginRequest, ipAddress, userAgent string) 
 	userClaims := dto.UserClaims{}.FromEntity(*user)
 	token, err := helper.GenerateJWT(userClaims)
 	if err != nil {
+		helper.RecordAuthAttempt(false)
 		return nil, &helper.InternalServerError{
 			Message: err.Error(),
 			Order:   "S3",
@@ -89,6 +94,7 @@ func (s *AuthService) Login(req *dto.LoginRequest, ipAddress, userAgent string) 
 
 	refreshToken, err := helper.GenerateRefreshToken(userClaims)
 	if err != nil {
+		helper.RecordAuthAttempt(false)
 		return nil, &helper.InternalServerError{
 			Message: err.Error(),
 			Order:   "S4",
@@ -104,11 +110,15 @@ func (s *AuthService) Login(req *dto.LoginRequest, ipAddress, userAgent string) 
 		UserAgent: userAgent,
 	}
 	if err := s.refreshTokenR.Create(refreshTokenEntity); err != nil {
+		helper.RecordAuthAttempt(false)
 		return nil, &helper.InternalServerError{
 			Message: err.Error(),
 			Order:   "S5",
 		}
 	}
+
+	// Record successful login
+	helper.RecordAuthAttempt(true)
 
 	return &dto.LoginResponse{
 		Token:        token,

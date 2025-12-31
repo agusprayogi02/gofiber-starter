@@ -3,13 +3,13 @@ package router
 import (
 	"starter-gofiber/config"
 	"starter-gofiber/dto"
+	"starter-gofiber/handler"
 	"starter-gofiber/helper"
 	"starter-gofiber/middleware"
 	"starter-gofiber/variables"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 )
 
@@ -26,18 +26,22 @@ func AppRouter(app *fiber.App) {
 		}
 	}
 
-	if config.ENV != nil && config.ENV.ENV_TYPE == "dev" {
-		app.Use(logger.New())
-	}
-	static := app.Group(variables.STATIC_PATH, middleware.AuthMiddleware())
-	authz := middleware.LoadAuthzMiddleware()
-	static.Use(authz.RequiresPermissions([]string{"files:read"}))
-	static.Static("/", "./public")
-	app.Static("/favicon.ico", "./public/favicon.ico")
+	// Recover middleware for production
 	if config.ENV.ENV_TYPE != "dev" {
 		app.Use(recover.New())
 	}
 
+	// Health check endpoints
+	healthHandler := handler.NewHealthHandler()
+	app.Get("/health", healthHandler.Health)
+	app.Get("/health/ready", healthHandler.Ready)
+	app.Get("/health/live", healthHandler.Live)
+
+	// Metrics endpoint for Prometheus
+	metricsHandler := handler.NewMetricsHandler()
+	app.Get("/metrics", metricsHandler.Metrics)
+
+	// Ping endpoint (legacy)
 	app.Get("/ping", func(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(dto.SuccessResponse{
 			Code:      fiber.StatusOK,
@@ -46,6 +50,14 @@ func AppRouter(app *fiber.App) {
 		})
 	})
 
+	// Static files
+	static := app.Group(variables.STATIC_PATH, middleware.AuthMiddleware())
+	authz := middleware.LoadAuthzMiddleware()
+	static.Use(authz.RequiresPermissions([]string{"files:read"}))
+	static.Static("/", "./public")
+	app.Static("/favicon.ico", "./public/favicon.ico")
+
+	// API routes
 	api := app.Group("/api")
 	auth := api.Group("/auth")
 	NewAuthentication(auth, config.Enforcer)

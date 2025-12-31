@@ -112,14 +112,17 @@ Lihat [docs/TEST_COVERAGE.md](docs/TEST_COVERAGE.md) untuk dokumentasi lengkap t
 - [CONTRIBUTING.md](CONTRIBUTING.md) - Contributing guidelines dan coding standards
 
 ### 4. Logging & Monitoring
-- [ ] **Structured Logging** - Implementasi structured logging (zap/logrus) menggantikan log.Print
-- [ ] **Request ID Tracking** - Trace request dengan unique ID
-- [ ] **Access Logs** - Logging untuk semua incoming requests dengan detail lengkap
-- [ ] **Error Tracking** - Integration dengan Sentry atau service sejenis
-- [ ] **Performance Monitoring** - APM tools integration
-- [ ] **Health Check Endpoint** - `/health` endpoint untuk container orchestration
-- [ ] **Metrics Endpoint** - Prometheus metrics `/metrics`
-- [ ] **Database Query Logging** - Logging slow queries
+- [x] **Structured Logging** - Implementasi structured logging (zap) menggantikan log.Print
+- [x] **Request ID Tracking** - Trace request dengan unique ID (UUID)
+- [x] **Access Logs** - Logging untuk semua incoming requests dengan detail lengkap
+- [x] **Error Tracking** - Integration dengan Sentry untuk production error tracking
+- [x] **Performance Monitoring** - Prometheus metrics untuk monitoring performa
+- [x] **Health Check Endpoint** - `/health`, `/health/ready`, `/health/live` untuk orchestration
+- [x] **Metrics Endpoint** - Prometheus metrics di `/metrics`
+- [x] **Database Query Logging** - Logging slow queries dengan custom GORM logger
+
+### Dokumentasi
+Lihat [docs/LOGGING_MONITORING.md](docs/LOGGING_MONITORING.md) untuk dokumentasi lengkap logging dan monitoring
 
 ### 5. Security
 - [ ] **API Rate Limiting per User** - Rate limit berdasarkan user ID/IP (sudah ada global, tapi belum per user)
