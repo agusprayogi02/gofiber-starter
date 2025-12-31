@@ -62,4 +62,7 @@ func AppRouter(app *fiber.App) {
 	auth := api.Group("/auth")
 	NewAuthentication(auth, config.Enforcer)
 	NewPostRouter(api)
+
+	// SSE routes
+	SSERouter(app)
 }

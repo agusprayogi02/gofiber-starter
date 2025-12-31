@@ -183,9 +183,12 @@ Lihat [docs/DATABASE.md](docs/DATABASE.md) untuk dokumentasi lengkap database ma
 Lihat [docs/API_FEATURES.md](docs/API_FEATURES.md) untuk dokumentasi lengkap API features dengan contoh penggunaan
 
 ### 10. Real-time Features
-- [ ] **WebSocket Support** - Real-time communication
-- [ ] **Server-Sent Events (SSE)** - Push notifications ke client
-- [ ] **Pub/Sub System** - Event-driven architecture
+- [x] **Server-Sent Events (SSE)** - Real-time push notifications dari server ke client dengan event types, user targeting, broadcast, dan auto keep-alive
+- [ ] **WebSocket Support** - Real-time bidirectional communication (belum diperlukan)
+- [ ] **Pub/Sub System** - Event-driven architecture (belum diperlukan)
+
+### Dokumentasi
+Lihat [docs/SSE.md](docs/SSE.md) untuk dokumentasi lengkap SSE dengan contoh client implementation (JS, React, Vue)
 
 ### 11. Background Jobs
 - [ ] **Job Queue** - Background job processing (Asynq, Machinery)
