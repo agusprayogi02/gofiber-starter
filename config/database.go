@@ -84,6 +84,8 @@ func LoadDB() {
 			entity.EmailVerification{},
 			entity.APIKey{},
 			entity.AuditLog{},
+			entity.File{},
+			entity.FileVersion{},
 		)
 		if err != nil {
 			panic(err)
