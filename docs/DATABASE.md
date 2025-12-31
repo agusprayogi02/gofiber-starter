@@ -11,6 +11,8 @@ Dokumentasi lengkap untuk database management, migrations, seeding, backup, dan 
 - [Backup & Restore](#backup--restore)
 - [Connection Pooling](#connection-pooling)
 - [Read Replica](#read-replica)
+- [Soft Delete](#soft-delete)
+- [Audit Log](#audit-log)
 - [Best Practices](#best-practices)
 
 ---
@@ -572,6 +574,318 @@ SHOW SLAVE STATUS\G
 user := entity.User{}
 config.UseWriteDB().Where("id = ?", userID).First(&user)
 ```
+
+---
+
+## Soft Delete
+
+Implementasi soft delete menggunakan GORM's built-in soft delete dengan helper functions tambahan.
+
+### How It Works
+
+Semua entities yang menggunakan `gorm.Model` otomatis mendapat soft delete support:
+```go
+type User struct {
+    gorm.Model  // Includes: ID, CreatedAt, UpdatedAt, DeletedAt
+    Name  string
+    Email string
+}
+```
+
+### Basic Usage
+
+**Soft Delete** (sets DeletedAt):
+```go
+// Delete user (soft delete)
+db.Delete(&user)
+
+// Delete by ID
+db.Delete(&entity.User{}, userID)
+```
+
+**Query Behavior**:
+```go
+// Normal queries exclude soft deleted records
+var users []entity.User
+db.Find(&users)  // Only returns non-deleted users
+```
+
+### Helper Functions
+
+**Include Soft Deleted Records**:
+```go
+import "starter-gofiber/helper"
+
+// Include deleted records
+var users []entity.User
+helper.WithTrashed(db).Find(&users)
+
+// Or using Scopes
+db.Scopes(helper.SoftDeleteScope()).Find(&users)
+```
+
+**Only Deleted Records**:
+```go
+// Get only soft deleted records
+var deletedUsers []entity.User
+helper.OnlyTrashed(db).Find(&deletedUsers)
+```
+
+**Restore Deleted Records**:
+```go
+// Restore a record
+helper.Restore(db, &user)
+
+// Restore by ID
+helper.RestoreByID(db, &entity.User{}, userID)
+
+// Restore all deleted records of a model
+helper.RestoreAll(db, &entity.User{})
+```
+
+**Force Delete** (permanent):
+```go
+// Permanently delete a record
+helper.ForceDelete(db, &user)
+
+// Permanently delete by ID
+helper.ForceDeleteByID(db, &entity.User{}, userID)
+```
+
+**Utility Functions**:
+```go
+// Count soft deleted records
+count, err := helper.CountTrashed(db, &entity.User{})
+
+// Check if a record is soft deleted
+isTrashed, err := helper.IsTrashed(db, &entity.User{}, userID)
+```
+
+### Example Usage
+
+```go
+// In your service
+func (s *UserService) SoftDeleteUser(id uint) error {
+    var user entity.User
+    if err := s.db.First(&user, id).Error; err != nil {
+        return err
+    }
+    
+    // Soft delete
+    return s.db.Delete(&user).Error
+}
+
+func (s *UserService) RestoreUser(id uint) error {
+    // Restore soft deleted user
+    return helper.RestoreByID(s.db, &entity.User{}, id)
+}
+
+func (s *UserService) GetDeletedUsers() ([]entity.User, error) {
+    var users []entity.User
+    err := helper.OnlyTrashed(s.db).Find(&users).Error
+    return users, err
+}
+
+func (s *UserService) PermanentlyDeleteUser(id uint) error {
+    // This cannot be undone!
+    return helper.ForceDeleteByID(s.db, &entity.User{}, id)
+}
+```
+
+### Best Practices
+
+1. **Default to Soft Delete** - Use soft delete for most user data
+2. **Cleanup Strategy** - Schedule periodic cleanup of old soft deleted records
+3. **Audit Before Force Delete** - Log before permanent deletions
+4. **User Notification** - Inform users before permanent data deletion
+5. **Cascade Deletes** - Handle related records appropriately
+
+---
+
+## Audit Log
+
+Automatic tracking of all data changes (who, when, what) dengan GORM callbacks.
+
+### Features
+
+- **Automatic Logging** - Tracks CREATE, UPDATE, DELETE, RESTORE operations
+- **User Tracking** - Records user ID, username, IP address, user agent
+- **Change Tracking** - Stores old and new values in JSON format
+- **Request Tracing** - Links changes to request ID for debugging
+- **Query Support** - Filter logs by entity, user, date, action
+
+### How It Works
+
+Audit logging otomatis aktif untuk semua GORM operations. Sistem menggunakan GORM callbacks untuk intercept dan log setiap perubahan data.
+
+### Audit Log Schema
+
+```go
+type AuditLog struct {
+    ID          uint
+    EntityType  string       // e.g., "users", "posts"
+    EntityID    uint         // ID of affected record
+    Action      AuditAction  // CREATE, UPDATE, DELETE, RESTORE
+    Description string       // Human-readable description
+    OldValues   string       // JSON of old values
+    NewValues   string       // JSON of new values
+    UserID      *uint        // User who performed action
+    Username    string       // Cached username
+    IPAddress   string       // IPv4 or IPv6
+    UserAgent   string       // Browser/client info
+    RequestID   string       // Trace request chain
+    CreatedAt   time.Time
+}
+```
+
+### Manual Logging
+
+**With User Context**:
+```go
+import "starter-gofiber/helper"
+
+// Create audit logger
+logger := helper.NewAuditLogger(config.DB).
+    WithUser(userID, username).
+    WithRequest(ipAddress, userAgent, requestID)
+
+// Log create
+logger.LogCreate("users", user.ID, user)
+
+// Log update
+logger.LogUpdate("users", user.ID, oldUser, newUser)
+
+// Log delete
+logger.LogDelete("users", user.ID, user, true) // true = soft delete
+
+// Log restore
+logger.LogRestore("users", user.ID, user)
+```
+
+### Automatic Logging
+
+GORM callbacks sudah terdaftar dan akan otomatis log semua operations. Untuk memberikan user context, gunakan context dalam DB statement:
+
+```go
+import "context"
+
+// Create context with user info
+ctx := context.Background()
+ctx = context.WithValue(ctx, "user_id", uint(123))
+ctx = context.WithValue(ctx, "username", "john@example.com")
+ctx = context.WithValue(ctx, "ip_address", "192.168.1.1")
+ctx = context.WithValue(ctx, "user_agent", "Mozilla/5.0...")
+ctx = context.WithValue(ctx, "request_id", "req-abc-123")
+
+// Use context in query
+db.WithContext(ctx).Create(&user)
+db.WithContext(ctx).Updates(&user)
+db.WithContext(ctx).Delete(&user)
+```
+
+### Query Audit Logs
+
+**Get All Logs**:
+```go
+logs, total, err := helper.GetAuditLogs(config.DB, entity.AuditLogFilter{}, 1, 50)
+```
+
+**Filter by Entity**:
+```go
+filter := entity.AuditLogFilter{
+    EntityType: "users",
+    EntityID:   &userID,
+}
+logs, total, err := helper.GetAuditLogs(config.DB, filter, 1, 50)
+```
+
+**Filter by User**:
+```go
+filter := entity.AuditLogFilter{
+    UserID: &adminID,
+}
+logs, total, err := helper.GetAuditLogs(config.DB, filter, 1, 50)
+```
+
+**Filter by Date Range**:
+```go
+startDate := time.Now().AddDate(0, 0, -7) // Last 7 days
+endDate := time.Now()
+
+filter := entity.AuditLogFilter{
+    StartDate: &startDate,
+    EndDate:   &endDate,
+}
+logs, total, err := helper.GetAuditLogs(config.DB, filter, 1, 50)
+```
+
+**Get Entity History**:
+```go
+// Get full history of a user
+history, err := helper.GetEntityAuditHistory(config.DB, "users", userID)
+
+// History shows all changes chronologically
+for _, log := range history {
+    fmt.Printf("%s - %s: %s\n", log.CreatedAt, log.Action, log.Description)
+}
+```
+
+**Get User Activity**:
+```go
+startDate := time.Now().AddDate(0, 0, -30) // Last 30 days
+activities, err := helper.GetUserActivity(config.DB, userID, &startDate, nil)
+```
+
+### Cleanup Old Logs
+
+```go
+// Delete audit logs older than 90 days
+err := helper.CleanupOldAuditLogs(config.DB, 90)
+```
+
+### Example in Handler
+
+```go
+func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
+    userID := c.Locals("user_id").(uint)
+    username := c.Locals("username").(string)
+    requestID := c.Locals("request_id").(string)
+    
+    var updateData dto.UpdateUserRequest
+    if err := c.BodyParser(&updateData); err != nil {
+        return err
+    }
+    
+    // Create context with user info
+    ctx := context.Background()
+    ctx = context.WithValue(ctx, "user_id", userID)
+    ctx = context.WithValue(ctx, "username", username)
+    ctx = context.WithValue(ctx, "ip_address", c.IP())
+    ctx = context.WithValue(ctx, "user_agent", c.Get("User-Agent"))
+    ctx = context.WithValue(ctx, "request_id", requestID)
+    
+    // Update will be automatically logged
+    var user entity.User
+    if err := config.DB.WithContext(ctx).First(&user, userID).Error; err != nil {
+        return err
+    }
+    
+    if err := config.DB.WithContext(ctx).Model(&user).Updates(updateData).Error; err != nil {
+        return err
+    }
+    
+    return c.JSON(fiber.Map{"message": "User updated successfully"})
+}
+```
+
+### Best Practices
+
+1. **Always Provide Context** - Include user, IP, request ID for complete audit trail
+2. **Retention Policy** - Clean up old logs periodically (e.g., keep 1 year)
+3. **Sensitive Data** - Don't log passwords or sensitive fields
+4. **Performance** - Index entity_type, entity_id, user_id, created_at
+5. **Monitoring** - Alert on unusual patterns (e.g., mass deletes)
+6. **Compliance** - Essential for GDPR, SOC2, and other regulations
 
 ---
 

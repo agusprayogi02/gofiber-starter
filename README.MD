@@ -154,8 +154,8 @@ Lihat [docs/CACHING.md](docs/CACHING.md) untuk dokumentasi lengkap caching syste
 - [x] **Database Backup Scripts** - Automated backup mechanism dengan compression dan retention
 - [x] **Connection Pooling Configuration** - Optimal connection pool settings (prod vs dev)
 - [x] **Read Replica Support** - Load balancing untuk read operations dengan DBResolver
-- [ ] **Soft Delete Support** - Soft delete implementation untuk semua entities (sudah ada di gorm.Model)
-- [ ] **Audit Log** - Track semua perubahan data (who, when, what)
+- [x] **Soft Delete Support** - Soft delete implementation dengan helper functions (WithTrashed, OnlyTrashed, Restore, ForceDelete)
+- [x] **Audit Log** - Track semua perubahan data (who, when, what) dengan automatic GORM callbacks
 
 ### Dokumentasi
 Lihat [docs/DATABASE.md](docs/DATABASE.md) untuk dokumentasi lengkap database management

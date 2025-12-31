@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"starter-gofiber/entity"
+	"starter-gofiber/helper"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -82,6 +83,7 @@ func LoadDB() {
 			entity.PasswordReset{},
 			entity.EmailVerification{},
 			entity.APIKey{},
+			entity.AuditLog{},
 		)
 		if err != nil {
 			panic(err)
@@ -108,6 +110,9 @@ func LoadDB() {
 		sqlDB.SetConnMaxLifetime(30 * time.Minute)
 		sqlDB.SetConnMaxIdleTime(5 * time.Minute)
 	}
+
+	// Register audit log callbacks for automatic tracking
+	helper.RegisterAuditCallbacks(db)
 
 	DB = db
 }
