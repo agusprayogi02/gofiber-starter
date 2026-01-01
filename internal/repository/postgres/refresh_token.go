@@ -3,7 +3,7 @@ package postgres
 import (
 	"time"
 
-	"starter-gofiber/entity"
+	"starter-gofiber/internal/domain/user"
 
 	"gorm.io/gorm"
 )
@@ -16,12 +16,12 @@ func NewRefreshTokenRepository(db *gorm.DB) *RefreshTokenRepository {
 	return &RefreshTokenRepository{db: db}
 }
 
-func (r *RefreshTokenRepository) Create(token *entity.RefreshToken) error {
+func (r *RefreshTokenRepository) Create(token *user.RefreshToken) error {
 	return r.db.Create(token).Error
 }
 
-func (r *RefreshTokenRepository) FindByToken(token string) (*entity.RefreshToken, error) {
-	var refreshToken entity.RefreshToken
+func (r *RefreshTokenRepository) FindByToken(token string) (*user.RefreshToken, error) {
+	var refreshToken user.RefreshToken
 	err := r.db.Where("token = ? AND is_revoked = ? AND expires_at > ?", token, false, time.Now()).
 		Preload("User").
 		First(&refreshToken).Error
@@ -29,23 +29,23 @@ func (r *RefreshTokenRepository) FindByToken(token string) (*entity.RefreshToken
 }
 
 func (r *RefreshTokenRepository) RevokeToken(token string) error {
-	return r.db.Model(&entity.RefreshToken{}).
+	return r.db.Model(&user.RefreshToken{}).
 		Where("token = ?", token).
 		Update("is_revoked", true).Error
 }
 
 func (r *RefreshTokenRepository) RevokeAllUserTokens(userID uint) error {
-	return r.db.Model(&entity.RefreshToken{}).
+	return r.db.Model(&user.RefreshToken{}).
 		Where("user_id = ? AND is_revoked = ?", userID, false).
 		Update("is_revoked", true).Error
 }
 
 func (r *RefreshTokenRepository) DeleteExpiredTokens() error {
-	return r.db.Where("expires_at < ?", time.Now()).Delete(&entity.RefreshToken{}).Error
+	return r.db.Where("expires_at < ?", time.Now()).Delete(&user.RefreshToken{}).Error
 }
 
-func (r *RefreshTokenRepository) GetUserActiveSessions(userID uint) ([]entity.RefreshToken, error) {
-	var tokens []entity.RefreshToken
+func (r *RefreshTokenRepository) GetUserActiveSessions(userID uint) ([]user.RefreshToken, error) {
+	var tokens []user.RefreshToken
 	err := r.db.Where("user_id = ? AND is_revoked = ? AND expires_at > ?", userID, false, time.Now()).
 		Order("created_at DESC").
 		Find(&tokens).Error
@@ -53,7 +53,7 @@ func (r *RefreshTokenRepository) GetUserActiveSessions(userID uint) ([]entity.Re
 }
 
 func (r *RefreshTokenRepository) RevokeSessionByID(id uint, userID uint) error {
-	return r.db.Model(&entity.RefreshToken{}).
+	return r.db.Model(&user.RefreshToken{}).
 		Where("id = ? AND user_id = ?", id, userID).
 		Update("is_revoked", true).Error
 }

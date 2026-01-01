@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"fmt"
+
 	"starter-gofiber/pkg/crypto"
 	"starter-gofiber/pkg/logger"
 	"starter-gofiber/pkg/utils"
@@ -45,7 +47,10 @@ func ValidateAPIKey(db *gorm.DB, apiKey string) (bool, uint) {
 // GenerateAPIKey creates a new API key for user
 func GenerateAPIKey(db *gorm.DB, userID uint, name string) (string, error) {
 	// Generate random API key
-	apiKey := crypto.GenerateRandomString(32)
+	apiKey, err := crypto.GenerateRandomString(32)
+	if err != nil {
+		return "", fmt.Errorf("failed to generate API key: %w", err)
+	}
 
 	// Hash the key
 	keyHash := crypto.HashString(apiKey)
