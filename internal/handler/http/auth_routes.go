@@ -1,10 +1,10 @@
 package http
 
 import (
-	"starter-gofiber/config"
+	"starter-gofiber/internal/config"
+	"starter-gofiber/internal/handler/middleware"
 	"starter-gofiber/internal/repository/postgres"
 	"starter-gofiber/internal/service/auth"
-	"starter-gofiber/middleware"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gofiber/fiber/v2"

@@ -3,7 +3,7 @@ package http
 import (
 	"time"
 
-	"starter-gofiber/config"
+	"starter-gofiber/internal/config"
 	"starter-gofiber/pkg/logger"
 
 	"github.com/gofiber/fiber/v2"

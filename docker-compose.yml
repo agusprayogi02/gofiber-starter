@@ -7,7 +7,11 @@ services:
       - 3000:3000
     volumes:
       - .:/usr/src/starter-api
-    command: air cmd/main.go -b 0.0.0.0
+      - ./public:/root/public
+    # For development with Air (uncomment if using Air)
+    # command: air
+    # For production (default)
+    command: ./app
   db:
     image: postgres:alpine
     environment:
