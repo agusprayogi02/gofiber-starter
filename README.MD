@@ -8,8 +8,7 @@ Backend Golang With Fiber Framework
 
 Sebelum menjalankan project ini, pastikan sistem Anda telah memiliki:
 
-#### Required
-- **Go 1.20 or higher** - [Download Go](https://golang.org/dl/)
+#### Required or higher** - [Download Go](https://golang.org/dl/)
 - **PostgreSQL 14+** atau **MySQL 8+** atau **SQL Server 2019+** - Database utama
 - **Redis 6+** - Untuk caching dan background job queue (Asynq)
 - **OpenSSL** - Untuk generate RSA key pair (JWT signing)

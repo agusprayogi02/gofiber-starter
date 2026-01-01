@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	"starter-gofiber/internal/config"
@@ -36,7 +37,13 @@ func main() {
 	)
 
 	// Initialize RSA private key
-	if err := crypto.InitPrivateKey(config.ENV.LOCATION_CERT); err != nil {
+	// Get project root path and join with certificate location
+	projectRoot, err := os.Getwd()
+	if err != nil {
+		logger.Fatal("Failed to get working directory", zap.Error(err))
+	}
+	certPath := filepath.Join(projectRoot, config.ENV.LOCATION_CERT)
+	if err := crypto.InitPrivateKey(certPath); err != nil {
 		logger.Fatal("Failed to initialize private key", zap.Error(err))
 	}
 
@@ -159,16 +166,15 @@ func startWorkerServer() {
 	// Create task handler mux
 	mux := asynq.NewServeMux()
 
-	// Register task handlers (legacy)
-	mux.HandleFunc(worker.TaskSendEmail, worker.HandleSendEmail)
-	mux.HandleFunc(worker.TaskSendVerificationCode, worker.HandleSendVerificationEmail)
-	mux.HandleFunc(worker.TaskSendPasswordReset, worker.HandleSendPasswordReset)
+	// Register legacy task handlers (non-email)
+	mux.HandleFunc(worker.TaskSendEmail, worker.HandleSendEmail) // Keep for backward compatibility
 	mux.HandleFunc(worker.TaskProcessExport, worker.HandleProcessExport)
 	mux.HandleFunc(worker.TaskCleanupOldFiles, worker.HandleCleanupOldFiles)
 	mux.HandleFunc(worker.TaskGenerateReport, worker.HandleGenerateReport)
 	mux.HandleFunc(worker.TaskSendNotification, worker.HandleSendNotification)
 
 	// Register new email handlers (with templates & SMTP)
+	// Note: These replace legacy email handlers to avoid duplicate registration
 	mux.HandleFunc(worker.TypeEmailWelcome, worker.HandleEmailWelcome)
 	mux.HandleFunc(worker.TypeEmailPasswordReset, worker.HandleEmailPasswordReset)
 	mux.HandleFunc(worker.TypeEmailVerification, worker.HandleEmailVerification)
