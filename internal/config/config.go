@@ -39,6 +39,10 @@ type Config struct {
 	DB_READ_USER string
 	DB_READ_PASS string
 	DB_READ_NAME string
+
+	// Performance Configuration
+	REQUEST_TIMEOUT  int // Request timeout in seconds (default: 30)
+	SHUTDOWN_TIMEOUT int // Graceful shutdown timeout in seconds (default: 10)
 }
 
 var ENV *Config

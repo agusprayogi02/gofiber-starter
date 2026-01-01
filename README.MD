@@ -266,8 +266,16 @@ starter-gofiber/
 ├── assets/                      # Static assets dan files
 │   ├── certs/                   # SSL certificates dan private keys (JWT)
 │   ├── docker/                  # Docker configurations
+│   │   ├── Dockerfile           # Default Dockerfile
+│   │   ├── Dockerfile.optimized # Optimized multi-stage Dockerfile
+│   │   ├── docker-compose.yml   # Default docker-compose
+│   │   ├── docker-compose.minio.yml  # MinIO S3 storage setup
 │   │   ├── dev/                 # Development docker setup
+│   │   │   ├── docker-compose.yml
+│   │   │   └── Dockerfile
 │   │   └── prod/                # Production docker setup
+│   │       ├── docker-compose.yml
+│   │       └── Dockerfile
 │   └── rbac/                    # Casbin RBAC policy files
 │       ├── model.conf           # RBAC model definition
 │       └── policy.csv           # Role-permission mappings
@@ -287,11 +295,14 @@ starter-gofiber/
 │   ├── BACKGROUND_JOBS.md       # Background jobs & Asynq
 │   ├── CACHING.md               # Redis caching guide
 │   ├── DATABASE.md              # Database management
+│   ├── DEVOPS.md                # DevOps & CI/CD guide
 │   ├── DEPLOYMENT.md            # Deployment guide
 │   ├── EMAIL.md                 # Email system docs
 │   ├── FILE_MANAGEMENT.md       # File upload & storage
 │   ├── LOGGING_MONITORING.md    # Logging & monitoring
 │   ├── METRICS_MONITORING.md    # Metrics & health checks
+│   ├── MINIO_SETUP.md           # MinIO S3 storage setup guide
+│   ├── PERFORMANCE.md           # Performance optimization guide
 │   ├── SECURITY.md              # Security features
 │   ├── SSE.md                   # Server-Sent Events
 │   ├── TESTING.md               # Testing guide
@@ -403,6 +414,7 @@ starter-gofiber/
 │   ├── database/                # Database utilities
 │   │   ├── audit.go            # Audit logging
 │   │   ├── bulk.go             # Bulk operations
+│   │   ├── indexing.go         # Database indexing utilities
 │   │   ├── migration.go        # Migration utilities
 │   │   ├── pagination.go       # Pagination helpers
 │   │   ├── seeder.go           # Database seeder
@@ -456,15 +468,17 @@ starter-gofiber/
 ├── .air.toml                    # Air live reload config
 ├── .env.example                 # Environment variables template
 ├── .gitignore                   # Git ignore rules
+├── .golangci.yml                # golangci-lint configuration
+├── .pre-commit-config.yaml      # Pre-commit hooks configuration
 ├── CONTRIBUTING.md              # Contributing guidelines
-├── docker-compose.yml           # Docker Compose (main)
-├── docker-compose.minio.yml     # MinIO S3 storage setup
-├── Dockerfile                   # Docker build instructions
 ├── go.mod                       # Go module dependencies
 ├── go.sum                       # Dependency checksums
 ├── LICENSE                      # MIT License
-├── MINIO_SETUP.md              # MinIO setup guide
-└── README.MD                    # This file
+├── Makefile                     # Automation tasks (build, test, migrate, etc.)
+├── README.MD                    # This file
+└── .github/                     # GitHub configuration
+    └── workflows/               # GitHub Actions workflows
+        └── ci.yml               # CI/CD pipeline
 ```
 
 **Note:** Semua code baru harus menggunakan struktur di `internal/` dan `pkg/`. Shared DTOs berada di `pkg/dto/` dan dapat digunakan oleh semua domain.
@@ -686,9 +700,12 @@ Lihat [docs/EMAIL.md](docs/EMAIL.md) untuk dokumentasi lengkap email notificatio
 Lihat [docs/DEVOPS.md](docs/DEVOPS.md) untuk dokumentasi lengkap DevOps & CI/CD setup
 
 ### 14. Performance
-- [ ] **Database Indexing** - Proper indexes untuk optimize queries
-- [ ] **Request Timeout** - Timeout configuration untuk all requests
-- [ ] **Graceful Shutdown** - Proper shutdown handling untuk zero-downtime deployment
+- [x] **Database Indexing** - Proper indexes untuk optimize queries dengan utilities dan recommended indexes
+- [x] **Request Timeout** - Timeout configuration untuk all requests (ReadTimeout, WriteTimeout, IdleTimeout)
+- [x] **Graceful Shutdown** - Proper shutdown handling dengan timeout protection untuk zero-downtime deployment
+
+### Dokumentasi
+Lihat [docs/PERFORMANCE.md](docs/PERFORMANCE.md) untuk dokumentasi lengkap performance optimization
 
 ### 15. User Management
 - [ ] **User Profile** - Get/Update user profile dengan avatar upload

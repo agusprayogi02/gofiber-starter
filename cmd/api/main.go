@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"starter-gofiber/internal/config"
 	"starter-gofiber/internal/handler/middleware"
@@ -113,10 +116,26 @@ func main() {
 	// Initialize API Key middleware
 	middleware.InitAPIKeyMiddleware(config.DB)
 
+	// Set default timeout values if not configured
+	requestTimeout := config.ENV.REQUEST_TIMEOUT
+	if requestTimeout == 0 {
+		requestTimeout = 30 // Default 30 seconds
+	}
+
+	shutdownTimeout := config.ENV.SHUTDOWN_TIMEOUT
+	if shutdownTimeout == 0 {
+		shutdownTimeout = 10 // Default 10 seconds
+	}
+
 	conf := fiber.Config{
-		JSONEncoder:  json.Marshal,
-		JSONDecoder:  json.Unmarshal,
-		ErrorHandler: apierror.ErrorHelper,
+		JSONEncoder:     json.Marshal,
+		JSONDecoder:     json.Unmarshal,
+		ErrorHandler:    apierror.ErrorHelper,
+		ReadTimeout:     time.Duration(requestTimeout) * time.Second,
+		WriteTimeout:    time.Duration(requestTimeout) * time.Second,
+		IdleTimeout:     120 * time.Second, // Keep-alive timeout
+		ReadBufferSize:  4096,
+		WriteBufferSize: 4096,
 	}
 	if config.ENV.ENV_TYPE == "prod" {
 		conf.Prefork = true
@@ -140,17 +159,88 @@ func main() {
 
 	// Wait for interrupt signal
 	<-quit
-	logger.Info("Shutting down server...")
+	logger.Info("Shutting down server...",
+		zap.Int("timeout_seconds", shutdownTimeout),
+	)
 
-	// Shutdown Asynq server
-	if config.AsynqServer != nil {
-		logger.Info("Shutting down Asynq worker server...")
-		config.AsynqServer.Shutdown()
-	}
+	// Create shutdown context with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), time.Duration(shutdownTimeout)*time.Second)
+	defer cancel()
 
-	// Shutdown Fiber app
-	if err := app.Shutdown(); err != nil {
-		logger.Error("Error shutting down server", zap.Error(err))
+	// Channel to track shutdown completion
+	shutdownDone := make(chan error, 1)
+
+	// Start graceful shutdown in goroutine
+	go func() {
+		var shutdownErrors []error
+
+		// Shutdown Fiber app
+		logger.Info("Shutting down Fiber server...")
+		if err := app.Shutdown(); err != nil {
+			logger.Error("Error shutting down Fiber server", zap.Error(err))
+			shutdownErrors = append(shutdownErrors, err)
+		} else {
+			logger.Info("Fiber server shut down successfully")
+		}
+
+		// Shutdown Asynq scheduler
+		if config.AsynqScheduler != nil {
+			logger.Info("Shutting down Asynq scheduler...")
+			config.AsynqScheduler.Shutdown()
+			logger.Info("Asynq scheduler shut down successfully")
+		}
+
+		// Shutdown Asynq server
+		if config.AsynqServer != nil {
+			logger.Info("Shutting down Asynq worker server...")
+			config.AsynqServer.Shutdown()
+			logger.Info("Asynq worker server shut down successfully")
+		}
+
+		// Close database connections
+		if config.DB != nil {
+			logger.Info("Closing database connections...")
+			sqlDB, err := config.DB.DB()
+			if err == nil {
+				if err := sqlDB.Close(); err != nil {
+					logger.Error("Error closing database", zap.Error(err))
+					shutdownErrors = append(shutdownErrors, err)
+				} else {
+					logger.Info("Database connections closed successfully")
+				}
+			}
+		}
+
+		// Close Redis connections
+		if config.ENV.REDIS_ENABLE {
+			logger.Info("Closing Redis connections...")
+			cache.CloseRedis()
+			logger.Info("Redis connections closed successfully")
+		}
+
+		// Flush logger
+		logger.SyncLogger()
+		logger.FlushSentry()
+
+		if len(shutdownErrors) > 0 {
+			shutdownDone <- fmt.Errorf("shutdown completed with %d errors", len(shutdownErrors))
+		} else {
+			shutdownDone <- nil
+		}
+	}()
+
+	// Wait for shutdown completion or timeout
+	select {
+	case err := <-shutdownDone:
+		if err != nil {
+			logger.Error("Shutdown completed with errors", zap.Error(err))
+		} else {
+			logger.Info("Server shut down gracefully")
+		}
+	case <-ctx.Done():
+		logger.Warn("Shutdown timeout exceeded, forcing exit",
+			zap.Int("timeout_seconds", shutdownTimeout),
+		)
 	}
 
 	logger.Info("Server exited")
