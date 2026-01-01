@@ -6,40 +6,411 @@ Backend Golang With Fiber Framework
 
 ### Prerequisites
 
-- Go 1.20 or higher
-- Docker (optional)
-- Open ssl -> untuk generate token jwt
+Sebelum menjalankan project ini, pastikan sistem Anda telah memiliki:
+
+#### Required
+- **Go 1.20 or higher** - [Download Go](https://golang.org/dl/)
+- **PostgreSQL 14+** atau **MySQL 8+** atau **SQL Server 2019+** - Database utama
+- **Redis 6+** - Untuk caching dan background job queue (Asynq)
+- **OpenSSL** - Untuk generate RSA key pair (JWT signing)
+
+#### Optional (Recommended)
+- **Docker & Docker Compose** - Untuk menjalankan dependencies (Redis, Database, Mailpit)
+- **Make** - Untuk automation tasks (jika menggunakan Makefile)
+- **Git** - Version control
+- **Mailpit** - Local SMTP server untuk testing email (development)
+  ```bash
+  docker run -d -p 1025:1025 -p 8025:8025 mailpit/mailpit
+  ```
+
+#### Development Tools
+- **Air** - Live reload untuk development
+- **golangci-lint** - Code linting (optional)
+- **Postman** atau **Insomnia** - API testing
 
 ### Installation
-1. Install `air` for live reload,
+
+#### 1. Clone Repository
 ```bash
-go install github.com/air-verse/air@latest
+git clone <repository-url>
+cd starter-gofiber
 ```
-2. Copy `.env.example` to `.env` and fill the values.
-3. Membuat certificate menggunakan open ssl
-	- Masuk ke folder `assets/certs` 
-	- buat private key
-		```bash
-		openssl genpkey -algorithm RSA -out certificate.pem -pkeyopt rsa_keygen_bits:4096
-		```
-	- Masukkan kedalam file `.env` dengan format:
-		```bash
-		LOCATION_CERT="assets/certs/certificate.pem"
-		```
-3. Change config on .env file, like database connection string.
-4. For `Sql Server` change Enum Data Type on `entity/user.go` like: 
-```go
-type User struct {
-	ID       uint     `gorm:"primaryKey;autoIncrement"`
-	Name     string   `gorm:"type:varchar(200);not null"`
-	Email    string   `gorm:"type:varchar(200);uniqueIndex;not null"`
-	Password string   `gorm:"type:varchar(150);not null"`
-	Role     UserRole `gorm:"type:varchar(10);default:user"` // this
-	gorm.Model
+
+#### 2. Install Dependencies
+```bash
+go mod download
+go mod verify
+```
+
+#### 3. Install Development Tools
+```bash
+# Install Air for live reload
+go install github.com/air-verse/air@latest
+
+# (Optional) Install golangci-lint for code linting
+go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+```
+
+#### 4. Setup Environment Variables
+```bash
+# Copy example environment file
+cp .env.example .env
+
+# Edit .env file dengan text editor favorit
+nano .env  # atau vim, code, dll
+```
+
+**Konfigurasi minimal yang harus diisi:**
+```env
+# Application
+ENV_TYPE=dev
+APP_URL=http://localhost:3000
+
+# Database (pilih salah satu)
+# PostgreSQL
+DB_DRIVER=postgres
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=starter_gofiber
+DB_USER=postgres
+DB_PASSWORD=your_password
+
+# Redis (required untuk caching dan background jobs)
+REDIS_HOST=localhost:6379
+REDIS_PASSWORD=
+REDIS_DB=0
+
+# SMTP (untuk email - gunakan Mailpit untuk development)
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_FROM=noreply@localhost
+SMTP_FROM_NAME=Starter GoFiber
+SMTP_USE_TLS=false
+
+# Sentry (optional - untuk error tracking)
+SENTRY_DSN=
+```
+
+#### 5. Generate RSA Key Pair untuk JWT
+```bash
+# Buat directory untuk certificates
+mkdir -p assets/certs
+
+# Generate private key (4096 bit RSA)
+openssl genpkey -algorithm RSA -out assets/certs/certificate.pem -pkeyopt rsa_keygen_bits:4096
+
+# Set permission (recommended)
+chmod 600 assets/certs/certificate.pem
+```
+
+**Update .env:**
+```env
+LOCATION_CERT=assets/certs/certificate.pem
+```
+
+#### 6. Setup Database
+
+**Opsi A: Menggunakan Docker Compose**
+```bash
+# Start PostgreSQL + Redis + Mailpit
+docker-compose up -d
+
+# Check status
+docker-compose ps
+```
+
+**Opsi B: Manual Setup**
+```bash
+# Buat database (PostgreSQL example)
+createdb starter_gofiber
+
+# Atau menggunakan psql
+psql -U postgres -c "CREATE DATABASE starter_gofiber;"
+```
+
+#### 7. Run Database Migrations
+```bash
+# Buat table dan structure database
+go run main.go migrate up
+
+# Atau menggunakan custom migration command jika ada
+# go run scripts/migrate.go up
+```
+
+#### 8. (Optional) Seed Database
+```bash
+# Populate database dengan sample data untuk development
+go run scripts/seeder.go
+```
+
+#### 9. Run Application
+
+**Development Mode (dengan live reload):**
+```bash
+air
+```
+
+**Standard Mode:**
+```bash
+go run main.go
+```
+
+**Build dan Run Binary:**
+```bash
+# Build binary
+go build -o bin/app
+
+# Run binary
+./bin/app
+```
+
+#### 10. Verify Installation
+
+Application akan berjalan di `http://localhost:3000` (atau port yang dikonfigurasi di `.env`)
+
+**Health Check:**
+```bash
+curl http://localhost:3000/health
+```
+
+**Expected Response:**
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-01-01T12:00:00Z",
+  "version": "1.0.0"
 }
 ```
-5. Run `air` to start the server with live reload.
-6. if you want to run in the docker container, run `docker-compose up -d` and then `docker ps` to check the container is running.
+
+**Access Points:**
+- API: `http://localhost:3000/api`
+- Health: `http://localhost:3000/health`
+- Metrics: `http://localhost:3000/metrics`
+- Mailpit UI (email testing): `http://localhost:8025`
+
+### Database Configuration Notes
+
+#### PostgreSQL
+Default dan recommended. Tidak perlu konfigurasi khusus.
+
+#### MySQL
+Pastikan menggunakan charset `utf8mb4`:
+```env
+DB_DRIVER=mysql
+DB_CHARSET=utf8mb4
+```
+
+#### SQL Server
+Untuk SQL Server, perlu adjust enum data type di model:
+```go
+// entity/user.go
+type User struct {
+    ID       uint     `gorm:"primaryKey;autoIncrement"`
+    Name     string   `gorm:"type:varchar(200);not null"`
+    Email    string   `gorm:"type:varchar(200);uniqueIndex;not null"`
+    Password string   `gorm:"type:varchar(150);not null"`
+    Role     UserRole `gorm:"type:varchar(10);default:user"` // Gunakan varchar untuk SQL Server
+    gorm.Model
+}
+```
+
+### Docker Deployment
+
+```bash
+# Build image
+docker build -t starter-gofiber .
+
+# Run with docker-compose
+docker-compose up -d
+
+# Check logs
+docker-compose logs -f app
+```
+
+### Troubleshooting
+
+#### Port Already in Use
+```bash
+# Find process using port 3000
+lsof -ti:3000
+
+# Kill process
+kill -9 $(lsof -ti:3000)
+```
+
+#### Redis Connection Failed
+```bash
+# Check Redis is running
+redis-cli ping
+# Expected: PONG
+
+# Start Redis (if not running)
+redis-server
+# Or with Docker:
+docker run -d -p 6379:6379 redis:7-alpine
+```
+
+#### Database Connection Failed
+- Check database credentials di `.env`
+- Verify database server is running
+- Check firewall rules
+- Ensure database exists: `CREATE DATABASE starter_gofiber;`
+
+## Project Structure
+
+```
+starter-gofiber/
+├── assets/                      # Static assets dan files
+│   ├── certs/                   # SSL certificates dan private keys (JWT)
+│   ├── docker/                  # Docker configurations
+│   │   ├── dev/                 # Development docker setup
+│   │   └── prod/                # Production docker setup
+│   └── rbac/                    # Casbin RBAC policy files
+│       ├── model.conf           # RBAC model definition
+│       └── policy.csv           # Role-permission mappings
+│
+├── backups/                     # Database backups (auto-generated)
+│
+├── config/                      # Application configurations
+│   ├── app.go                   # App config (port, name, version)
+│   ├── config.go                # Main config loader
+│   ├── database.go              # Database connection config
+│   ├── permission.go            # Casbin permission init
+│   ├── storage.go               # S3/MinIO storage config
+│   └── timezone.go              # Timezone configuration
+│
+├── docs/                        # Documentation files
+│   ├── API_AUTH.md              # Authentication API docs
+│   ├── API_FEATURES.md          # Advanced API features
+│   ├── ARCHITECTURE.md          # Architecture overview
+│   ├── BACKGROUND_JOBS.md       # Background jobs & Asynq
+│   ├── CACHING.md               # Redis caching guide
+│   ├── DATABASE.md              # Database management
+│   ├── DEPLOYMENT.md            # Deployment guide
+│   ├── EMAIL.md                 # Email system docs
+│   ├── FILE_MANAGEMENT.md       # File upload & storage
+│   ├── LOGGING_MONITORING.md    # Logging & monitoring
+│   ├── METRICS_MONITORING.md    # Metrics & health checks
+│   ├── SECURITY.md              # Security features
+│   ├── SSE.md                   # Server-Sent Events
+│   ├── TESTING.md               # Testing guide
+│   └── TEST_COVERAGE.md         # Test coverage reports
+│
+├── dto/                         # Data Transfer Objects
+│   ├── paginate.go              # Pagination DTO
+│   ├── post.go                  # Post-related DTOs
+│   ├── response.go              # Standard API responses
+│   ├── token.go                 # Token DTOs
+│   └── user.go                  # User-related DTOs
+│
+├── entity/                      # Database models (GORM)
+│   ├── post.go                  # Post model
+│   └── user.go                  # User model + enums
+│
+├── handler/                     # HTTP request handlers (controllers)
+│   ├── auth.go                  # Authentication endpoints
+│   └── post.go                  # Post CRUD endpoints
+│
+├── helper/                      # Utility functions & helpers
+│   ├── database.go              # Database helpers (pagination)
+│   ├── date.go                  # Date/time utilities
+│   ├── email.go                 # Email service
+│   ├── email_config.go          # Email configuration
+│   ├── error.go                 # Custom error types
+│   ├── hash.go                  # Hashing utilities
+│   ├── jobs.go                  # Asynq job helpers
+│   ├── password.go              # Password utilities
+│   ├── response.go              # Response formatters
+│   ├── token.go                 # JWT token utilities
+│   ├── upload.go                # File upload helpers
+│   └── validation.go            # Input validation
+│
+├── jobs/                        # Background job handlers
+│   ├── email.go                 # Email job handlers
+│   ├── handlers.go              # Job handler implementations
+│   └── jobs.go                  # Job definitions
+│
+├── middleware/                  # HTTP middlewares
+│   ├── auth.go                  # JWT authentication
+│   └── authz.go                 # Casbin authorization
+│
+├── migrations/                  # Database migrations
+│   └── *.sql                    # Migration files
+│
+├── mocks/                       # Mock objects untuk testing
+│
+├── postman/                     # Postman collections
+│   └── *.json                   # API test collections
+│
+├── public/                      # Public static files
+│
+├── repository/                  # Database repository layer
+│   ├── post.go                  # Post repository
+│   ├── repository.go            # Base repository interface
+│   └── user.go                  # User repository
+│
+├── router/                      # Route definitions
+│   ├── auth.go                  # Auth routes
+│   ├── post.go                  # Post routes
+│   └── router.go                # Main router setup
+│
+├── scripts/                     # Utility scripts
+│   ├── seeder.go                # Database seeder
+│   └── migrate.go               # Migration runner
+│
+├── service/                     # Business logic layer
+│   ├── auth.go                  # Authentication service
+│   └── post.go                  # Post service
+│
+├── templates/                   # HTML templates
+│   └── email/                   # Email templates
+│       ├── welcome.html         # Welcome email HTML
+│       ├── welcome.txt          # Welcome email text
+│       ├── reset-password.html  # Password reset HTML
+│       ├── reset-password.txt   # Password reset text
+│       ├── verify-email.html    # Email verification HTML
+│       └── verify-email.txt     # Email verification text
+│
+├── tests/                       # Test files
+│   ├── auth_test.go             # Auth endpoint tests
+│   ├── email_test.go            # Email system tests
+│   ├── post_test.go             # Post endpoint tests
+│   └── setup_test.go            # Test setup & helpers
+│
+├── variables/                   # Global constants & variables
+│   └── constant.go              # App constants
+│
+├── .air.toml                    # Air live reload config
+├── .env.example                 # Environment variables template
+├── .gitignore                   # Git ignore rules
+├── CONTRIBUTING.md              # Contributing guidelines
+├── docker-compose.yml           # Docker Compose (main)
+├── docker-compose.minio.yml     # MinIO S3 storage setup
+├── Dockerfile                   # Docker build instructions
+├── go.mod                       # Go module dependencies
+├── go.sum                       # Dependency checksums
+├── LICENSE                      # MIT License
+├── main.go                      # Application entry point
+├── MINIO_SETUP.md              # MinIO setup guide
+└── README.MD                    # This file
+```
+
+### Architecture Layers
+
+Project ini menggunakan **Clean Architecture** dengan layer separation:
+
+1. **Entity Layer** (`entity/`) - Domain models
+2. **Repository Layer** (`repository/`) - Data access
+3. **Service Layer** (`service/`) - Business logic
+4. **Handler Layer** (`handler/`) - HTTP handlers
+5. **Router Layer** (`router/`) - Route definitions
+
+**Data Flow:**
+```
+Client Request → Router → Middleware → Handler → Service → Repository → Database
+                                                    ↓
+                                            Helper/Jobs/Config
+```
 
 ## Warning
 
