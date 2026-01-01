@@ -730,10 +730,6 @@ Lihat [docs/PERFORMANCE.md](docs/PERFORMANCE.md) untuk dokumentasi lengkap perfo
 ### Dokumentasi
 Lihat [docs/API_AUTH.md](docs/API_AUTH.md) untuk dokumentasi lengkap authentication endpoints
 
-### 16. API Documentation
-- [ ] **Swagger/OpenAPI** - Auto-generated API documentation dengan Swagger UI
-- [ ] **API Versioning** - Version management untuk backward compatibility
-
 ## Prioritas Implementasi (Rekomendasi)
 
 ### High Priority
