@@ -3,8 +3,10 @@ package apierror
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"starter-gofiber/dto"
+	"starter-gofiber/variables"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -79,7 +81,7 @@ func ErrorHelper(c *fiber.Ctx, err error) error {
 	var order string
 	rest := dto.ErrorResponse{
 		Message:   err.Error(),
-		Timestamp: "", // Will update after date utils are moved
+		Timestamp: TimeNow(),
 	}
 
 	switch err := err.(type) {
@@ -115,4 +117,8 @@ func ErrorHelper(c *fiber.Ctx, err error) error {
 	rest.Order = &order
 
 	return c.Status(rest.Code).JSON(rest)
+}
+
+func TimeNow() string {
+	return time.Now().Format(variables.FORMAT_TIME)
 }

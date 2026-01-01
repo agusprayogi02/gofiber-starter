@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"starter-gofiber/pkg/logger"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -101,9 +102,9 @@ func CacheGetOrSet(key string, dest interface{}, expiration time.Duration, fn fu
 
 	// Store in cache
 	if err := CacheSet(key, result, expiration); err != nil {
-		// Log error but don't fail
-		logger, _ := zap.NewProduction()
-		logger.Error("Failed to cache result", zap.Error(err), zap.String("key", key))
+		// Log error but don't fail - logger will be initialized elsewhere
+		// Error is silently ignored to prevent cache failures from breaking the app
+		logger.Error("Failed to cache result", zap.Error(err), zap.String("key", key), zap.String("value", fmt.Sprintf("%v", result)))
 	}
 
 	// Marshal result to dest

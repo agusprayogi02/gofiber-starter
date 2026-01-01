@@ -100,20 +100,20 @@ func Decrypt(ciphertext string) (string, error) {
 }
 
 // EncryptField encrypts a database field
+// Note: Errors are silently ignored to prevent encryption failures from breaking the app
 func EncryptField(value string) string {
 	encrypted, err := Encrypt(value)
 	if err != nil {
-		// Note: This will need logger - will update after logger is moved
 		return value // Return original if encryption fails
 	}
 	return encrypted
 }
 
 // DecryptField decrypts a database field
+// Note: Errors are silently ignored to prevent decryption failures from breaking the app
 func DecryptField(value string) string {
 	decrypted, err := Decrypt(value)
 	if err != nil {
-		// Note: This will need logger - will update after logger is moved
 		return value // Return original if decryption fails
 	}
 	return decrypted
@@ -126,19 +126,20 @@ func HashString(input string) string {
 }
 
 // GenerateRandomString generates cryptographically secure random string
-func GenerateRandomString(length int) string {
+// Returns error if random number generation fails
+func GenerateRandomString(length int) (string, error) {
 	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	result := make([]byte, length)
 
 	for i := range result {
 		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(charset))))
 		if err != nil {
-			panic(err)
+			return "", fmt.Errorf("failed to generate random string: %w", err)
 		}
 		result[i] = charset[num.Int64()]
 	}
 
-	return string(result)
+	return string(result), nil
 }
 
 // GenerateSecureToken generates a secure random token

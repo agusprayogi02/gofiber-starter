@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"starter-gofiber/dto"
+	"starter-gofiber/internal/domain/user"
 	"starter-gofiber/pkg/apierror"
 
 	"github.com/gofiber/fiber/v2"
@@ -39,11 +39,11 @@ func GetPrivateKey() *rsa.PrivateKey {
 	return privateKey
 }
 
-func GetUserFromToken(c *fiber.Ctx) (*dto.CustomClaims, error) {
+func GetUserFromToken(c *fiber.Ctx) (*user.CustomClaims, error) {
 	token := c.Locals("user").(*jwt.Token)
 
 	if claim, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		data := dto.CustomClaims{}.FromToken(claim)
+		data := user.CustomClaims{}.FromToken(claim)
 		return &data, nil
 	} else {
 		return nil, &apierror.UnauthorizedError{
@@ -52,12 +52,12 @@ func GetUserFromToken(c *fiber.Ctx) (*dto.CustomClaims, error) {
 	}
 }
 
-func GenerateJWT(user dto.UserClaims) (string, error) {
+func GenerateJWT(userClaims user.UserClaims) (string, error) {
 	// Create the Claims
-	claims := dto.CustomClaims{
-		ID:    user.ID,
-		Email: user.Email,
-		Role:  user.Role,
+	claims := user.CustomClaims{
+		ID:    userClaims.ID,
+		Email: userClaims.Email,
+		Role:  userClaims.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 1)), // Short-lived: 1 hour
 			Issuer:    "Starter-Gofiber",
@@ -71,12 +71,12 @@ func GenerateJWT(user dto.UserClaims) (string, error) {
 	return token.SignedString(GetPrivateKey())
 }
 
-func GenerateRefreshToken(user dto.UserClaims) (string, error) {
+func GenerateRefreshToken(userClaims user.UserClaims) (string, error) {
 	// Create the Claims for refresh token
-	claims := dto.CustomClaims{
-		ID:    user.ID,
-		Email: user.Email,
-		Role:  user.Role,
+	claims := user.CustomClaims{
+		ID:    userClaims.ID,
+		Email: userClaims.Email,
+		Role:  userClaims.Role,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 30)), // Long-lived: 30 days
 			Issuer:    "Starter-Gofiber-Refresh",
