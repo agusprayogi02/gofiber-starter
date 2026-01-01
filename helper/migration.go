@@ -108,6 +108,9 @@ func RollbackMigration(db *gorm.DB, steps int) error {
 			"postgres",
 			pgDriver,
 		)
+		if err != nil {
+			return err
+		}
 	} else {
 		mysqlDriver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
 		if err != nil {
@@ -118,10 +121,9 @@ func RollbackMigration(db *gorm.DB, steps int) error {
 			"mysql",
 			mysqlDriver,
 		)
-	}
-
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	// Rollback specified steps
@@ -181,6 +183,9 @@ func GetMigrationVersion(db *gorm.DB) (uint, bool, error) {
 			"postgres",
 			pgDriver,
 		)
+		if err != nil {
+			return 0, false, err
+		}
 	} else {
 		mysqlDriver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
 		if err != nil {
@@ -191,10 +196,9 @@ func GetMigrationVersion(db *gorm.DB) (uint, bool, error) {
 			"mysql",
 			mysqlDriver,
 		)
-	}
-
-	if err != nil {
-		return 0, false, err
+		if err != nil {
+			return 0, false, err
+		}
 	}
 
 	version, dirty, err := driver.Version()
@@ -224,6 +228,9 @@ func ForceMigrationVersion(db *gorm.DB, version int) error {
 			"postgres",
 			pgDriver,
 		)
+		if err != nil {
+			return err
+		}
 	} else {
 		mysqlDriver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
 		if err != nil {
@@ -234,10 +241,9 @@ func ForceMigrationVersion(db *gorm.DB, version int) error {
 			"mysql",
 			mysqlDriver,
 		)
-	}
-
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
 	}
 
 	return driver.Force(version)

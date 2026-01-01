@@ -353,8 +353,8 @@ func NotifyAll(event string, data interface{}) {
 
 // SSEStats returns SSE hub statistics
 type SSEStats struct {
-	TotalClients int            `json:"total_clients"`
-	UserClients  map[uint]int   `json:"user_clients"`
+	TotalClients int          `json:"total_clients"`
+	UserClients  map[uint]int `json:"user_clients"`
 }
 
 // GetSSEStats returns current SSE hub statistics

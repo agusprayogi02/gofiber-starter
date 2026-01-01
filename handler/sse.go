@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"starter-gofiber/helper"
 	"time"
+
+	"starter-gofiber/helper"
 
 	"github.com/gofiber/fiber/v2"
 	"go.uber.org/zap"

@@ -12,3 +12,8 @@ func LoadTimezone() {
 	}
 	time.Local = location
 }
+
+// GetTimezone returns configured timezone location
+func GetTimezone() *time.Location {
+	return time.Local
+}

@@ -72,7 +72,7 @@ func CaptureError(err error, ctx ...*fiber.Ctx) {
 			scope.SetTag("request_id", GetRequestID(c))
 			scope.SetTag("method", c.Method())
 			scope.SetTag("path", c.Path())
-			scope.SetTag("status_code", string(c.Response().StatusCode()))
+			scope.SetTag("status_code", string(rune(c.Response().StatusCode())))
 		}
 
 		// Capture the error

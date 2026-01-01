@@ -1,6 +1,8 @@
 package helper
 
 import (
+	"encoding/json"
+
 	"starter-gofiber/dto"
 
 	"github.com/gofiber/fiber/v2"
@@ -47,4 +49,10 @@ func Response(p dto.ResponseResult, c *fiber.Ctx) error {
 	}
 
 	return c.Status(p.StatusCode).JSON(response)
+}
+
+// ToJSON converts interface to JSON bytes
+func ToJSON(v interface{}) []byte {
+	data, _ := json.Marshal(v)
+	return data
 }
