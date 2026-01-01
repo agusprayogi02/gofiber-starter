@@ -1,8 +1,6 @@
 package main
 
 import (
-	"database/sql"
-	"errors"
 	"os"
 	"os/signal"
 	"syscall"
@@ -95,14 +93,6 @@ func main() {
 			}()
 		}
 	}
-
-	// Start database metrics updater
-	helper.StartDBMetricsUpdater(func() (*sql.DB, error) {
-		if config.DB == nil {
-			return nil, errors.New("database not initialized")
-		}
-		return config.DB.DB()
-	})
 
 	// Initialize API Key middleware
 	middleware.InitAPIKeyMiddleware(config.DB)

@@ -118,11 +118,11 @@ Lihat [docs/TEST_COVERAGE.md](docs/TEST_COVERAGE.md) untuk dokumentasi lengkap t
 - [x] **Error Tracking** - Integration dengan Sentry untuk production error tracking
 - [x] **Performance Monitoring** - Prometheus metrics untuk monitoring performa
 - [x] **Health Check Endpoint** - `/health`, `/health/ready`, `/health/live` untuk orchestration
-- [x] **Metrics Endpoint** - Prometheus metrics di `/metrics`
+- [x] **Lightweight Metrics** - Zero-dependency metrics di `/metrics` (tidak pakai Prometheus, super ringan!)
 - [x] **Database Query Logging** - Logging slow queries dengan custom GORM logger
 
 ### Dokumentasi
-Lihat [docs/LOGGING_MONITORING.md](docs/LOGGING_MONITORING.md) untuk dokumentasi lengkap logging dan monitoring
+Lihat [docs/LOGGING_MONITORING.md](docs/LOGGING_MONITORING.md) dan [docs/METRICS_MONITORING.md](docs/METRICS_MONITORING.md) untuk dokumentasi lengkap
 
 ### 5. Security
 - [x] **API Rate Limiting per User** - Rate limit berdasarkan user ID/IP dengan in-memory store

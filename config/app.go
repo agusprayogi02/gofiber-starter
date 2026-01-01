@@ -31,8 +31,8 @@ func App(app *fiber.App) {
 	// Sentry error tracking middleware
 	app.Use(middleware.SentryMiddleware())
 
-	// Prometheus metrics middleware
-	app.Use(middleware.PrometheusMiddleware())
+	// Lightweight metrics middleware (no external dependencies, super ringan!)
+	app.Use(middleware.MetricsMiddleware())
 
 	// CSRF protection for state-changing requests
 	// Note: Skip for API endpoints, use for web forms

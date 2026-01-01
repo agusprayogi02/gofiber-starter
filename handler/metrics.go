@@ -1,9 +1,9 @@
 package handler
 
 import (
+	"starter-gofiber/middleware"
+
 	"github.com/gofiber/fiber/v2"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/valyala/fasthttp/fasthttpadaptor"
 )
 
 type MetricsHandler struct{}
@@ -12,10 +12,7 @@ func NewMetricsHandler() *MetricsHandler {
 	return &MetricsHandler{}
 }
 
-// Metrics returns Prometheus metrics
+// Metrics returns lightweight system metrics in JSON (no external dependencies, super ringan!)
 func (h *MetricsHandler) Metrics(c *fiber.Ctx) error {
-	// Use fasthttpadaptor to convert http.Handler to fiber.Handler
-	handler := fasthttpadaptor.NewFastHTTPHandler(promhttp.Handler())
-	handler(c.Context())
-	return nil
+	return c.JSON(middleware.GetMetrics())
 }
