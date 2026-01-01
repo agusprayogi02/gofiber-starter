@@ -97,7 +97,7 @@ Middleware untuk cache HTTP responses secara otomatis.
 
 ```go
 // config/app.go
-import "starter-gofiber/middleware"
+import "starter-gofiber/internal/handler/middleware"
 
 // Cache all GET requests dengan default 5 menit TTL
 app.Use(middleware.SimpleCacheMiddleware())
@@ -155,13 +155,13 @@ Helper functions untuk cache hasil database queries.
 ### Simple Get/Set
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Set cache
 err := helper.CacheSet("user:123", userData, 10*time.Minute)
 
 // Get cache
-var user entity.User
+var user user.User
 err := helper.CacheGet("user:123", &user)
 if err == redis.Nil {
     // Cache miss - load from database
@@ -171,8 +171,8 @@ if err == redis.Nil {
 ### Cache-Aside Pattern (Lazy Loading)
 
 ```go
-func (s *PostService) GetByID(id uint) (*entity.Post, error) {
-    var post entity.Post
+func (s *PostService) GetByID(id uint) (*post.Post, error) {
+    var post post.Post
     cacheKey := helper.Pattern.Post(id)
     
     // Try cache first, load from DB if miss
@@ -187,8 +187,8 @@ func (s *PostService) GetByID(id uint) (*entity.Post, error) {
 ### Preventing Cache Stampede
 
 ```go
-func (s *PostService) GetPopularPosts() ([]entity.Post, error) {
-    var posts []entity.Post
+func (s *PostService) GetPopularPosts() ([]post.Post, error) {
+    var posts []post.Post
     cacheKey := "posts:popular"
     
     // Use distributed lock to prevent stampede
@@ -203,8 +203,8 @@ func (s *PostService) GetPopularPosts() ([]entity.Post, error) {
 ### Stale-While-Revalidate
 
 ```go
-func (s *UserService) GetProfile(userID uint) (*entity.User, error) {
-    var user entity.User
+func (s *UserService) GetProfile(userID uint) (*user.User, error) {
+    var user user.User
     cacheKey := helper.Pattern.User(userID)
     
     // Serve stale cache while refreshing in background
@@ -263,7 +263,7 @@ func (h *PostHandler) Update(c *fiber.Ctx) error {
         return err
     }
     
-    return helper.Response(...)
+    return response.Response(...)
 }
 ```
 
@@ -303,7 +303,7 @@ go func() {
 ### 1. Cache Key Builder
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Build structured cache key
 key := helper.NewCacheKeyBuilder("posts").
@@ -395,7 +395,7 @@ helper.CacheSet("site:config", data, 7*24*time.Hour)
 ### 3. Handle Cache Misses Gracefully
 
 ```go
-var user entity.User
+var user user.User
 err := helper.CacheGet("user:123", &user)
 
 if err == redis.Nil {
@@ -429,7 +429,7 @@ func (h *PostHandler) Create(c *fiber.Ctx) error {
     helper.InvalidateUser(req.UserID)             // User's posts
     helper.InvalidateByTag("trending")             // Trending posts
     
-    return helper.Response(...)
+    return response.Response(...)
 }
 ```
 
@@ -554,8 +554,8 @@ redis-cli ttl "user:123"
 ### 1. User Profile Caching
 
 ```go
-func (s *UserService) GetProfile(userID uint) (*dto.UserProfile, error) {
-    var profile dto.UserProfile
+func (s *UserService) GetProfile(userID uint) (*pkg/dto.UserProfile, error) {
+    var profile pkg/dto.UserProfile
     key := helper.Pattern.User(userID)
     
     err := helper.CacheGetOrSet(key, &profile, 15*time.Minute, func() (interface{}, error) {
@@ -566,7 +566,7 @@ func (s *UserService) GetProfile(userID uint) (*dto.UserProfile, error) {
         }
         
         // Transform to DTO
-        return &dto.UserProfile{
+        return &pkg/dto.UserProfile{
             ID:    user.ID,
             Name:  user.Name,
             Email: user.Email,
@@ -581,8 +581,8 @@ func (s *UserService) GetProfile(userID uint) (*dto.UserProfile, error) {
 ### 2. Paginated List Caching
 
 ```go
-func (s *PostService) GetAll(params *dto.Pagination) ([]entity.Post, error) {
-    var posts []entity.Post
+func (s *PostService) GetAll(params *dto.Pagination) ([]post.Post, error) {
+    var posts []post.Post
     key := helper.Pattern.PostList(params.Page)
     
     err := helper.CacheGetOrSet(key, &posts, 5*time.Minute, func() (interface{}, error) {

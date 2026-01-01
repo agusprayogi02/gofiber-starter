@@ -50,53 +50,78 @@ starter-gofiber/
 │   ├── certs/           # SSL certificates
 │   ├── docker/          # Docker configurations
 │   └── rbac/            # RBAC policies (Casbin)
-├── config/              # Configuration management
-│   ├── app.go          # App config
-│   ├── database.go     # Database config
-│   ├── permission.go   # Casbin enforcer
-│   └── storage.go      # File storage config
-├── dto/                 # Data Transfer Objects
-│   ├── paginate.go     # Pagination DTO
-│   ├── post.go         # Post DTOs
-│   ├── response.go     # Response wrapper
-│   ├── token.go        # Token DTOs
-│   └── user.go         # User DTOs
-├── entity/              # Database entities/models
-│   ├── post.go         # Post entity
-│   └── user.go         # User entity
-├── handler/             # HTTP request handlers
-│   ├── auth.go         # Auth endpoints
-│   └── post.go         # Post endpoints
-├── helper/              # Utility functions
-│   ├── database.go     # DB helpers (pagination)
-│   ├── error.go        # Error handling
-│   ├── hash.go         # Hashing utilities
-│   ├── password.go     # Password hashing
-│   ├── response.go     # Response builder
-│   ├── token.go        # JWT utilities
-│   └── upload.go       # File upload
-├── middleware/          # HTTP middlewares
-│   ├── auth.go         # JWT authentication
-│   └── authz.go        # Authorization (Casbin)
-├── repository/          # Data access layer
-│   ├── repository.go   # Base repository interface
-│   ├── user.go         # User repository
-│   └── post.go         # Post repository
+├── cmd/                 # Application entry points
+│   ├── api/            # Main API server
+│   │   └── main.go     # API entry point
+│   └── worker/         # Background worker server
+│       └── main.go     # Worker entry point
+├── internal/            # Private application code
+│   ├── config/         # Configuration management
+│   │   ├── app.go      # App config
+│   │   ├── database.go  # Database config
+│   │   └── permission.go # Casbin enforcer
+│   ├── domain/          # Domain layer (entities & interfaces)
+│   │   ├── user/        # User domain
+│   │   │   ├── entity.go      # User entity
+│   │   │   ├── dto.go         # User DTOs
+│   │   │   ├── repository.go # User repository interface
+│   │   │   └── service.go    # User service interface
+│   │   └── post/        # Post domain
+│   │       ├── entity.go      # Post entity
+│   │       ├── dto.go         # Post DTOs
+│   │       ├── repository.go # Post repository interface
+│   │       └── service.go    # Post service interface
+│   ├── handler/         # HTTP handlers
+│   │   ├── http/        # HTTP request handlers
+│   │   │   ├── auth.go  # Auth endpoints
+│   │   │   └── post.go  # Post endpoints
+│   │   └── middleware/  # HTTP middlewares
+│   │       ├── auth.go  # JWT authentication
+│   │       └── authz.go # Authorization (Casbin)
+│   ├── repository/      # Data access implementations
+│   │   └── postgres/    # PostgreSQL repository
+│   │       ├── user.go  # User repository implementation
+│   │       └── post.go  # Post repository implementation
+│   ├── service/         # Business logic implementations
+│   │   ├── auth/        # Auth service
+│   │   │   └── service.go
+│   │   └── post/        # Post service
+│   │       └── service.go
+│   └── worker/          # Background worker (Asynq)
+│       ├── jobs.go      # Job definitions
+│       └── handlers.go  # Job handlers
+├── pkg/                 # Public library code
+│   ├── dto/             # Shared Data Transfer Objects
+│   │   ├── paginate.go  # Pagination DTO
+│   │   ├── response.go  # Response wrapper
+│   │   └── token.go     # Token DTOs
+│   ├── apierror/        # API error types
+│   │   └── error.go
+│   ├── crypto/          # Cryptographic utilities
+│   │   ├── hash.go      # Hashing utilities
+│   │   ├── password.go  # Password hashing
+│   │   └── jwt.go       # JWT utilities
+│   ├── database/        # Database utilities
+│   │   ├── bulk.go      # Bulk operations
+│   │   └── pagination.go # Pagination helpers
+│   ├── pagination/      # Pagination utilities
+│   │   └── cursor.go    # Cursor-based pagination
+│   ├── utils/           # General utilities
+│   │   ├── export.go    # Data export
+│   │   └── filter.go    # Filtering utilities
+│   └── response/        # Response utilities
+│       └── response.go  # Response builder
 ├── router/              # Route definitions
-│   ├── router.go       # Main router
-│   ├── auth.go         # Auth routes
-│   └── post.go         # Post routes
-├── service/             # Business logic layer
-│   ├── auth.go         # Auth service
-│   └── post.go         # Post service
+│   ├── router.go        # Main router
+│   ├── auth.go          # Auth routes
+│   └── post.go          # Post routes
 ├── tests/               # Test files
-│   ├── setup_test.go   # Test setup
-│   ├── auth_test.go    # Auth tests
-│   └── post_test.go    # Post tests
+│   ├── setup_test.go    # Test setup
+│   ├── auth_test.go     # Auth tests
+│   └── post_test.go     # Post tests
 ├── variables/           # Constants
-│   └── constant.go     # App constants
+│   └── constant.go      # App constants
 ├── docs/                # Documentation
-├── main.go              # Application entry point
 ├── go.mod               # Go modules
 ├── .env                 # Environment variables
 └── docker-compose.yml   # Docker compose config
@@ -124,7 +149,7 @@ type UserRepository struct {
     DB *gorm.DB
 }
 
-func (r *UserRepository) Create(user *entity.User) error {
+func (r *UserRepository) Create(user *user.User) error {
     return r.DB.Create(user).Error
 }
 ```
@@ -144,15 +169,15 @@ func (r *UserRepository) Create(user *entity.User) error {
 ```go
 // service/auth.go
 type AuthService struct {
-    userRepo     repository.UserRepository
-    tokenRepo    repository.RefreshTokenRepository
-    passwordRepo repository.PasswordResetRepository
+    userRepo     user.Repository
+    tokenRepo    user.Repository
+    passwordRepo user.Repository
 }
 
 func NewAuthService(
-    userRepo repository.UserRepository,
-    tokenRepo repository.RefreshTokenRepository,
-    passwordRepo repository.PasswordResetRepository,
+    userRepo user.Repository,
+    tokenRepo user.Repository,
+    passwordRepo user.Repository,
 ) *AuthService {
     return &AuthService{
         userRepo:     userRepo,
@@ -176,20 +201,20 @@ func NewAuthService(
 
 ```go
 // service/auth.go
-func (s *AuthService) Register(req dto.RegisterRequest) (*dto.AuthResponse, error) {
+func (s *AuthService) Register(req user.RegisterRequest) (*user.LoginResponse, error) {
     // 1. Validate business rules
     if exist := s.userRepo.ExistEmail(req.Email); exist {
-        return nil, &helper.BadRequestError{
+        return nil, &apierror.BadRequestError{
             Message: "Email already registered",
             Order:   "S1",
         }
     }
     
     // 2. Hash password
-    hashedPassword, err := helper.HashPassword(req.Password)
+    hashedPassword, err := crypto.HashPassword(req.Password)
     
     // 3. Create user
-    user := &entity.User{
+    user := &user.User{
         Name:     req.Name,
         Email:    req.Email,
         Password: hashedPassword,
@@ -199,11 +224,11 @@ func (s *AuthService) Register(req dto.RegisterRequest) (*dto.AuthResponse, erro
     err = s.userRepo.Create(user)
     
     // 5. Generate tokens
-    accessToken, _ := helper.GenerateJWT(user)
-    refreshToken, _ := helper.GenerateRefreshToken(user)
+    accessToken, _ := crypto.GenerateJWT(user)
+    refreshToken, _ := crypto.GenerateRefreshToken(user)
     
     // 6. Return response
-    return &dto.AuthResponse{
+    return &user.LoginResponse{
         AccessToken:  accessToken,
         RefreshToken: refreshToken,
     }, nil
@@ -267,9 +292,9 @@ func AuthMiddleware(c *fiber.Ctx) error {
     token := c.Get("Authorization")
     
     // 2. Validate token
-    user, err := helper.GetUserFromToken(token)
+    user, err := crypto.GetUserFromToken(token)
     if err != nil {
-        return helper.UnauthorizedError{Message: "Invalid token"}
+        return apierror.UnauthorizedError{Message: "Invalid token"}
     }
     
     // 3. Store user in context
@@ -282,12 +307,12 @@ func AuthMiddleware(c *fiber.Ctx) error {
 // middleware/authz.go (Casbin)
 func LoadAuthzMiddleware(enforcer *casbin.Enforcer) fiber.Handler {
     return func(c *fiber.Ctx) error {
-        user := c.Locals("user").(*entity.User)
+        user := c.Locals("user").(*user.User)
         
         // Check permission
         ok, _ := enforcer.Enforce(user.Role, c.Path(), c.Method())
         if !ok {
-            return helper.ForbiddenError{Message: "Access denied"}
+            return apierror.ForbiddenError{Message: "Access denied"}
         }
         
         return c.Next()
@@ -349,7 +374,7 @@ func ErrorHelper(c *fiber.Ctx, err error) error {
 func (h *AuthHandler) Login(c *fiber.Ctx) error {
     resp, err := h.authService.Login(req)
     if err != nil {
-        return helper.ErrorHelper(c, err) // Auto handle error type
+        return apierror.ErrorHelper(c, err) // Auto handle error type
     }
     return c.JSON(resp)
 }
@@ -382,12 +407,12 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
    │               ├─→ Validate DTO
    │               └─→ Call Service
    │
-   ├─→ 5. Service Layer (service/*.go)
+   ├─→ 5. Service Layer (internal/service/*.go)
    │       ├─→ Business Logic
    │       ├─→ Call Repository
    │       └─→ Build Response DTO
    │
-   ├─→ 6. Repository Layer (repository/*.go)
+   ├─→ 6. Repository Layer (internal/repository/postgres/*.go)
    │       ├─→ Build Query
    │       ├─→ Execute via GORM
    │       └─→ Return Entity
@@ -414,56 +439,56 @@ router.Post("/register", authHandler.Register)
 
 // 4. Handler validates and calls service
 func (h *AuthHandler) Register(c *fiber.Ctx) error {
-    var req dto.RegisterRequest
+    var req user.RegisterRequest
     if err := c.BodyParser(&req); err != nil {
-        return helper.BadRequestError{Message: "Invalid request"}
+        return apierror.BadRequestError{Message: "Invalid request"}
     }
     
     resp, err := h.authService.Register(req)
     if err != nil {
-        return helper.ErrorHelper(c, err)
+        return apierror.ErrorHelper(c, err)
     }
     
-    return helper.Response(c, 201, "User registered", resp)
+    return response.Response(c, 201, "User registered", resp)
 }
 
 // 5. Service implements business logic
-func (s *AuthService) Register(req dto.RegisterRequest) (*dto.AuthResponse, error) {
+func (s *AuthService) Register(req user.RegisterRequest) (*user.LoginResponse, error) {
     // Check duplicate email
     if s.userRepo.ExistEmail(req.Email) {
-        return nil, &helper.BadRequestError{
+        return nil, &apierror.BadRequestError{
             Message: "Email already exists",
             Order:   "S1",
         }
     }
     
     // Hash password
-    hashedPassword, _ := helper.HashPassword(req.Password)
+    hashedPassword, _ := crypto.HashPassword(req.Password)
     
     // Create user entity
-    user := &entity.User{
+    user := &user.User{
         Name:     req.Name,
         Email:    req.Email,
         Password: hashedPassword,
-        Role:     entity.UserRoleUser,
+        Role:     user.UserRoleUser,
     }
     
     // Save via repository
     if err := s.userRepo.Create(user); err != nil {
-        return nil, &helper.InternalServerError{
+        return nil, &apierror.InternalServerError{
             Message: "Failed to create user",
             Order:   "S2",
         }
     }
     
     // Generate tokens
-    accessToken, _ := helper.GenerateJWT(user)
-    refreshToken, _ := helper.GenerateRefreshToken(user)
+    accessToken, _ := crypto.GenerateJWT(user)
+    refreshToken, _ := crypto.GenerateRefreshToken(user)
     
-    return &dto.AuthResponse{
+    return &user.LoginResponse{
         AccessToken:  accessToken,
         RefreshToken: refreshToken,
-        User: dto.UserProfile{
+        User: pkg/dto.UserProfile{
             ID:    user.ID,
             Name:  user.Name,
             Email: user.Email,
@@ -473,7 +498,7 @@ func (s *AuthService) Register(req dto.RegisterRequest) (*dto.AuthResponse, erro
 }
 
 // 6. Repository executes database operation
-func (r *UserRepository) Create(user *entity.User) error {
+func (r *UserRepository) Create(user *user.User) error {
     return r.DB.Create(user).Error
 }
 
@@ -584,7 +609,7 @@ Setiap file/struct hanya punya satu tanggung jawab.
 
 ```go
 // ✅ Good
-// handler/auth.go - Handle HTTP requests only
+// internal/handler/http/auth.go - Handle HTTP requests only
 // service/auth.go - Business logic only
 // repository/user.go - Database operations only
 
@@ -612,8 +637,8 @@ Gunakan interface untuk abstraksi.
 ```go
 // ✅ Good
 type UserRepository interface {
-    Create(user *entity.User) error
-    FindByEmail(email string) (*entity.User, error)
+    Create(user *user.User) error
+    FindByEmail(email string) (*user.User, error)
 }
 
 // Mudah di-mock untuk testing
@@ -628,7 +653,7 @@ Error harus di-propagate dengan konteks yang jelas.
 ```go
 // ✅ Good
 if err := repo.Create(user); err != nil {
-    return nil, &helper.InternalServerError{
+    return nil, &apierror.InternalServerError{
         Message: "Failed to create user",
         Order:   "S2", // Track error location
     }
@@ -654,7 +679,7 @@ func TestRegister_Success(t *testing.T) {
     
     authService := NewAuthService(mockUserRepo, nil, nil)
     
-    resp, err := authService.Register(dto.RegisterRequest{
+    resp, err := authService.Register(user.RegisterRequest{
         Email: "test@example.com",
         // ...
     })
@@ -671,7 +696,7 @@ Test end-to-end dengan real HTTP requests.
 ```go
 // tests/auth_test.go
 func (s *AuthTestSuite) TestRegister_Success() {
-    req := dto.RegisterRequest{
+    req := user.RegisterRequest{
         Name:     "Test User",
         Email:    "test@example.com",
         Password: "password123",
@@ -691,8 +716,8 @@ func (s *AuthTestSuite) TestRegister_Success() {
 
 ```go
 // Pagination
-func (r *PostRepository) All(page, pageSize int) ([]entity.Post, error) {
-    var posts []entity.Post
+func (r *PostRepository) All(page, pageSize int) ([]post.Post, error) {
+    var posts []post.Post
     offset := (page - 1) * pageSize
     
     err := r.DB.

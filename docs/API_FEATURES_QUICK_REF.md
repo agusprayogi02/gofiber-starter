@@ -15,7 +15,7 @@ app.Use(middleware.CompressionBestSize())   // Large payloads
 
 ```go
 // Parse dari query
-pagination := helper.ParseCursorParams(
+pagination := pagination.ParseCursorParams(
     c.Query("cursor"),
     c.Query("limit"),
     c.Query("sort_by"),
@@ -23,11 +23,11 @@ pagination := helper.ParseCursorParams(
 )
 
 // Apply ke query
-db, _ := helper.ApplyCursorPagination(db, pagination)
+db, _ := pagination.ApplyCursorPagination(db, pagination)
 db.Find(&results)
 
 // Build response
-response := helper.BuildCursorResponse(results, pagination)
+response := pagination.BuildCursorResponse(results, pagination)
 ```
 
 **Query:** `GET /users?limit=20&cursor=eyJ...`
@@ -36,84 +36,84 @@ response := helper.BuildCursorResponse(results, pagination)
 
 ```go
 // Bulk Create
-result, _ := helper.BulkCreate(db, &items, 100)
-result, _ := helper.BulkCreateWithValidation(db, &items, validateFunc, 100)
+result, _ := database.BulkCreate(db, &items, 100)
+result, _ := database.BulkCreateWithValidation(db, &items, validateFunc, 100)
 
 // Bulk Update
-result, _ := helper.BulkUpdate(db, &Model{}, ids, updates)
-result, _ := helper.BulkUpdateWithValidation(db, &Model{}, ids, updates, validateFunc)
+result, _ := database.BulkUpdate(db, &Model{}, ids, updates)
+result, _ := database.BulkUpdateWithValidation(db, &Model{}, ids, updates, validateFunc)
 
 // Bulk Delete
-result, _ := helper.BulkDelete(db, &Model{}, ids)              // Soft delete
-result, _ := helper.BulkDeletePermanent(db, &Model{}, ids)     // Hard delete
-result, _ := helper.BulkRestore(db, &Model{}, ids)             // Restore
+result, _ := database.BulkDelete(db, &Model{}, ids)              // Soft delete
+result, _ := database.BulkDeletePermanent(db, &Model{}, ids)     // Hard delete
+result, _ := database.BulkRestore(db, &Model{}, ids)             // Restore
 
 // Bulk Upsert
-result, _ := helper.BulkUpsert(db, &items, []string{"email"}, []string{"name", "age"})
+result, _ := database.BulkUpsert(db, &items, []string{"email"}, []string{"name", "age"})
 ```
 
 ## Export Data
 
 ```go
 // CSV
-filename, _ := helper.ExportToCSV(data, headers, "output.csv")
+filename, _ := utils.ExportToCSV(data, headers, "output.csv")
 
 // Excel
-config := helper.ExportConfig{
+config := utils.ExportConfig{
     Filename:  "output.xlsx",
     SheetName: "Sheet1",
     Headers:   headers,
-    Format:    helper.FormatExcel,
+    Format:    utils.FormatExcel,
 }
-filename, _ := helper.ExportToExcel(data, config)
+filename, _ := utils.ExportToExcel(data, config)
 
 // PDF
-config.Format = helper.FormatPDF
+config.Format = utils.FormatPDF
 config.Title = "Report Title"
-filename, _ := helper.ExportToPDF(data, config)
+filename, _ := utils.ExportToPDF(data, config)
 
 // Generic
-filename, _ := helper.ExportData(data, headers, config)
+filename, _ := utils.ExportData(data, headers, config)
 ```
 
 ## Search & Filter
 
 ```go
 // Simple search
-searchFilter := helper.SearchFilter{
+searchFilter := utils.SearchFilter{
     Search:      "keyword",
     SearchFields: []string{"name", "email"},
 }
-db = helper.ApplySearchFilter(db, searchFilter)
+db = utils.ApplySearchFilter(db, searchFilter)
 
 // Single filter
-filter := helper.Filter{
+filter := utils.Filter{
     Field:    "age",
-    Operator: helper.OpGreaterThanOrEqual,
+    Operator: utils.OpGreaterThanOrEqual,
     Value:    18,
 }
-db = helper.ApplyFilter(db, filter)
+db = utils.ApplyFilter(db, filter)
 
 // Multiple filters (AND)
-filters := []helper.Filter{
-    {Field: "status", Operator: helper.OpEqual, Value: "active"},
-    {Field: "age", Operator: helper.OpGreaterThanOrEqual, Value: 18},
+filters := []utils.Filter{
+    {Field: "status", Operator: utils.OpEqual, Value: "active"},
+    {Field: "age", Operator: utils.OpGreaterThanOrEqual, Value: 18},
 }
-db = helper.ApplyFilters(db, filters)
+db = utils.ApplyFilters(db, filters)
 
 // Filter group (OR)
-filterGroup := helper.FilterGroup{
+filterGroup := utils.FilterGroup{
     Logic: "OR",
-    Filters: []helper.Filter{
-        {Field: "role", Operator: helper.OpEqual, Value: "admin"},
-        {Field: "role", Operator: helper.OpEqual, Value: "moderator"},
+    Filters: []utils.Filter{
+        {Field: "role", Operator: utils.OpEqual, Value: "admin"},
+        {Field: "role", Operator: utils.OpEqual, Value: "moderator"},
     },
 }
-db = helper.ApplyFilterGroup(db, filterGroup)
+db = utils.ApplyFilterGroup(db, filterGroup)
 
 // From query string
-filters := helper.BuildFilterFromQuery(params)
-db = helper.ApplyFilters(db, filters)
+filters := utils.BuildFilterFromQuery(params)
+db = utils.ApplyFilters(db, filters)
 ```
 
 **Operators:**
@@ -128,21 +128,21 @@ db = helper.ApplyFilters(db, filters)
 
 ```go
 // Single field
-db = helper.ApplySort(db, "created_at", helper.SortDesc)
+db = utils.ApplySort(db, "created_at", utils.SortDesc)
 
 // Multiple fields
-sortFields := []helper.SortField{
-    {Field: "status", Order: helper.SortAsc},
-    {Field: "created_at", Order: helper.SortDesc},
+sortFields := []utils.SortField{
+    {Field: "status", Order: utils.SortAsc},
+    {Field: "created_at", Order: utils.SortDesc},
 }
-db = helper.ApplyMultiSort(db, sortFields, allowedFields)
+db = utils.ApplyMultiSort(db, sortFields, allowedFields)
 
 // From query string
-sortConfig := helper.BuildSortFromQuery(params, allowedFields)
-db = helper.ApplySortConfig(db, sortConfig)
+sortConfig := utils.BuildSortFromQuery(params, allowedFields)
+db = utils.ApplySortConfig(db, sortConfig)
 
 // Parse sort string
-sortFields := helper.ParseSortString("status:asc,created_at:desc")
+sortFields := utils.ParseSortString("status:asc,created_at:desc")
 ```
 
 **Query formats:**
@@ -162,18 +162,18 @@ func GetUsers(c *fiber.Ctx) error {
     })
     
     // Search & Filter
-    searchFilter := helper.SearchFilter{
+    searchFilter := utils.SearchFilter{
         Search:      c.Query("search"),
         SearchFields: []string{"name", "email"},
-        Filters:     helper.BuildFilterFromQuery(params),
+        Filters:     utils.BuildFilterFromQuery(params),
     }
     
     // Sorting
     allowedSortFields := []string{"name", "email", "created_at"}
-    sortConfig := helper.BuildSortFromQuery(params, allowedSortFields)
+    sortConfig := utils.BuildSortFromQuery(params, allowedSortFields)
     
     // Pagination
-    pagination := helper.ParseCursorParams(
+    pagination := pagination.ParseCursorParams(
         c.Query("cursor"),
         c.Query("limit"),
         c.Query("sort_by"),
@@ -181,17 +181,17 @@ func GetUsers(c *fiber.Ctx) error {
     )
     
     // Build query
-    db := config.DB.Model(&entity.User{})
-    db = helper.ApplySearchFilter(db, searchFilter)
-    db = helper.ApplySortConfig(db, sortConfig)
-    db, _ = helper.ApplyCursorPagination(db, pagination)
+    db := config.DB.Model(&user.User{})
+    db = utils.ApplySearchFilter(db, searchFilter)
+    db = utils.ApplySortConfig(db, sortConfig)
+    db, _ = pagination.ApplyCursorPagination(db, pagination)
     
     // Execute
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     // Response
-    return c.JSON(helper.BuildCursorResponse(users, pagination))
+    return c.JSON(pagination.BuildCursorResponse(users, pagination))
 }
 ```
 
@@ -204,22 +204,22 @@ GET /users?search=john&filter_status_eq=active&filter_age_gte=18&sort=-created_a
 
 ```go
 // Date range
-filter := helper.DateRangeFilter("created_at", fromDate, toDate)
+filter := utils.DateRangeFilter("created_at", fromDate, toDate)
 
 // Multi-value (IN)
-filter := helper.MultiValueFilter("role", []interface{}{"admin", "mod"})
+filter := utils.MultiValueFilter("role", []interface{}{"admin", "mod"})
 
 // Text search
-filter := helper.TextSearchFilter("name", "john")
+filter := utils.TextSearchFilter("name", "john")
 
 // Numeric range
-filter := helper.RangeFilter("age", 18, 65)
+filter := utils.RangeFilter("age", 18, 65)
 
 // Validate filter
-err := helper.ValidateFilter(filter, allowedFields)
+err := utils.ValidateFilter(filter, allowedFields)
 
 // Validate sort
-err := helper.ValidateSortFields(sortFields, allowedFields)
+err := utils.ValidateSortFields(sortFields, allowedFields)
 ```
 
 ## Response Formats

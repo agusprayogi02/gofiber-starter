@@ -145,7 +145,7 @@ data: {"title":"New message","body":"You have a new message","timestamp":1704067
 ### 1. Notify Specific User
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Send notification to user ID 123
 helper.NotifyUser(123, "notification", fiber.Map{
@@ -774,7 +774,7 @@ fmt.Printf("User connections: %v\n", stats.UserClients)
 ### Log Events
 
 ```go
-helper.Info("SSE message sent",
+logger.Info("SSE message sent",
     zap.Uint("user_id", userID),
     zap.String("event", "notification"),
     zap.Int("client_count", hub.GetUserClientCount(userID)),

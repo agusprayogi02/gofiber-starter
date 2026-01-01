@@ -151,7 +151,7 @@ go test ./tests/... -v
 bash scripts/test-coverage.sh
 
 # Test specific package
-go test ./service/... -v
+go test ./internal/service/... -v
 
 # Manual testing
 curl -X POST http://localhost:3000/api/v1/auth/register \
@@ -213,12 +213,12 @@ golangci-lint run
 **Variables & Functions**:
 ```go
 // ✅ Good - camelCase untuk private
-var userRepository UserRepository
-func getUserByEmail(email string) (*entity.User, error) {}
+var userRepository user.Repository
+func getUserByEmail(email string) (*user.User, error) {}
 
 // ✅ Good - PascalCase untuk public
 var UserService *AuthService
-func GetUserProfile(id uint) (*dto.UserProfile, error) {}
+func GetUserProfile(id uint) (*user.UserResponse, error) {}
 
 // ❌ Bad - snake_case tidak digunakan di Go
 var user_repository UserRepository
@@ -267,26 +267,28 @@ import (
     
     // Internal packages
     "starter-gofiber/pkg/dto"
-    "starter-gofiber/entity"
-    "starter-gofiber/helper"
+    "starter-gofiber/internal/domain/user"
+    "starter-gofiber/internal/domain/post"
+    "starter-gofiber/pkg/apierror"
+    "starter-gofiber/pkg/logger"
 )
 
 // ✅ Good - struct definition
 type UserService struct {
-    repo repository.UserRepository
+    repo user.Repository
 }
 
 // ✅ Good - constructor
-func NewUserService(repo repository.UserRepository) *UserService {
+func NewUserService(repo user.Repository) *UserService {
     return &UserService{repo: repo}
 }
 
 // ✅ Good - methods grouped by functionality
-func (s *UserService) GetProfile(id uint) (*dto.UserProfile, error) {
+func (s *UserService) GetProfile(id uint) (*user.UserResponse, error) {
     // Implementation
 }
 
-func (s *UserService) UpdateProfile(id uint, req dto.UpdateProfileRequest) error {
+func (s *UserService) UpdateProfile(id uint, req *user.UpdateProfileRequest) error {
     // Implementation
 }
 ```
@@ -296,7 +298,7 @@ func (s *UserService) UpdateProfile(id uint, req dto.UpdateProfileRequest) error
 ```go
 // ✅ Good - use custom error types
 if err := s.repo.Create(user); err != nil {
-    return nil, &helper.InternalServerError{
+    return nil, &apierror.InternalServerError{
         Message: "Failed to create user",
         Order:   "S1",
     }
@@ -322,8 +324,8 @@ if err != nil {
 ```go
 // ✅ Good - public functions have comments
 // GetUserProfile retrieves user profile information by user ID.
-// Returns UserProfile DTO or error if user not found.
-func GetUserProfile(id uint) (*dto.UserProfile, error) {
+// Returns UserResponse DTO or error if user not found.
+func GetUserProfile(id uint) (*user.UserResponse, error) {
     // Implementation
 }
 
@@ -404,7 +406,7 @@ bash scripts/test-coverage.sh
 # - Handler: 70%+
 # - Service: 80%+
 # - Repository: 70%+
-# - Helper: 75%+
+# - Infrastructure/Utilities: 75%+
 ```
 
 ### Test Naming

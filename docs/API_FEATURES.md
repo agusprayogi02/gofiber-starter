@@ -21,7 +21,7 @@ Middleware untuk mengompress response dengan Gzip untuk mengurangi bandwidth dan
 ### Setup
 
 ```go
-import "starter-gofiber/middleware"
+import "starter-gofiber/internal/handler/middleware"
 
 // Default compression (balanced)
 app.Use(middleware.CompressionDefault())
@@ -55,11 +55,11 @@ Alternative untuk offset pagination yang lebih efisien untuk dataset besar.
 ### Basic Usage
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 func GetPosts(c *fiber.Ctx) error {
     // Parse cursor parameters dari query string
-    pagination := helper.ParseCursorParams(
+    pagination := pagination.ParseCursorParams(
         c.Query("cursor"),      // Next cursor dari response sebelumnya
         c.Query("limit"),       // Jumlah data per page (default: 10, max: 100)
         c.Query("sort_by"),     // Field untuk sorting (default: "id")
@@ -68,9 +68,9 @@ func GetPosts(c *fiber.Ctx) error {
     
     // Apply cursor pagination ke GORM query
     db := config.DB
-    var posts []entity.Post
+    var posts []post.Post
     
-    db, err := helper.ApplyCursorPagination(db, pagination)
+    db, err := pagination.ApplyCursorPagination(db, pagination)
     if err != nil {
         return err
     }
@@ -78,7 +78,7 @@ func GetPosts(c *fiber.Ctx) error {
     db.Find(&posts)
     
     // Build response dengan next cursor
-    response := helper.BuildCursorResponse(posts, pagination)
+    response := pagination.BuildCursorResponse(posts, pagination)
     
     return c.JSON(response)
 }
@@ -126,25 +126,25 @@ Operasi create, update, dan delete dalam jumlah banyak dengan error tracking.
 ### Bulk Create
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 func BulkCreateUsers(c *fiber.Ctx) error {
-    var users []entity.User
+    var users []user.User
     if err := c.BodyParser(&users); err != nil {
         return err
     }
     
     // Simple bulk create (all or nothing)
-    result, err := helper.BulkCreate(config.DB, &users, 100) // batch size 100
+    result, err := database.BulkCreate(config.DB, &users, 100) // batch size 100
     if err != nil {
         return err
     }
     
     // Or with individual validation
-    result, err := helper.BulkCreateWithValidation(
+    result, err := database.BulkCreateWithValidation(
         config.DB,
         &users,
-        func(user *entity.User) error {
+        func(user *user.User) error {
             // Custom validation per item
             if user.Email == "" {
                 return errors.New("email required")
@@ -176,20 +176,20 @@ func BulkUpdateUsers(c *fiber.Ctx) error {
     }
     
     // Update multiple records dengan field yang sama
-    result, err := helper.BulkUpdate(
+    result, err := database.BulkUpdate(
         config.DB,
-        &entity.User{},
+        &user.User{},
         req.IDs,
         req.Updates,
     )
     
     // Or with individual validation
-    result, err := helper.BulkUpdateWithValidation(
+    result, err := database.BulkUpdateWithValidation(
         config.DB,
-        &entity.User{},
+        &user.User{},
         req.IDs,
         req.Updates,
-        func(user *entity.User) error {
+        func(user *user.User) error {
             // Validation after update
             return nil
         },
@@ -212,10 +212,10 @@ func BulkDeleteUsers(c *fiber.Ctx) error {
     }
     
     // Soft delete
-    result, err := helper.BulkDelete(config.DB, &entity.User{}, req.IDs)
+    result, err := database.BulkDelete(config.DB, &user.User{}, req.IDs)
     
     // Hard delete (permanent)
-    result, err := helper.BulkDeletePermanent(config.DB, &entity.User{}, req.IDs)
+    result, err := database.BulkDeletePermanent(config.DB, &user.User{}, req.IDs)
     
     return c.JSON(result)
 }
@@ -233,7 +233,7 @@ func BulkRestoreUsers(c *fiber.Ctx) error {
         return err
     }
     
-    result, err := helper.BulkRestore(config.DB, &entity.User{}, req.IDs)
+    result, err := database.BulkRestore(config.DB, &user.User{}, req.IDs)
     
     return c.JSON(result)
 }
@@ -243,13 +243,13 @@ func BulkRestoreUsers(c *fiber.Ctx) error {
 
 ```go
 func BulkUpsertUsers(c *fiber.Ctx) error {
-    var users []entity.User
+    var users []user.User
     if err := c.BodyParser(&users); err != nil {
         return err
     }
     
     // Insert or update berdasarkan unique key (email)
-    result, err := helper.BulkUpsert(
+    result, err := database.BulkUpsert(
         config.DB,
         &users,
         []string{"email"}, // Conflict columns
@@ -290,15 +290,15 @@ Export data ke format CSV, Excel, atau PDF.
 ### CSV Export
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 func ExportUsersCSV(c *fiber.Ctx) error {
-    var users []entity.User
+    var users []user.User
     config.DB.Find(&users)
     
     headers := []string{"ID", "Name", "Email", "Created At"}
     
-    filename, err := helper.ExportToCSV(users, headers, "users.csv")
+    filename, err := utils.ExportToCSV(users, headers, "users.csv")
     if err != nil {
         return err
     }
@@ -311,20 +311,20 @@ func ExportUsersCSV(c *fiber.Ctx) error {
 
 ```go
 func ExportUsersExcel(c *fiber.Ctx) error {
-    var users []entity.User
+    var users []user.User
     config.DB.Find(&users)
     
     headers := []string{"ID", "Name", "Email", "Phone", "Created At"}
     
     // With custom config
-    config := helper.ExportConfig{
+    config := utils.ExportConfig{
         Filename:  "users.xlsx",
         SheetName: "Users Data",
         Headers:   headers,
-        Format:    helper.FormatExcel,
+        Format:    utils.FormatExcel,
     }
     
-    filename, err := helper.ExportToExcel(users, config)
+    filename, err := utils.ExportToExcel(users, config)
     if err != nil {
         return err
     }
@@ -337,19 +337,19 @@ func ExportUsersExcel(c *fiber.Ctx) error {
 
 ```go
 func ExportUsersPDF(c *fiber.Ctx) error {
-    var users []entity.User
+    var users []user.User
     config.DB.Find(&users)
     
     headers := []string{"ID", "Name", "Email", "Phone", "Created At"}
     
-    config := helper.ExportConfig{
+    config := utils.ExportConfig{
         Filename: "users.pdf",
         Title:    "Users Report",
         Headers:  headers,
-        Format:   helper.FormatPDF,
+        Format:   utils.FormatPDF,
     }
     
-    filename, err := helper.ExportToPDF(users, config)
+    filename, err := utils.ExportToPDF(users, config)
     if err != nil {
         return err
     }
@@ -364,25 +364,25 @@ func ExportUsersPDF(c *fiber.Ctx) error {
 func ExportUsers(c *fiber.Ctx) error {
     format := c.Query("format", "csv") // csv, excel, or pdf
     
-    var users []entity.User
+    var users []user.User
     config.DB.Find(&users)
     
     headers := []string{"ID", "Name", "Email", "Phone", "Created At"}
     
-    exportFormat := helper.FormatCSV
+    exportFormat := utils.FormatCSV
     switch format {
     case "excel":
-        exportFormat = helper.FormatExcel
+        exportFormat = utils.FormatExcel
     case "pdf":
-        exportFormat = helper.FormatPDF
+        exportFormat = utils.FormatPDF
     }
     
-    config := helper.DefaultExportConfig(exportFormat)
+    config := utils.DefaultExportConfig(exportFormat)
     config.Filename = "users_" + time.Now().Format("20060102_150405")
     config.Headers = headers
     config.Title = "Users Report"
     
-    filename, err := helper.ExportData(users, headers, config)
+    filename, err := utils.ExportData(users, headers, config)
     if err != nil {
         return err
     }
@@ -432,17 +432,17 @@ Advanced search dan filtering dengan multiple operators.
 ### Basic Search
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 func SearchUsers(c *fiber.Ctx) error {
-    searchFilter := helper.SearchFilter{
+    searchFilter := utils.SearchFilter{
         Search:      c.Query("search"),
         SearchFields: []string{"name", "email", "phone"},
     }
     
-    db := helper.ApplySearchFilter(config.DB, searchFilter)
+    db := utils.ApplySearchFilter(config.DB, searchFilter)
     
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     return c.JSON(users)
@@ -455,15 +455,15 @@ Query: `GET /users?search=john`
 
 ```go
 func FilterUsers(c *fiber.Ctx) error {
-    filter := helper.Filter{
+    filter := utils.Filter{
         Field:    "age",
-        Operator: helper.OpGreaterThanOrEqual,
+        Operator: utils.OpGreaterThanOrEqual,
         Value:    18,
     }
     
-    db := helper.ApplyFilter(config.DB, filter)
+    db := utils.ApplyFilter(config.DB, filter)
     
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     return c.JSON(users)
@@ -474,27 +474,27 @@ func FilterUsers(c *fiber.Ctx) error {
 
 ```go
 func FilterUsersMultiple(c *fiber.Ctx) error {
-    filters := []helper.Filter{
+    filters := []utils.Filter{
         {
             Field:    "status",
-            Operator: helper.OpEqual,
+            Operator: utils.OpEqual,
             Value:    "active",
         },
         {
             Field:    "age",
-            Operator: helper.OpGreaterThanOrEqual,
+            Operator: utils.OpGreaterThanOrEqual,
             Value:    18,
         },
         {
             Field:    "email",
-            Operator: helper.OpLike,
+            Operator: utils.OpLike,
             Value:    "gmail",
         },
     }
     
-    db := helper.ApplyFilters(config.DB, filters)
+    db := utils.ApplyFilters(config.DB, filters)
     
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     return c.JSON(users)
@@ -505,25 +505,25 @@ func FilterUsersMultiple(c *fiber.Ctx) error {
 
 ```go
 func FilterUsersOR(c *fiber.Ctx) error {
-    filterGroup := helper.FilterGroup{
+    filterGroup := utils.FilterGroup{
         Logic: "OR",
-        Filters: []helper.Filter{
+        Filters: []utils.Filter{
             {
                 Field:    "role",
-                Operator: helper.OpEqual,
+                Operator: utils.OpEqual,
                 Value:    "admin",
             },
             {
                 Field:    "role",
-                Operator: helper.OpEqual,
+                Operator: utils.OpEqual,
                 Value:    "moderator",
             },
         },
     }
     
-    db := helper.ApplyFilterGroup(config.DB, filterGroup)
+    db := utils.ApplyFilterGroup(config.DB, filterGroup)
     
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     return c.JSON(users)
@@ -540,11 +540,11 @@ func FilterFromQuery(c *fiber.Ctx) error {
         params[string(key)] = string(value)
     })
     
-    filters := helper.BuildFilterFromQuery(params)
+    filters := utils.BuildFilterFromQuery(params)
     
-    db := helper.ApplyFilters(config.DB, filters)
+    db := utils.ApplyFilters(config.DB, filters)
     
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     return c.JSON(users)
@@ -591,23 +591,23 @@ GET /users?filter_status_eq=active&filter_age_gte=18&filter_role_in=admin,modera
 
 ```go
 // Date range filter
-filter := helper.DateRangeFilter(
+filter := utils.DateRangeFilter(
     "created_at",
     time.Now().AddDate(0, -1, 0), // From 1 month ago
     time.Now(),                     // To now
 )
 
 // Multi-value filter (IN)
-filter := helper.MultiValueFilter(
+filter := utils.MultiValueFilter(
     "role",
     []interface{}{"admin", "moderator", "editor"},
 )
 
 // Text search filter
-filter := helper.TextSearchFilter("name", "john")
+filter := utils.TextSearchFilter("name", "john")
 
 // Numeric range filter
-filter := helper.RangeFilter("age", 18, 65)
+filter := utils.RangeFilter("age", 18, 65)
 ```
 
 ### Field Validation
@@ -616,20 +616,20 @@ filter := helper.RangeFilter("age", 18, 65)
 func FilterWithValidation(c *fiber.Ctx) error {
     allowedFields := []string{"name", "email", "age", "status", "role"}
     
-    filter := helper.Filter{
+    filter := utils.Filter{
         Field:    c.Query("field"),
-        Operator: helper.FilterOperator(c.Query("op")),
+        Operator: utils.FilterOperator(c.Query("op")),
         Value:    c.Query("value"),
     }
     
     // Validate field is allowed
-    if err := helper.ValidateFilter(filter, allowedFields); err != nil {
+    if err := utils.ValidateFilter(filter, allowedFields); err != nil {
         return err
     }
     
-    db := helper.ApplyFilter(config.DB, filter)
+    db := utils.ApplyFilter(config.DB, filter)
     
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     return c.JSON(users)
@@ -645,17 +645,17 @@ Multi-field sorting dengan validation.
 ### Basic Sorting
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 func GetUsers(c *fiber.Ctx) error {
     // Simple sorting
-    db := helper.ApplySort(
+    db := utils.ApplySort(
         config.DB,
         "created_at",
-        helper.SortDesc,
+        utils.SortDesc,
     )
     
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     return c.JSON(users)
@@ -666,16 +666,16 @@ func GetUsers(c *fiber.Ctx) error {
 
 ```go
 func GetUsersMultiSort(c *fiber.Ctx) error {
-    sortFields := []helper.SortField{
-        {Field: "status", Order: helper.SortAsc},
-        {Field: "created_at", Order: helper.SortDesc},
+    sortFields := []utils.SortField{
+        {Field: "status", Order: utils.SortAsc},
+        {Field: "created_at", Order: utils.SortDesc},
     }
     
     allowedFields := []string{"name", "email", "status", "created_at"}
     
-    db := helper.ApplyMultiSort(config.DB, sortFields, allowedFields)
+    db := utils.ApplyMultiSort(config.DB, sortFields, allowedFields)
     
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     return c.JSON(users)
@@ -693,11 +693,11 @@ func GetUsersWithSort(c *fiber.Ctx) error {
     })
     
     allowedFields := []string{"name", "email", "age", "created_at", "updated_at"}
-    sortConfig := helper.BuildSortFromQuery(params, allowedFields)
+    sortConfig := utils.BuildSortFromQuery(params, allowedFields)
     
-    db := helper.ApplySortConfig(config.DB, sortConfig)
+    db := utils.ApplySortConfig(config.DB, sortConfig)
     
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     return c.JSON(users)
@@ -727,10 +727,10 @@ GET /users?sort=status:asc,age:desc,name:asc
 
 ```go
 // From string: "name:asc,created_at:desc"
-sortFields := helper.ParseSortString(c.Query("sort"))
+sortFields := utils.ParseSortString(c.Query("sort"))
 
 // From separate params
-sortField := helper.ParseSortParams(
+sortField := utils.ParseSortParams(
     c.Query("sort_by"),
     c.Query("order"),
 )
@@ -741,9 +741,9 @@ sortField := helper.ParseSortParams(
 ```go
 func GetUsers(c *fiber.Ctx) error {
     // Default sort if not provided
-    sortConfig := helper.DefaultSortConfig(
+    sortConfig := utils.DefaultSortConfig(
         "created_at",           // Default field
-        helper.SortDesc,        // Default order
+        utils.SortDesc,        // Default order
         []string{"name", "email", "created_at"}, // Allowed fields
     )
     
@@ -754,12 +754,12 @@ func GetUsers(c *fiber.Ctx) error {
     })
     
     if sort, ok := params["sort"]; ok {
-        sortConfig.Fields = helper.ParseSortString(sort)
+        sortConfig.Fields = utils.ParseSortString(sort)
     }
     
-    db := helper.ApplySortConfig(config.DB, sortConfig)
+    db := utils.ApplySortConfig(config.DB, sortConfig)
     
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     return c.JSON(users)
@@ -772,18 +772,18 @@ func GetUsers(c *fiber.Ctx) error {
 func GetUsersValidated(c *fiber.Ctx) error {
     allowedFields := []string{"name", "email", "created_at"}
     
-    sortFields := helper.ParseSortString(c.Query("sort"))
+    sortFields := utils.ParseSortString(c.Query("sort"))
     
     // Validate all sort fields
-    if err := helper.ValidateSortFields(sortFields, allowedFields); err != nil {
+    if err := utils.ValidateSortFields(sortFields, allowedFields); err != nil {
         return c.Status(400).JSON(fiber.Map{
             "error": err.Error(),
         })
     }
     
-    db := helper.ApplyMultiSort(config.DB, sortFields, allowedFields)
+    db := utils.ApplyMultiSort(config.DB, sortFields, allowedFields)
     
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     return c.JSON(users)
@@ -801,7 +801,7 @@ Contoh penggunaan semua fitur secara bersamaan.
 ```go
 func GetUsersAdvanced(c *fiber.Ctx) error {
     // 1. Parse search & filter
-    searchFilter := helper.SearchFilter{
+    searchFilter := utils.SearchFilter{
         Search:      c.Query("search"),
         SearchFields: []string{"name", "email"},
     }
@@ -812,20 +812,20 @@ func GetUsersAdvanced(c *fiber.Ctx) error {
         params[string(key)] = string(value)
     })
     
-    searchFilter.Filters = helper.BuildFilterFromQuery(params)
+    searchFilter.Filters = utils.BuildFilterFromQuery(params)
     
     // 2. Parse sorting
     allowedSortFields := []string{"name", "email", "created_at", "updated_at"}
-    sortConfig := helper.BuildSortFromQuery(params, allowedSortFields)
+    sortConfig := utils.BuildSortFromQuery(params, allowedSortFields)
     
     // Set default sort jika tidak ada
     if len(sortConfig.Fields) == 0 {
         sortConfig.DefaultField = "created_at"
-        sortConfig.DefaultOrder = helper.SortDesc
+        sortConfig.DefaultOrder = utils.SortDesc
     }
     
     // 3. Parse cursor pagination
-    pagination := helper.ParseCursorParams(
+    pagination := pagination.ParseCursorParams(
         c.Query("cursor"),
         c.Query("limit"),
         c.Query("sort_by"),
@@ -833,26 +833,26 @@ func GetUsersAdvanced(c *fiber.Ctx) error {
     )
     
     // 4. Build query
-    db := config.DB.Model(&entity.User{})
+    db := config.DB.Model(&user.User{})
     
     // Apply search & filter
-    db = helper.ApplySearchFilter(db, searchFilter)
+    db = utils.ApplySearchFilter(db, searchFilter)
     
     // Apply sorting
-    db = helper.ApplySortConfig(db, sortConfig)
+    db = utils.ApplySortConfig(db, sortConfig)
     
     // Apply pagination
-    db, err := helper.ApplyCursorPagination(db, pagination)
+    db, err := pagination.ApplyCursorPagination(db, pagination)
     if err != nil {
         return err
     }
     
     // 5. Execute query
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     // 6. Build response
-    response := helper.BuildCursorResponse(users, pagination)
+    response := pagination.BuildCursorResponse(users, pagination)
     
     return c.JSON(response)
 }
@@ -877,35 +877,35 @@ func ExportUsersAdvanced(c *fiber.Ctx) error {
     format := c.Query("format", "excel")
     
     // Same query building as above
-    searchFilter := helper.SearchFilter{...}
-    sortConfig := helper.BuildSortFromQuery(params, allowedFields)
+    searchFilter := utils.SearchFilter{...}
+    sortConfig := utils.BuildSortFromQuery(params, allowedFields)
     
-    db := config.DB.Model(&entity.User{})
-    db = helper.ApplySearchFilter(db, searchFilter)
-    db = helper.ApplySortConfig(db, sortConfig)
+    db := config.DB.Model(&user.User{})
+    db = utils.ApplySearchFilter(db, searchFilter)
+    db = utils.ApplySortConfig(db, sortConfig)
     
     // Get all data (no pagination for export)
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     // Export
     headers := []string{"ID", "Name", "Email", "Status", "Created At"}
     
-    var exportFormat helper.ExportFormat
+    var exportFormat utils.ExportFormat
     switch format {
     case "csv":
-        exportFormat = helper.FormatCSV
+        exportFormat = utils.FormatCSV
     case "pdf":
-        exportFormat = helper.FormatPDF
+        exportFormat = utils.FormatPDF
     default:
-        exportFormat = helper.FormatExcel
+        exportFormat = utils.FormatExcel
     }
     
-    config := helper.DefaultExportConfig(exportFormat)
+    config := utils.DefaultExportConfig(exportFormat)
     config.Headers = headers
     config.Title = "Users Report - " + time.Now().Format("2006-01-02")
     
-    filename, err := helper.ExportData(users, headers, config)
+    filename, err := utils.ExportData(users, headers, config)
     if err != nil {
         return err
     }
@@ -920,9 +920,9 @@ func ExportUsersAdvanced(c *fiber.Ctx) error {
 package handler
 
 import (
-    "starter-gofiber/config"
-    "starter-gofiber/entity"
-    "starter-gofiber/helper"
+    "starter-gofiber/internal/config"
+    "starter-gofiber/internal/domain/user"
+    "starter-gofiber/pkg/apierror"
     "github.com/gofiber/fiber/v2"
     "time"
 )
@@ -942,22 +942,22 @@ func (h *UserHandler) List(c *fiber.Ctx) error {
     })
     
     // Search & Filter
-    searchFilter := helper.SearchFilter{
+    searchFilter := utils.SearchFilter{
         Search:      c.Query("search"),
         SearchFields: []string{"name", "email", "phone"},
-        Filters:     helper.BuildFilterFromQuery(params),
+        Filters:     utils.BuildFilterFromQuery(params),
     }
     
     // Sorting
     allowedSortFields := []string{"id", "name", "email", "created_at", "updated_at"}
-    sortConfig := helper.BuildSortFromQuery(params, allowedSortFields)
+    sortConfig := utils.BuildSortFromQuery(params, allowedSortFields)
     if len(sortConfig.Fields) == 0 {
         sortConfig.DefaultField = "created_at"
-        sortConfig.DefaultOrder = helper.SortDesc
+        sortConfig.DefaultOrder = utils.SortDesc
     }
     
     // Pagination
-    pagination := helper.ParseCursorParams(
+    pagination := pagination.ParseCursorParams(
         c.Query("cursor"),
         c.Query("limit"),
         c.Query("sort_by"),
@@ -965,17 +965,17 @@ func (h *UserHandler) List(c *fiber.Ctx) error {
     )
     
     // Build query
-    db := config.DB.Model(&entity.User{})
-    db = helper.ApplySearchFilter(db, searchFilter)
-    db = helper.ApplySortConfig(db, sortConfig)
-    db, _ = helper.ApplyCursorPagination(db, pagination)
+    db := config.DB.Model(&user.User{})
+    db = utils.ApplySearchFilter(db, searchFilter)
+    db = utils.ApplySortConfig(db, sortConfig)
+    db, _ = pagination.ApplyCursorPagination(db, pagination)
     
     // Execute
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     // Response
-    response := helper.BuildCursorResponse(users, pagination)
+    response := pagination.BuildCursorResponse(users, pagination)
     return c.JSON(response)
 }
 
@@ -989,36 +989,36 @@ func (h *UserHandler) Export(c *fiber.Ctx) error {
         params[string(key)] = string(value)
     })
     
-    searchFilter := helper.SearchFilter{
+    searchFilter := utils.SearchFilter{
         Search:      c.Query("search"),
         SearchFields: []string{"name", "email"},
-        Filters:     helper.BuildFilterFromQuery(params),
+        Filters:     utils.BuildFilterFromQuery(params),
     }
     
-    db := config.DB.Model(&entity.User{})
-    db = helper.ApplySearchFilter(db, searchFilter)
+    db := config.DB.Model(&user.User{})
+    db = utils.ApplySearchFilter(db, searchFilter)
     
-    var users []entity.User
+    var users []user.User
     db.Find(&users)
     
     // Export
     headers := []string{"ID", "Name", "Email", "Phone", "Created At"}
     
-    var exportFormat helper.ExportFormat
+    var exportFormat utils.ExportFormat
     switch format {
     case "csv":
-        exportFormat = helper.FormatCSV
+        exportFormat = utils.FormatCSV
     case "pdf":
-        exportFormat = helper.FormatPDF
+        exportFormat = utils.FormatPDF
     default:
-        exportFormat = helper.FormatExcel
+        exportFormat = utils.FormatExcel
     }
     
-    exportConfig := helper.DefaultExportConfig(exportFormat)
+    exportConfig := utils.DefaultExportConfig(exportFormat)
     exportConfig.Headers = headers
     exportConfig.Title = "Users Report"
     
-    filename, err := helper.ExportData(users, headers, exportConfig)
+    filename, err := utils.ExportData(users, headers, exportConfig)
     if err != nil {
         return err
     }
@@ -1028,15 +1028,15 @@ func (h *UserHandler) Export(c *fiber.Ctx) error {
 
 // Bulk create
 func (h *UserHandler) BulkCreate(c *fiber.Ctx) error {
-    var users []entity.User
+    var users []user.User
     if err := c.BodyParser(&users); err != nil {
         return err
     }
     
-    result, err := helper.BulkCreateWithValidation(
+    result, err := database.BulkCreateWithValidation(
         config.DB,
         &users,
-        func(user *entity.User) error {
+        func(user *user.User) error {
             // Validation
             if user.Email == "" {
                 return errors.New("email required")
@@ -1064,9 +1064,9 @@ func (h *UserHandler) BulkUpdate(c *fiber.Ctx) error {
         return err
     }
     
-    result, err := helper.BulkUpdate(
+    result, err := database.BulkUpdate(
         config.DB,
-        &entity.User{},
+        &user.User{},
         req.IDs,
         req.Updates,
     )
@@ -1088,7 +1088,7 @@ func (h *UserHandler) BulkDelete(c *fiber.Ctx) error {
         return err
     }
     
-    result, err := helper.BulkDelete(config.DB, &entity.User{}, req.IDs)
+    result, err := database.BulkDelete(config.DB, &user.User{}, req.IDs)
     if err != nil {
         return err
     }
@@ -1177,7 +1177,7 @@ if cached, err := cache.Get(cacheKey); err == nil {
 }
 
 // Get from DB and cache
-result := helper.BuildCursorResponse(users, pagination)
+result := pagination.BuildCursorResponse(users, pagination)
 cache.Set(cacheKey, result, 5*time.Minute)
 ```
 
@@ -1194,7 +1194,7 @@ db.Preload("Posts", func(db *gorm.DB) *gorm.DB {
 
 // Use count cache
 var total int64
-db.Model(&entity.User{}).Count(&total) // Cached count
+db.Model(&user.User{}).Count(&total) // Cached count
 ```
 
 ---
@@ -1204,8 +1204,8 @@ db.Model(&entity.User{}).Count(&total) // Cached count
 ```go
 func HandleErrors(c *fiber.Ctx) error {
     // Validate filter
-    filter := helper.Filter{...}
-    if err := helper.ValidateFilter(filter, allowedFields); err != nil {
+    filter := utils.Filter{...}
+    if err := utils.ValidateFilter(filter, allowedFields); err != nil {
         return c.Status(400).JSON(fiber.Map{
             "error": "Invalid filter",
             "detail": err.Error(),
@@ -1213,8 +1213,8 @@ func HandleErrors(c *fiber.Ctx) error {
     }
     
     // Validate sort
-    sortFields := helper.ParseSortString(c.Query("sort"))
-    if err := helper.ValidateSortFields(sortFields, allowedFields); err != nil {
+    sortFields := utils.ParseSortString(c.Query("sort"))
+    if err := utils.ValidateSortFields(sortFields, allowedFields); err != nil {
         return c.Status(400).JSON(fiber.Map{
             "error": "Invalid sort field",
             "detail": err.Error(),
@@ -1222,7 +1222,7 @@ func HandleErrors(c *fiber.Ctx) error {
     }
     
     // Validate cursor
-    pagination := helper.ParseCursorParams(...)
+    pagination := pagination.ParseCursorParams(...)
     if pagination.Limit > 100 {
         return c.Status(400).JSON(fiber.Map{
             "error": "Limit exceeded",
@@ -1244,21 +1244,21 @@ func TestSearchFilter(t *testing.T) {
     db := setupTestDB()
     
     // Create test data
-    users := []entity.User{
+    users := []user.User{
         {Name: "John Doe", Email: "john@example.com", Age: 25},
         {Name: "Jane Smith", Email: "jane@example.com", Age: 30},
     }
     db.Create(&users)
     
     // Test search
-    searchFilter := helper.SearchFilter{
+    searchFilter := utils.SearchFilter{
         Search:      "john",
         SearchFields: []string{"name", "email"},
     }
     
-    query := helper.ApplySearchFilter(db, searchFilter)
+    query := utils.ApplySearchFilter(db, searchFilter)
     
-    var results []entity.User
+    var results []user.User
     query.Find(&results)
     
     assert.Equal(t, 1, len(results))

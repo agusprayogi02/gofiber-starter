@@ -43,7 +43,7 @@ migrations/
 
 **Menggunakan Helper Function**:
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Creates timestamped migration files
 helper.CreateMigration("create_comments_table")
@@ -126,7 +126,7 @@ DROP TABLE IF EXISTS users;
 
 **Programmatically**:
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Run all pending migrations
 if err := helper.RunMigrations(config.DB); err != nil {
@@ -189,7 +189,7 @@ Default seeders registered:
 
 **Run All Seeders**:
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 if err := helper.RunAllSeeders(config.DB); err != nil {
     log.Fatal(err)
@@ -418,7 +418,7 @@ ConnMaxIdleTime:  5 minutes
 ### Monitoring Pool
 
 ```go
-import "starter-gofiber/config"
+import "starter-gofiber/internal/config"
 
 sqlDB, _ := config.DB.DB()
 stats := sqlDB.Stats()
@@ -491,10 +491,10 @@ config.LoadReadReplica()
 
 **Automatic Routing**:
 ```go
-import "starter-gofiber/config"
+import "starter-gofiber/internal/config"
 
 // Use read replica for queries
-users := []entity.User{}
+users := []user.User{}
 config.UseReadReplica().Find(&users)
 
 // Use primary DB for writes
@@ -526,14 +526,14 @@ func NewUserService() *UserService {
     }
 }
 
-func (s *UserService) GetAll() ([]entity.User, error) {
-    var users []entity.User
+func (s *UserService) GetAll() ([]user.User, error) {
+    var users []user.User
     // Use read replica
     err := s.dbRead.Find(&users).Error
     return users, err
 }
 
-func (s *UserService) Create(user *entity.User) error {
+func (s *UserService) Create(user *user.User) error {
     // Use primary DB
     return s.dbWrite.Create(user).Error
 }
@@ -571,7 +571,7 @@ SHOW SLAVE STATUS\G
 **Handle in Code**:
 ```go
 // For critical reads, use primary DB
-user := entity.User{}
+user := user.User{}
 config.UseWriteDB().Where("id = ?", userID).First(&user)
 ```
 
@@ -600,13 +600,13 @@ type User struct {
 db.Delete(&user)
 
 // Delete by ID
-db.Delete(&entity.User{}, userID)
+db.Delete(&user.User{}, userID)
 ```
 
 **Query Behavior**:
 ```go
 // Normal queries exclude soft deleted records
-var users []entity.User
+var users []user.User
 db.Find(&users)  // Only returns non-deleted users
 ```
 
@@ -614,10 +614,10 @@ db.Find(&users)  // Only returns non-deleted users
 
 **Include Soft Deleted Records**:
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Include deleted records
-var users []entity.User
+var users []user.User
 helper.WithTrashed(db).Find(&users)
 
 // Or using Scopes
@@ -627,7 +627,7 @@ db.Scopes(helper.SoftDeleteScope()).Find(&users)
 **Only Deleted Records**:
 ```go
 // Get only soft deleted records
-var deletedUsers []entity.User
+var deletedUsers []user.User
 helper.OnlyTrashed(db).Find(&deletedUsers)
 ```
 
@@ -637,10 +637,10 @@ helper.OnlyTrashed(db).Find(&deletedUsers)
 helper.Restore(db, &user)
 
 // Restore by ID
-helper.RestoreByID(db, &entity.User{}, userID)
+helper.RestoreByID(db, &user.User{}, userID)
 
 // Restore all deleted records of a model
-helper.RestoreAll(db, &entity.User{})
+helper.RestoreAll(db, &user.User{})
 ```
 
 **Force Delete** (permanent):
@@ -649,16 +649,16 @@ helper.RestoreAll(db, &entity.User{})
 helper.ForceDelete(db, &user)
 
 // Permanently delete by ID
-helper.ForceDeleteByID(db, &entity.User{}, userID)
+helper.ForceDeleteByID(db, &user.User{}, userID)
 ```
 
 **Utility Functions**:
 ```go
 // Count soft deleted records
-count, err := helper.CountTrashed(db, &entity.User{})
+count, err := helper.CountTrashed(db, &user.User{})
 
 // Check if a record is soft deleted
-isTrashed, err := helper.IsTrashed(db, &entity.User{}, userID)
+isTrashed, err := helper.IsTrashed(db, &user.User{}, userID)
 ```
 
 ### Example Usage
@@ -666,7 +666,7 @@ isTrashed, err := helper.IsTrashed(db, &entity.User{}, userID)
 ```go
 // In your service
 func (s *UserService) SoftDeleteUser(id uint) error {
-    var user entity.User
+    var user user.User
     if err := s.db.First(&user, id).Error; err != nil {
         return err
     }
@@ -677,18 +677,18 @@ func (s *UserService) SoftDeleteUser(id uint) error {
 
 func (s *UserService) RestoreUser(id uint) error {
     // Restore soft deleted user
-    return helper.RestoreByID(s.db, &entity.User{}, id)
+    return helper.RestoreByID(s.db, &user.User{}, id)
 }
 
-func (s *UserService) GetDeletedUsers() ([]entity.User, error) {
-    var users []entity.User
+func (s *UserService) GetDeletedUsers() ([]user.User, error) {
+    var users []user.User
     err := helper.OnlyTrashed(s.db).Find(&users).Error
     return users, err
 }
 
 func (s *UserService) PermanentlyDeleteUser(id uint) error {
     // This cannot be undone!
-    return helper.ForceDeleteByID(s.db, &entity.User{}, id)
+    return helper.ForceDeleteByID(s.db, &user.User{}, id)
 }
 ```
 
@@ -742,7 +742,7 @@ type AuditLog struct {
 
 **With User Context**:
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Create audit logger
 logger := helper.NewAuditLogger(config.DB).
@@ -865,7 +865,7 @@ func (h *UserHandler) UpdateUser(c *fiber.Ctx) error {
     ctx = context.WithValue(ctx, "request_id", requestID)
     
     // Update will be automatically logged
-    var user entity.User
+    var user user.User
     if err := config.DB.WithContext(ctx).First(&user, userID).Error; err != nil {
         return err
     }
@@ -928,14 +928,14 @@ config.DB.Debug().
 **Avoid N+1 Queries**:
 ```go
 // ❌ Bad: N+1 queries
-var users []entity.User
+var users []user.User
 db.Find(&users)
 for _, user := range users {
     db.Model(&user).Association("Posts").Find(&user.Posts) // N queries
 }
 
 // ✅ Good: Use Preload
-var users []entity.User
+var users []user.User
 db.Preload("Posts").Find(&users) // 2 queries total
 ```
 

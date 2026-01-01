@@ -5,7 +5,7 @@
 ### 1. Basic Job Dispatch
 
 ```go
-import "starter-gofiber/jobs"
+import "starter-gofiber/internal/worker"
 
 // Send email
 jobs.SendEmailJob("user@example.com", "Subject", "Body", nil)
@@ -32,16 +32,16 @@ jobs.SendEmailAtJob(email, subject, body, time.Now().Add(24*time.Hour))
 ### 3. Queue Priority
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Critical (60% processing power)
-helper.EnqueueTaskToQueue(helper.TaskSendEmail, payload, helper.QueueCritical)
+worker.EnqueueTaskToQueue(worker.TypeEmailWelcome, payload, worker.QueueCritical)
 
 // Default (30% processing power)
-helper.EnqueueTaskToQueue(helper.TaskSendEmail, payload, helper.QueueDefault)
+worker.EnqueueTaskToQueue(worker.TypeEmailWelcome, payload, worker.QueueDefault)
 
 // Low (10% processing power)
-helper.EnqueueTaskToQueue(helper.TaskCleanupOldFiles, payload, helper.QueueLow)
+worker.EnqueueTaskToQueue(worker.TypeCleanupOldFiles, payload, worker.QueueLow)
 ```
 
 ## Task Types
@@ -77,21 +77,21 @@ MonthlyOn(15, 12, 0)         // 15th of month at 12:00
 
 ```go
 // Get queue stats
-queues, _ := helper.ListAllQueues()
-queueInfo, _ := helper.GetQueueStats("default")
+queues, _ := worker.ListAllQueues()
+queueInfo, _ := worker.GetQueueStats("default")
 
 // Pause/Resume queue
-helper.PauseQueue("low")
-helper.UnpauseQueue("low")
+worker.PauseQueue("low")
+worker.UnpauseQueue("low")
 
 // Task management
-helper.GetTaskInfo("default", "task-id")
-helper.RetryTask("default", "task-id")
-helper.DeleteTask("default", "task-id")
+worker.GetTaskInfo("default", "task-id")
+worker.RetryTask("default", "task-id")
+worker.DeleteTask("default", "task-id")
 
 // Bulk operations
-helper.DeleteAllPendingTasks("low")
-helper.ArchiveAllPendingTasks("low")
+worker.DeleteAllPendingTasks("low")
+worker.ArchiveAllPendingTasks("low")
 ```
 
 ## API Endpoints
@@ -152,13 +152,13 @@ func HandleProcessVideo(ctx context.Context, t *asynq.Task) error {
 **3. Create dispatcher** (`jobs/jobs.go`):
 ```go
 func ProcessVideoJob(videoID uint) error {
-    return helper.EnqueueTask(helper.TaskProcessVideo, VideoPayload{VideoID: videoID})
+    return worker.EnqueueTask(worker.TypeProcessVideo, VideoPayload{VideoID: videoID})
 }
 ```
 
 **4. Register** (`main.go`):
 ```go
-mux.HandleFunc(helper.TaskProcessVideo, jobs.HandleProcessVideo)
+mux.HandleFunc(worker.TypeProcessVideo, jobs.HandleProcessVideo)
 ```
 
 ## Error Handling
@@ -197,7 +197,7 @@ REDIS_DB=0
 go func() {
     ticker := time.NewTicker(5 * time.Minute)
     for range ticker.C {
-        queues, _ := helper.ListAllQueues()
+        queues, _ := worker.ListAllQueues()
         for _, q := range queues {
             log.Printf("%s: pending=%d active=%d retry=%d", 
                 q.Queue, q.Pending, q.Active, q.Retry)

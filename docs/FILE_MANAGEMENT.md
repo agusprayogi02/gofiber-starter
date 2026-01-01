@@ -35,7 +35,7 @@ The file validation system provides secure file upload with magic number checkin
 #### Basic Validation
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Using preset configuration for images
 config := helper.DefaultImageConfig() // Max 5MB
@@ -257,7 +257,7 @@ See [CLOUD_STORAGE_EXAMPLES.md](CLOUD_STORAGE_EXAMPLES.md) for complete configur
 ### Initialize S3 Client
 
 ```go
-import "starter-gofiber/config"
+import "starter-gofiber/internal/config"
 
 s3Client, err := config.InitS3Client()
 if err != nil {
@@ -1038,8 +1038,8 @@ metadata := helper.FileMetadata{
 package handler
 
 import (
-    "starter-gofiber/config"
-    "starter-gofiber/helper"
+    "starter-gofiber/internal/config"
+    "starter-gofiber/pkg/apierror"
     
     "github.com/gofiber/fiber/v2"
 )
@@ -1115,9 +1115,9 @@ Example error handling:
 ```go
 if err != nil {
     switch err.(type) {
-    case *helper.BadRequestError:
+    case *apierror.BadRequestError:
         return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err})
-    case *helper.NotFoundError:
+    case *apierror.NotFoundError:
         return c.Status(fiber.StatusNotFound).JSON(fiber.Map{"error": err})
     case *helper.UnprocessableEntityError:
         return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{"error": err})

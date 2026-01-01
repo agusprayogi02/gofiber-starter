@@ -158,7 +158,7 @@ Membersihkan input dari HTML, XSS, dan SQL injection attempts.
 ### Strip All HTML
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 clean := helper.SanitizeInput(userInput)
 ```
@@ -275,7 +275,7 @@ middleware.InitAPIKeyMiddleware(config.DB)
 ### Generate API Key
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 apiKey, err := helper.GenerateAPIKey(db, userID, "CLI Tool")
 // Returns: "randomly-generated-32-character-key"
@@ -360,7 +360,7 @@ ENCRYPTION_KEY="your-32-character-secret-key-here!!"
 ### Encrypt/Decrypt Data
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Encrypt
 encrypted, err := helper.Encrypt("sensitive data")
@@ -541,7 +541,7 @@ type User struct {
 
 // Before save
 user.SSN, _ = helper.EncryptField(user.SSN)
-user.Password = helper.HashPassword(user.Password)
+user.Password = crypto.HashPassword(user.Password)
 ```
 
 ### 5. Use API Keys for Service Accounts
