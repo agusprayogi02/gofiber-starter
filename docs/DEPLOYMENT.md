@@ -114,7 +114,7 @@ LOG_LEVEL="info"                  # debug | info | warn | error
 
 ### Development Mode
 
-File: `docker-compose.yml` (root directory)
+File: `assets/docker/docker-compose.yml`
 
 ```yaml
 version: '3.8'
@@ -123,7 +123,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: assets/docker/Dockerfile
     ports:
       - "3000:3000"
     volumes:
@@ -259,7 +259,7 @@ docker compose -f docker-compose.prod.yml down
 
 ### Development Dockerfile
 
-File: `Dockerfile`
+File: `assets/docker/Dockerfile`
 
 ```dockerfile
 FROM golang:1.20-alpine AS builder

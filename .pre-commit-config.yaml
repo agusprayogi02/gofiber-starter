@@ -1,0 +1,70 @@
+# Pre-commit hooks configuration
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+        args: [--unsafe] # Allow custom YAML tags
+      - id: check-json
+      - id: check-added-large-files
+        args: [--maxkb=1000]
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: detect-private-key
+
+  # Go specific hooks
+  - repo: https://github.com/dnephin/pre-commit-golang
+    rev: v0.5.1
+    hooks:
+      - id: go-fmt
+        args: [-w]
+      - id: go-vet
+      - id: go-mod-tidy
+      - id: golangci-lint
+        args: [--timeout=5m]
+        # Uncomment if you want to skip golangci-lint (slower)
+        # exclude: ^(tests/|mocks/)
+
+  # Makefile linting
+  - repo: https://github.com/mrtazz/checkmake
+    rev: 0.1.1
+    hooks:
+      - id: checkmake
+
+  # Dockerfile linting
+  - repo: https://github.com/hadolint/hadolint
+    rev: v2.12.0
+    hooks:
+      - id: hadolint-docker
+        args: [--ignore, DL3008, --ignore, DL3009]
+
+  # Markdown linting
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: v0.38.0
+    hooks:
+      - id: markdownlint
+        args: [--fix]
+
+# Exclude certain files/directories
+exclude: |
+  (?x)^(
+      \.git/|
+      vendor/|
+      bin/|
+      tmp/|
+      coverage\.out|
+      coverage\.html|
+      \.env|
+      \.env\.example|
+      migrations/.*\.sql
+  )
+

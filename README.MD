@@ -219,13 +219,13 @@ type User struct {
 
 ```bash
 # Build image
-docker build -t starter-gofiber .
+docker build -f assets/docker/Dockerfile -t starter-gofiber .
 
 # Run with docker-compose
-docker-compose up -d
+docker-compose -f assets/docker/docker-compose.yml up -d
 
 # Check logs
-docker-compose logs -f app
+docker-compose -f assets/docker/docker-compose.yml logs -f app
 ```
 
 ### Troubleshooting
@@ -634,7 +634,7 @@ Lihat [docs/DATABASE.md](docs/DATABASE.md) untuk dokumentasi lengkap database ma
 
 ### Dokumentasi
 - Lihat [docs/FILE_MANAGEMENT.md](docs/FILE_MANAGEMENT.md) untuk dokumentasi lengkap file management system
-- Lihat [Setup Minio](MINIO_SETUP.md) untuk panduan setup MinIO sebagai local S3-compatible storage
+- Lihat [Setup Minio](docs/MINIO_SETUP.md) untuk panduan setup MinIO sebagai local S3-compatible storage
 
 ### 9. API Features
 - [x] **Response Compression** - Gzip compression untuk response dengan 3 compression levels
@@ -649,8 +649,6 @@ Lihat [docs/API_FEATURES.md](docs/API_FEATURES.md) untuk dokumentasi lengkap API
 
 ### 10. Real-time Features
 - [x] **Server-Sent Events (SSE)** - Real-time push notifications dari server ke client dengan event types, user targeting, broadcast, dan auto keep-alive
-- [ ] **WebSocket Support** - Real-time bidirectional communication (belum diperlukan)
-- [ ] **Pub/Sub System** - Event-driven architecture (belum diperlukan)
 
 ### Dokumentasi
 Lihat [docs/SSE.md](docs/SSE.md) untuk dokumentasi lengkap SSE dengan contoh client implementation (JS, React, Vue)
@@ -679,89 +677,39 @@ Lihat [docs/BACKGROUND_JOBS.md](docs/BACKGROUND_JOBS.md) untuk dokumentasi lengk
 Lihat [docs/EMAIL.md](docs/EMAIL.md) untuk dokumentasi lengkap email notification system dengan contoh konfigurasi SMTP providers dan template customization
 
 ### 13. DevOps & CI/CD
-- [ ] **Makefile** - Common tasks automation
-- [ ] **GitHub Actions/GitLab CI** - Automated testing & deployment
-- [ ] **Docker Optimization** - Multi-stage build, smaller image size
-- [ ] **Docker Compose for Testing** - Separate compose untuk testing
-- [ ] **Kubernetes Manifests** - K8s deployment files
-- [ ] **Helm Charts** - Kubernetes package manager
-- [ ] **Pre-commit Hooks** - Automated checks sebelum commit
-- [ ] **Code Linting** - golangci-lint integration
-- [ ] **Code Formatting** - Automated formatting dengan gofmt/goimports
+- [x] **Makefile** - Automation untuk common tasks (build, test, migrate)
+- [x] **CI/CD Pipeline** - GitHub Actions untuk automated testing & deployment
+- [x] **Docker Optimization** - Multi-stage build untuk smaller image size (~90% reduction)
+- [x] **Pre-commit Hooks** - Automated checks sebelum commit (linting, formatting)
+
+### Dokumentasi
+Lihat [docs/DEVOPS.md](docs/DEVOPS.md) untuk dokumentasi lengkap DevOps & CI/CD setup
 
 ### 14. Performance
-- [ ] **Database Indexing** - Proper indexes untuk queries
-- [ ] **Query Optimization** - Analyze dan optimize slow queries
-- [ ] **Connection Pooling** - Optimize database connections
-- [ ] **Lazy Loading** - Load relations on demand
-- [ ] **Response Pagination** - Limit response size
+- [ ] **Database Indexing** - Proper indexes untuk optimize queries
 - [ ] **Request Timeout** - Timeout configuration untuk all requests
+- [ ] **Graceful Shutdown** - Proper shutdown handling untuk zero-downtime deployment
 
 ### 15. User Management
-- [ ] **User Profile** - Get/Update user profile
-- [ ] **Avatar Upload** - Profile picture management
+- [ ] **User Profile** - Get/Update user profile dengan avatar upload
 - [ ] **User Preferences** - Settings/preferences per user
-- [ ] **User Activity Log** - Track user activities
-- [ ] **User Roles & Permissions CRUD** - Manage roles via API
-- [ ] **User Impersonation** - Admin impersonate user (for support)
-- [ ] **Account Deactivation** - Soft delete user accounts
 
-### 16. Notification System
-- [ ] **In-app Notifications** - Notification center
-- [ ] **Push Notifications** - Firebase/OneSignal integration
-- [ ] **Email Notifications** - Automated email notifications
-- [ ] **SMS Notifications** - Twilio/Nexmo integration
-- [ ] **Notification Preferences** - User can choose notification channels
-
-### 17. Admin Panel Features
-- [ ] **Admin Dashboard** - Statistics dan metrics
-- [ ] **User Management** - CRUD users from admin
-- [ ] **Content Moderation** - Approve/reject user content
-- [ ] **System Settings** - Configurable settings via admin
-- [ ] **Audit Logs Viewer** - View system audit logs
-
-### 18. Internationalization (i18n)
-- [ ] **Multi-language Support** - Support multiple languages
-- [ ] **Translation Management** - Easy to add new translations
-- [ ] **Locale Detection** - Auto detect user locale
-- [ ] **Date/Time Localization** - Format based on locale
-
-### 19. Others
-- [ ] **Feature Flags** - Toggle features on/off without deployment
-- [ ] **A/B Testing Support** - Framework untuk A/B testing
-- [ ] **Analytics Integration** - Google Analytics, Mixpanel, dll
-- [ ] **Error Reporting** - Better error messages dengan codes
-- [ ] **Request Validation** - Comprehensive input validation
-- [ ] **GDPR Compliance** - Data export/delete for privacy compliance
-- [ ] **Graceful Shutdown** - Proper shutdown handling
+### 16. API Documentation
+- [ ] **Swagger/OpenAPI** - Auto-generated API documentation dengan Swagger UI
+- [ ] **API Versioning** - Version management untuk backward compatibility
 
 ## Prioritas Implementasi (Rekomendasi)
 
-### High Priority (Harus Ada)
-1. Unit & Integration Tests
-2. API Documentation (Swagger)
-3. Refresh Token & Logout
-4. Database Migration System
-5. Structured Logging
-6. Health Check & Metrics
-7. Email Verification & Password Reset
-8. API Versioning
+### High Priority
+1. **API Documentation (Swagger)** - Auto-generated API docs
+2. **Graceful Shutdown** - Zero-downtime deployment support
+3. **Database Indexing** - Query performance optimization
 
-### Medium Priority (Sangat Direkomendasikan)
-1. Redis Caching
-2. Background Job Queue
-3. File Validation & Cloud Storage
-4. Database Seeder & Backup
-5. CI/CD Pipeline
-6. Error Tracking (Sentry)
-7. User Profile Management
-8. Advanced Search & Filtering
+### Medium Priority
+1. **CI/CD Pipeline** - Automated testing & deployment
+2. **Makefile** - Development automation
+3. **User Profile Management** - Basic user profile features
 
-### Low Priority (Nice to Have)
-1. WebSocket/Real-time features
-2. GraphQL Support
-3. Multi-language Support
-4. Social Login
-5. Admin Panel Features
-6. Feature Flags
-7. A/B Testing
+### Low Priority
+1. **API Versioning** - Backward compatibility management
+2. **Request Timeout** - Request timeout configuration
