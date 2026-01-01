@@ -73,7 +73,42 @@ When your access token expires (after 1 hour):
 - Open "Authentication" > "Logout All Devices"
 - All sessions will be revoked
 
-### 5. Posts CRUD
+### 5. User Profile Management
+
+**Get Profile:**
+- Open "Authentication" > "Get Profile"
+- Returns current user's profile information (name, email, avatar, bio, etc.)
+
+**Update Profile:**
+- Open "Authentication" > "Update Profile"
+- Update name and/or bio
+- All fields are optional
+
+**Update Avatar:**
+- Open "Authentication" > "Update Avatar"
+- Upload an image file (JPEG, PNG, GIF, WebP)
+- Max file size: 5MB
+- File will be saved to `/public/avatars/`
+
+### 6. User Preferences
+
+**Get Preferences:**
+- Open "Authentication" > "Get Preferences"
+- Returns user's preferences (notifications, privacy, UI settings)
+- If preferences don't exist, returns default preferences
+
+**Update Preferences:**
+- Open "Authentication" > "Update Preferences"
+- Update any preference settings:
+  - Notification preferences (email_notifications, push_notifications, sms_notifications)
+  - Privacy settings (profile_visibility, show_email, show_online_status)
+  - UI preferences (theme, language, timezone)
+  - Custom preferences (any key-value pairs)
+- All fields are optional
+- `profile_visibility` must be: `public`, `private`, or `friends`
+- `theme` must be: `light`, `dark`, or `auto`
+
+### 7. Posts CRUD
 
 **Get All Posts:**
 - Open "Posts" > "Get All Posts"

@@ -377,6 +377,154 @@
                         }
                     },
                     "response": []
+                },
+                {
+                    "name": "Get Profile",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "profile"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Profile",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"John Updated\",\n  \"bio\": \"Updated bio text\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/profile",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "profile"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Avatar",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "avatar",
+                                    "type": "file",
+                                    "src": "",
+                                    "description": "Image file (JPEG, PNG, GIF, WebP), max 5MB"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/profile/avatar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "profile",
+                                "avatar"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Get Preferences",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/preferences",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "preferences"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Update Preferences",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{access_token}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email_notifications\": false,\n  \"push_notifications\": true,\n  \"sms_notifications\": false,\n  \"profile_visibility\": \"public\",\n  \"show_email\": false,\n  \"show_online_status\": true,\n  \"theme\": \"dark\",\n  \"language\": \"id\",\n  \"timezone\": \"Asia/Jakarta\",\n  \"custom\": {\n    \"newsletter\": true,\n    \"marketing_emails\": false\n  }\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/auth/preferences",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "auth",
+                                "preferences"
+                            ]
+                        }
+                    },
+                    "response": []
                 }
             ]
         },
