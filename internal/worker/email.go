@@ -5,7 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"starter-gofiber/helper"
+	"starter-gofiber/internal/infrastructure/email"
+	"starter-gofiber/pkg/logger"
 
 	"github.com/hibiken/asynq"
 	"go.uber.org/zap"
@@ -58,7 +59,7 @@ func EnqueueEmailWelcome(email, name string) (*asynq.TaskInfo, error) {
 	}
 
 	task := asynq.NewTask(TypeEmailWelcome, payload, asynq.Queue("email"), asynq.MaxRetry(3))
-	return helper.AsynqClientInstance.Enqueue(task)
+	return AsynqClientInstance.Enqueue(task)
 }
 
 // EnqueueEmailPasswordReset enqueues a password reset email task
@@ -72,7 +73,7 @@ func EnqueueEmailPasswordReset(email, resetToken string) (*asynq.TaskInfo, error
 	}
 
 	task := asynq.NewTask(TypeEmailPasswordReset, payload, asynq.Queue("email"), asynq.MaxRetry(3))
-	return helper.AsynqClientInstance.Enqueue(task)
+	return AsynqClientInstance.Enqueue(task)
 }
 
 // EnqueueEmailVerification enqueues an email verification task
@@ -86,7 +87,7 @@ func EnqueueEmailVerification(email, verificationToken string) (*asynq.TaskInfo,
 	}
 
 	task := asynq.NewTask(TypeEmailVerification, payload, asynq.Queue("email"), asynq.MaxRetry(3))
-	return helper.AsynqClientInstance.Enqueue(task)
+	return AsynqClientInstance.Enqueue(task)
 }
 
 // EnqueueEmailCustom enqueues a custom email task
@@ -97,7 +98,7 @@ func EnqueueEmailCustom(opts *EmailCustomPayload) (*asynq.TaskInfo, error) {
 	}
 
 	task := asynq.NewTask(TypeEmailCustom, payload, asynq.Queue("email"), asynq.MaxRetry(3))
-	return helper.AsynqClientInstance.Enqueue(task)
+	return AsynqClientInstance.Enqueue(task)
 }
 
 // HandleEmailWelcome handles welcome email tasks
@@ -107,16 +108,16 @@ func HandleEmailWelcome(ctx context.Context, t *asynq.Task) error {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
-	helper.Info("Processing welcome email job",
+	logger.Info("Processing welcome email job",
 		zap.String("email", payload.Email),
 		zap.String("name", payload.Name),
 	)
 
-	if err := helper.SendWelcomeEmail(payload.Email, payload.Name); err != nil {
+	if err := email.SendWelcomeEmail(payload.Email, payload.Name); err != nil {
 		return fmt.Errorf("failed to send welcome email: %w", err)
 	}
 
-	helper.Info("Welcome email sent successfully",
+	logger.Info("Welcome email sent successfully",
 		zap.String("email", payload.Email),
 	)
 
@@ -130,15 +131,15 @@ func HandleEmailPasswordReset(ctx context.Context, t *asynq.Task) error {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
-	helper.Info("Processing password reset email job",
+	logger.Info("Processing password reset email job",
 		zap.String("email", payload.Email),
 	)
 
-	if err := helper.SendPasswordResetEmail(payload.Email, payload.ResetToken); err != nil {
+	if err := email.SendPasswordResetEmail(payload.Email, payload.ResetToken); err != nil {
 		return fmt.Errorf("failed to send password reset email: %w", err)
 	}
 
-	helper.Info("Password reset email sent successfully",
+	logger.Info("Password reset email sent successfully",
 		zap.String("email", payload.Email),
 	)
 
@@ -152,15 +153,15 @@ func HandleEmailVerification(ctx context.Context, t *asynq.Task) error {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
-	helper.Info("Processing email verification job",
+	logger.Info("Processing email verification job",
 		zap.String("email", payload.Email),
 	)
 
-	if err := helper.SendVerificationEmail(payload.Email, payload.VerificationToken); err != nil {
+	if err := email.SendVerificationEmail(payload.Email, payload.VerificationToken); err != nil {
 		return fmt.Errorf("failed to send verification email: %w", err)
 	}
 
-	helper.Info("Verification email sent successfully",
+	logger.Info("Verification email sent successfully",
 		zap.String("email", payload.Email),
 	)
 
@@ -174,12 +175,12 @@ func HandleEmailCustom(ctx context.Context, t *asynq.Task) error {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
-	helper.Info("Processing custom email job",
+	logger.Info("Processing custom email job",
 		zap.Strings("to", payload.To),
 		zap.String("subject", payload.Subject),
 	)
 
-	opts := &helper.EmailOptions{
+	opts := &email.EmailOptions{
 		To:           payload.To,
 		CC:           payload.CC,
 		BCC:          payload.BCC,
@@ -191,11 +192,11 @@ func HandleEmailCustom(ctx context.Context, t *asynq.Task) error {
 		Attachments:  payload.Attachments,
 	}
 
-	if err := helper.SendEmail(opts); err != nil {
+	if err := email.SendEmail(opts); err != nil {
 		return fmt.Errorf("failed to send custom email: %w", err)
 	}
 
-	helper.Info("Custom email sent successfully",
+	logger.Info("Custom email sent successfully",
 		zap.Strings("to", payload.To),
 	)
 
