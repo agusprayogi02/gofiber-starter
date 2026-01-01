@@ -50,6 +50,9 @@ type EmailCustomPayload struct {
 
 // EnqueueEmailWelcome enqueues a welcome email task
 func EnqueueEmailWelcome(email, name string) (*asynq.TaskInfo, error) {
+	if AsynqClientInstance == nil {
+		return nil, fmt.Errorf("asynq client not initialized")
+	}
 	payload, err := json.Marshal(EmailWelcomePayload{
 		Email: email,
 		Name:  name,
@@ -64,6 +67,9 @@ func EnqueueEmailWelcome(email, name string) (*asynq.TaskInfo, error) {
 
 // EnqueueEmailPasswordReset enqueues a password reset email task
 func EnqueueEmailPasswordReset(email, resetToken string) (*asynq.TaskInfo, error) {
+	if AsynqClientInstance == nil {
+		return nil, fmt.Errorf("asynq client not initialized")
+	}
 	payload, err := json.Marshal(EmailPasswordResetPayload{
 		Email:      email,
 		ResetToken: resetToken,
@@ -78,6 +84,9 @@ func EnqueueEmailPasswordReset(email, resetToken string) (*asynq.TaskInfo, error
 
 // EnqueueEmailVerification enqueues an email verification task
 func EnqueueEmailVerification(email, verificationToken string) (*asynq.TaskInfo, error) {
+	if AsynqClientInstance == nil {
+		return nil, fmt.Errorf("asynq client not initialized")
+	}
 	payload, err := json.Marshal(EmailVerificationPayload{
 		Email:             email,
 		VerificationToken: verificationToken,

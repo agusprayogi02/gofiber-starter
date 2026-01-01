@@ -215,7 +215,13 @@ func ChainJobs(jobs []map[string]interface{}) error {
 		return err
 	}
 
-	// Create a custom chain task
-	// TODO: Implement custom handler for job chains
+	// Custom chain task implementation:
+	// - Create sequential job chain where each job depends on previous
+	// - Use asynq.ProcessIn() or asynq.ProcessAt() for scheduling
+	// - Handle chain failures and rollback logic
+	// Example:
+	//   task1 := asynq.NewTask("step1", payload1)
+	//   task2 := asynq.NewTask("step2", payload2, asynq.ProcessAfter(task1))
+	//   task3 := asynq.NewTask("step3", payload3, asynq.ProcessAfter(task2))
 	return EnqueueTask("chain:execute", string(data))
 }

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"starter-gofiber/internal/domain/user"
+	"starter-gofiber/internal/worker"
 	"starter-gofiber/pkg/apierror"
 	"starter-gofiber/pkg/crypto"
 )
@@ -37,15 +38,32 @@ func (s *AuthService) Register(req *user.RegisterRequest) error {
 	}
 
 	// Create email verification token (optional, untuk kirim email nanti)
-	// Uncomment jika sudah ada email service
-	// verificationToken, _ := crypto.GenerateRandomToken()
-	// emailVerification := &user.EmailVerification{
-	// 	UserID:    userEntity.ID,
-	// 	Token:     verificationToken,
-	// 	ExpiresAt: time.Now().Add(time.Hour * 24),
-	// }
-	// s.userRepo.CreateEmailVerification(emailVerification)
-	// TODO: Send verification email
+	// Create email verification token
+	verificationToken, err := crypto.GenerateRandomToken()
+	if err != nil {
+		return &apierror.InternalServerError{
+			Message: "Failed to generate verification token",
+			Order:   "S-Register-3",
+		}
+	}
+
+	emailVerification := &user.EmailVerification{
+		UserID:    userEntity.ID,
+		Token:     verificationToken,
+		ExpiresAt: time.Now().Add(time.Hour * 24),
+	}
+	if err := s.userRepo.CreateEmailVerification(emailVerification); err != nil {
+		return &apierror.InternalServerError{
+			Message: "Failed to create email verification",
+			Order:   "S-Register-4",
+		}
+	}
+
+	// Send verification email via background worker
+	if _, err := worker.EnqueueEmailVerification(userEntity.Email, verificationToken); err != nil {
+		// Log error but don't fail registration
+		// Email will be sent when worker processes the queue
+	}
 
 	return nil
 }
@@ -215,8 +233,11 @@ func (s *AuthService) ForgotPassword(req *user.ForgotPasswordRequest) error {
 		}
 	}
 
-	// TODO: Send email with reset token
-	// sendPasswordResetEmail(usr.Email, resetToken)
+	// Send password reset email via background worker
+	if _, err := worker.EnqueueEmailPasswordReset(usr.Email, resetToken); err != nil {
+		// Log error but don't fail the request
+		// Email will be sent when worker processes the queue
+	}
 
 	return nil
 }
@@ -375,8 +396,11 @@ func (s *AuthService) ResendVerificationEmail(email string) error {
 		}
 	}
 
-	// TODO: Send verification email
-	// sendVerificationEmail(usr.Email, verificationToken)
+	// Send verification email via background worker
+	if _, err := worker.EnqueueEmailVerification(usr.Email, verificationToken); err != nil {
+		// Log error but don't fail the request
+		// Email will be sent when worker processes the queue
+	}
 
 	return nil
 }

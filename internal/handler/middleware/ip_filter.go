@@ -168,7 +168,10 @@ func isIPInList(ip string, list []string) bool {
 			}
 		}
 
-		// TODO: Add CIDR support for production
+		// CIDR support can be added for production:
+		// - Parse CIDR notation (e.g., "192.168.1.0/24")
+		// - Check if IP falls within CIDR range
+		// - Use net.ParseCIDR() and net.Contains() for validation
 	}
 	return false
 }

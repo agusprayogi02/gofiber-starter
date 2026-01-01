@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"starter-gofiber/entity"
+	"starter-gofiber/internal/domain/user"
 	"starter-gofiber/variables"
 )
 
@@ -11,7 +11,7 @@ type UserClaims struct {
 	Role  string `json:"role"`
 }
 
-func (r UserClaims) FromEntity(u entity.User) UserClaims {
+func (r UserClaims) FromEntity(u user.User) UserClaims {
 	r.ID = u.ID
 	r.Email = u.Email
 	r.Role = u.Role.String()
@@ -30,12 +30,12 @@ type RegisterRequest struct {
 	Role     string `json:"role" binding:"oneof=admin user;default:user"`
 }
 
-func (r RegisterRequest) ToEntity() entity.User {
-	return entity.User{
+func (r RegisterRequest) ToEntity() user.User {
+	return user.User{
 		Name:     r.Name,
 		Email:    r.Email,
 		Password: r.Password,
-		Role:     entity.UserRole(r.Role),
+		Role:     user.UserRole(r.Role),
 	}
 }
 
@@ -48,7 +48,7 @@ type UserResponse struct {
 	UpdatedAt string `json:"updated_at"`
 }
 
-func (r UserResponse) FromEntity(u entity.User) UserResponse {
+func (r UserResponse) FromEntity(u user.User) UserResponse {
 	r.ID = u.ID
 	r.Name = u.Name
 	r.Email = u.Email
@@ -104,7 +104,7 @@ type SessionResponse struct {
 	ExpiresAt string `json:"expires_at"`
 }
 
-func (r SessionResponse) FromEntity(t entity.RefreshToken) SessionResponse {
+func (r SessionResponse) FromEntity(t user.RefreshToken) SessionResponse {
 	r.ID = t.ID
 	r.DeviceID = t.DeviceID
 	r.IPAddress = t.IPAddress

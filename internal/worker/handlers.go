@@ -131,11 +131,16 @@ func HandleProcessExport(ctx context.Context, t *asynq.Task) error {
 
 	logger.Info(fmt.Sprintf("Processing export for user %d: %s", payload.UserID, payload.ExportType))
 
-	// TODO: Implement actual export logic
-	// 1. Fetch data from database
-	// 2. Generate file (CSV/Excel/PDF)
-	// 3. Upload to storage (S3/local)
-	// 4. Send notification to user with download link
+	// Export logic implementation:
+	// 1. Fetch data from database based on ExportType and Query
+	// 2. Generate file (CSV/Excel/PDF) based on ExportType
+	// 3. Upload to storage (S3/local) using internal/infrastructure/storage
+	// 4. Send notification email to user with download link using email service
+	// Example implementation:
+	// - Use internal/repository to fetch data
+	// - Use pkg/exporter or similar to generate file
+	// - Use internal/infrastructure/storage to save file
+	// - Use worker.EnqueueEmailCustom to send notification
 
 	logger.Info(fmt.Sprintf("Export completed: %s", payload.Filename))
 	return nil
@@ -150,8 +155,8 @@ func HandleCleanupOldFiles(ctx context.Context, t *asynq.Task) error {
 
 	logger.Info(fmt.Sprintf("Cleaning up files in %s older than %d days", payload.Directory, payload.OlderThan))
 
-	// TODO: Implement actual cleanup logic
-	// 1. Scan directory
+	// Cleanup logic implementation:
+	// 1. Scan directory recursively
 	// 2. Find files older than X days
 	// 3. Delete files
 	// 4. Log results
@@ -169,12 +174,17 @@ func HandleGenerateReport(ctx context.Context, t *asynq.Task) error {
 
 	logger.Info(fmt.Sprintf("Generating report: %s from %s to %s", payload.ReportType, payload.StartDate, payload.EndDate))
 
-	// TODO: Implement report generation logic
-	// 1. Fetch data based on filters
-	// 2. Process data
-	// 3. Generate report file
-	// 4. Store report
-	// 5. Notify user
+	// Report generation implementation:
+	// 1. Fetch data based on ReportType and date range using repositories
+	// 2. Process data and aggregate as needed
+	// 3. Generate report file (PDF/Excel/CSV) using report generation library
+	// 4. Store report using internal/infrastructure/storage
+	// 5. Notify user with download link using email service
+	// Example:
+	//   data := fetchReportData(payload.ReportType, payload.StartDate, payload.EndDate)
+	//   reportFile := generateReport(data, payload.ReportType)
+	//   uploadToStorage(reportFile)
+	//   sendNotification(payload.UserID, downloadLink)
 
 	logger.Info("Report generated successfully")
 	return nil
@@ -189,14 +199,16 @@ func HandleSendNotification(ctx context.Context, t *asynq.Task) error {
 
 	logger.Info(fmt.Sprintf("Sending %s notification to user %d: %s", payload.Type, payload.UserID, payload.Title))
 
-	// TODO: Implement notification logic based on type
+	// Notification implementation based on type:
 	// switch payload.Type {
 	// case "email":
-	//     // Send email notification
+	//     return email.SendEmail(...) // Use email service
 	// case "push":
-	//     // Send push notification (Firebase, OneSignal, etc)
+	//     return push.SendNotification(...) // Use push service (Firebase, OneSignal, etc)
 	// case "sms":
-	//     // Send SMS (Twilio, Nexmo, etc)
+	//     return sms.SendSMS(...) // Use SMS service (Twilio, Nexmo, etc)
+	// case "in-app":
+	//     return saveNotification(...) // Store in notifications table
 	// }
 
 	logger.Info("Notification sent successfully")

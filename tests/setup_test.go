@@ -6,12 +6,14 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"starter-gofiber/internal/config"
 	"starter-gofiber/internal/domain/post"
 	"starter-gofiber/internal/domain/user"
 	"starter-gofiber/pkg/apierror"
+	"starter-gofiber/pkg/crypto"
 	"starter-gofiber/router"
 
 	"github.com/casbin/casbin/v2"
@@ -56,6 +58,13 @@ func SetupTestApp() *fiber.App {
 			ENV_TYPE:      "test",
 			LOCATION_CERT: "../assets/certs/certificate.pem",
 		}
+	}
+	// Set environment variable for middleware detection
+	os.Setenv("ENV_TYPE", "test")
+
+	// Initialize private key for JWT
+	if err := crypto.InitPrivateKey(config.ENV.LOCATION_CERT); err != nil {
+		panic("failed to initialize private key: " + err.Error())
 	}
 
 	app := fiber.New(fiber.Config{

@@ -43,7 +43,12 @@ func GetUserFromToken(c *fiber.Ctx) (*user.CustomClaims, error) {
 	token := c.Locals("user").(*jwt.Token)
 
 	if claim, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		data := user.CustomClaims{}.FromToken(claim)
+		data, err := user.CustomClaims{}.FromToken(claim)
+		if err != nil {
+			return nil, &apierror.UnauthorizedError{
+				Message: "Invalid token claims: " + err.Error(),
+			}
+		}
 		return &data, nil
 	} else {
 		return nil, &apierror.UnauthorizedError{

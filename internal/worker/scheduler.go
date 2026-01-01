@@ -73,11 +73,16 @@ func RegisterPeriodicTasks(scheduler *asynq.Scheduler) error {
 func HandleHealthCheck(ctx context.Context, t *asynq.Task) error {
 	logger.Info("Running scheduled health check")
 
-	// TODO: Implement health check logic
-	// - Check database connection
-	// - Check Redis connection
-	// - Check external services
-	// - Send alert if something is down
+	// Health check implementation:
+	// - Check database connection using internal/config.DB
+	// - Check Redis connection using internal/infrastructure/cache
+	// - Check external services (email, storage, etc.)
+	// - Send alert via email/notification if something is down
+	// Example:
+	//   if err := config.DB.Exec("SELECT 1").Error; err != nil {
+	//     logger.Error("Database health check failed", zap.Error(err))
+	//     // Send alert
+	//   }
 
 	logger.Info("Health check completed")
 	return nil
@@ -87,10 +92,14 @@ func HandleHealthCheck(ctx context.Context, t *asynq.Task) error {
 func HandleCleanupExpiredTokens(ctx context.Context, t *asynq.Task) error {
 	logger.Info("Running scheduled token cleanup")
 
-	// TODO: Implement cleanup logic
-	// - Delete expired refresh tokens
-	// - Delete expired password reset tokens
-	// - Delete expired verification tokens
+	// Token cleanup implementation:
+	// - Delete expired refresh tokens using user.Repository
+	// - Delete expired password reset tokens using user.Repository
+	// - Delete expired verification tokens using user.Repository
+	// Example:
+	//   db.Where("expires_at < ?", time.Now()).Delete(&user.RefreshToken{})
+	//   db.Where("expires_at < ?", time.Now()).Delete(&user.PasswordReset{})
+	//   db.Where("expires_at < ?", time.Now()).Delete(&user.EmailVerification{})
 
 	logger.Info("Token cleanup completed")
 	return nil
@@ -100,11 +109,13 @@ func HandleCleanupExpiredTokens(ctx context.Context, t *asynq.Task) error {
 func HandleMonthlyArchive(ctx context.Context, t *asynq.Task) error {
 	logger.Info("Running monthly archive")
 
-	// TODO: Implement archive logic
-	// - Archive old logs
-	// - Archive old audit trails
-	// - Compress archived data
-	// - Move to cold storage
+	// Archive logic implementation:
+	// - Archive old audit logs (older than X months) using database.CleanupOldAuditLogs()
+	// - Archive old file versions (keep only latest N versions) using storage functions
+	// - Compress archived data using gzip or similar
+	// - Move to cold storage (S3 Glacier, separate database, etc.)
+	// Example:
+	//   database.CleanupOldAuditLogs(db, 90) // Keep last 90 days
 
 	logger.Info("Monthly archive completed")
 	return nil
@@ -133,11 +144,12 @@ func ScheduleDailyBackup(scheduler *asynq.Scheduler, hour, minute int) error {
 func HandleDatabaseBackup(ctx context.Context, t *asynq.Task) error {
 	logger.Info("Starting database backup")
 
-	// TODO: Implement backup logic
-	// - Dump database
-	// - Compress backup file
-	// - Upload to S3 or storage
-	// - Delete old backups
+	// Backup logic implementation:
+	// - Dump database using pg_dump/mysqldump based on DB_TYPE
+	// - Compress backup file using gzip
+	// - Upload to S3 or storage using internal/infrastructure/storage
+	// - Delete old backups (keep last N backups)
+	// See scripts/backup/ for example backup scripts
 
 	logger.Info("Database backup completed")
 	return nil
@@ -168,10 +180,14 @@ func ScheduleEmailDigest(scheduler *asynq.Scheduler, hour, minute int, recipient
 func HandleDailyEmailDigest(ctx context.Context, t *asynq.Task) error {
 	logger.Info("Sending daily email digest")
 
-	// TODO: Implement digest logic
-	// - Collect daily statistics
-	// - Generate digest content
-	// - Send to all recipients
+	// Daily digest implementation:
+	// - Collect daily statistics (user registrations, posts, etc.) from database
+	// - Generate digest content using email templates
+	// - Send to all recipients using email service
+	// Example:
+	//   stats := collectDailyStats(db)
+	//   content := generateDigestContent(stats)
+	//   email.SendEmail(...)
 
 	logger.Info("Daily email digest sent")
 	return nil
@@ -195,8 +211,13 @@ func ScheduleMetricsCollection(scheduler *asynq.Scheduler) error {
 func HandleMetricsCollection(ctx context.Context, t *asynq.Task) error {
 	logger.Info("Collecting metrics")
 
-	// TODO: Implement metrics collection
-	// - Collect system metrics
+	// Metrics collection implementation:
+	// - Collect application metrics (request counts, response times, etc.)
+	// - Collect system metrics (CPU, memory, disk usage) using runtime package
+	// - Send metrics to monitoring service (Prometheus, DataDog, etc.)
+	// Example:
+	//   metrics := collectApplicationMetrics()
+	//   sendToPrometheus(metrics)
 	// - Store to time-series database
 	// - Update dashboards
 

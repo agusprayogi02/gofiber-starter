@@ -4,11 +4,63 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"starter-gofiber/entity"
 	"time"
 
 	"gorm.io/gorm"
 )
+
+// AuditAction represents the type of action performed
+type AuditAction string
+
+const (
+	AuditActionCreate  AuditAction = "CREATE"
+	AuditActionUpdate  AuditAction = "UPDATE"
+	AuditActionDelete  AuditAction = "DELETE"
+	AuditActionRestore AuditAction = "RESTORE"
+)
+
+// AuditLog tracks all data changes in the system
+type AuditLog struct {
+	ID uint `gorm:"primaryKey;autoIncrement" json:"id"`
+
+	// Entity information
+	EntityType string `gorm:"type:varchar(100);not null;index" json:"entity_type"` // e.g., "users", "posts"
+	EntityID   uint   `gorm:"not null;index" json:"entity_id"`                     // ID of the affected record
+
+	// Action details
+	Action      AuditAction `gorm:"type:varchar(20);not null;index" json:"action"` // CREATE, UPDATE, DELETE, RESTORE
+	Description string      `gorm:"type:text" json:"description"`                  // Human-readable description
+
+	// Change tracking
+	OldValues string `gorm:"type:json" json:"old_values,omitempty"` // JSON of old values (for UPDATE/DELETE)
+	NewValues string `gorm:"type:json" json:"new_values,omitempty"` // JSON of new values (for CREATE/UPDATE)
+
+	// User tracking
+	UserID    *uint  `gorm:"index" json:"user_id,omitempty"`        // User who performed the action (nullable for system actions)
+	Username  string `gorm:"type:varchar(255)" json:"username"`     // Cached username for quick display
+	IPAddress string `gorm:"type:varchar(45)" json:"ip_address"`    // IPv4 or IPv6
+	UserAgent string `gorm:"type:text" json:"user_agent,omitempty"` // Browser/client info
+
+	// Metadata
+	RequestID string    `gorm:"type:varchar(100);index" json:"request_id,omitempty"` // Trace request chain
+	CreatedAt time.Time `gorm:"autoCreateTime;index" json:"created_at"`
+}
+
+// TableName specifies the table name for AuditLog
+func (AuditLog) TableName() string {
+	return "audit_logs"
+}
+
+// AuditLogFilter for querying audit logs
+type AuditLogFilter struct {
+	EntityType *string
+	EntityID   *uint
+	Action     *AuditAction
+	UserID     *uint
+	StartDate  *time.Time
+	EndDate    *time.Time
+	Search     *string
+}
 
 // AuditLogger handles automatic audit logging for GORM operations
 type AuditLogger struct {
@@ -49,10 +101,10 @@ func (a *AuditLogger) LogCreate(entityType string, entityID uint, newData interf
 		return err
 	}
 
-	auditLog := entity.AuditLog{
+	auditLog := AuditLog{
 		EntityType:  entityType,
 		EntityID:    entityID,
-		Action:      entity.AuditActionCreate,
+		Action:      AuditActionCreate,
 		Description: fmt.Sprintf("Created %s #%d", entityType, entityID),
 		NewValues:   string(newValues),
 		UserID:      a.userID,
@@ -84,10 +136,10 @@ func (a *AuditLogger) LogUpdate(entityType string, entityID uint, oldData, newDa
 		description = fmt.Sprintf("Updated %s #%d: %v", entityType, entityID, changes)
 	}
 
-	auditLog := entity.AuditLog{
+	auditLog := AuditLog{
 		EntityType:  entityType,
 		EntityID:    entityID,
-		Action:      entity.AuditActionUpdate,
+		Action:      AuditActionUpdate,
 		Description: description,
 		OldValues:   string(oldValues),
 		NewValues:   string(newValues),
@@ -108,13 +160,13 @@ func (a *AuditLogger) LogDelete(entityType string, entityID uint, oldData interf
 		return err
 	}
 
-	action := entity.AuditActionDelete
+	action := AuditActionDelete
 	description := fmt.Sprintf("Deleted %s #%d", entityType, entityID)
 	if isSoftDelete {
 		description = fmt.Sprintf("Soft deleted %s #%d", entityType, entityID)
 	}
 
-	auditLog := entity.AuditLog{
+	auditLog := AuditLog{
 		EntityType:  entityType,
 		EntityID:    entityID,
 		Action:      action,
@@ -137,10 +189,10 @@ func (a *AuditLogger) LogRestore(entityType string, entityID uint, data interfac
 		return err
 	}
 
-	auditLog := entity.AuditLog{
+	auditLog := AuditLog{
 		EntityType:  entityType,
 		EntityID:    entityID,
-		Action:      entity.AuditActionRestore,
+		Action:      AuditActionRestore,
 		Description: fmt.Sprintf("Restored %s #%d", entityType, entityID),
 		NewValues:   string(newValues),
 		UserID:      a.userID,
@@ -307,24 +359,24 @@ func getEntityID(value reflect.Value) uint {
 }
 
 // GetAuditLogs retrieves audit logs with filters
-func GetAuditLogs(db *gorm.DB, filter entity.AuditLogFilter, page, limit int) ([]entity.AuditLog, int64, error) {
-	var logs []entity.AuditLog
+func GetAuditLogs(db *gorm.DB, filter AuditLogFilter, page, limit int) ([]AuditLog, int64, error) {
+	var logs []AuditLog
 	var total int64
 
-	query := db.Model(&entity.AuditLog{})
+	query := db.Model(&AuditLog{})
 
 	// Apply filters
-	if filter.EntityType != "" {
-		query = query.Where("entity_type = ?", filter.EntityType)
+	if filter.EntityType != nil && *filter.EntityType != "" {
+		query = query.Where("entity_type = ?", *filter.EntityType)
 	}
-	if filter.EntityID != nil {
+	if filter.EntityID != nil && *filter.EntityID > 0 {
 		query = query.Where("entity_id = ?", *filter.EntityID)
 	}
-	if filter.UserID != nil {
+	if filter.UserID != nil && *filter.UserID > 0 {
 		query = query.Where("user_id = ?", *filter.UserID)
 	}
-	if filter.Action != "" {
-		query = query.Where("action = ?", filter.Action)
+	if filter.Action != nil && *filter.Action != "" {
+		query = query.Where("action = ?", *filter.Action)
 	}
 	if filter.StartDate != nil {
 		query = query.Where("created_at >= ?", *filter.StartDate)
@@ -332,8 +384,9 @@ func GetAuditLogs(db *gorm.DB, filter entity.AuditLogFilter, page, limit int) ([
 	if filter.EndDate != nil {
 		query = query.Where("created_at <= ?", *filter.EndDate)
 	}
-	if filter.RequestID != "" {
-		query = query.Where("request_id = ?", filter.RequestID)
+	if filter.Search != nil && *filter.Search != "" {
+		searchPattern := "%" + *filter.Search + "%"
+		query = query.Where("description ILIKE ? OR old_values ILIKE ? OR new_values ILIKE ?", searchPattern, searchPattern, searchPattern)
 	}
 
 	// Count total
@@ -352,8 +405,8 @@ func GetAuditLogs(db *gorm.DB, filter entity.AuditLogFilter, page, limit int) ([
 }
 
 // GetEntityAuditHistory retrieves full history for a specific entity
-func GetEntityAuditHistory(db *gorm.DB, entityType string, entityID uint) ([]entity.AuditLog, error) {
-	var logs []entity.AuditLog
+func GetEntityAuditHistory(db *gorm.DB, entityType string, entityID uint) ([]AuditLog, error) {
+	var logs []AuditLog
 	err := db.Where("entity_type = ? AND entity_id = ?", entityType, entityID).
 		Order("created_at ASC").
 		Find(&logs).Error
@@ -361,8 +414,8 @@ func GetEntityAuditHistory(db *gorm.DB, entityType string, entityID uint) ([]ent
 }
 
 // GetUserActivity retrieves all activities by a user
-func GetUserActivity(db *gorm.DB, userID uint, startDate, endDate *time.Time) ([]entity.AuditLog, error) {
-	var logs []entity.AuditLog
+func GetUserActivity(db *gorm.DB, userID uint, startDate, endDate *time.Time) ([]AuditLog, error) {
+	var logs []AuditLog
 	query := db.Where("user_id = ?", userID)
 
 	if startDate != nil {
@@ -379,5 +432,5 @@ func GetUserActivity(db *gorm.DB, userID uint, startDate, endDate *time.Time) ([
 // CleanupOldAuditLogs removes audit logs older than specified days
 func CleanupOldAuditLogs(db *gorm.DB, daysToKeep int) error {
 	cutoffDate := time.Now().AddDate(0, 0, -daysToKeep)
-	return db.Where("created_at < ?", cutoffDate).Delete(&entity.AuditLog{}).Error
+	return db.Where("created_at < ?", cutoffDate).Delete(&AuditLog{}).Error
 }

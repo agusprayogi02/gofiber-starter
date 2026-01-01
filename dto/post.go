@@ -1,7 +1,7 @@
 package dto
 
 import (
-	"starter-gofiber/entity"
+	"starter-gofiber/internal/domain/post"
 	"starter-gofiber/variables"
 )
 
@@ -38,15 +38,15 @@ type PostUpdateRequest struct {
 	UserID uint    `json:"user_id" validate:"required"`
 }
 
-func (r PostRequest) ToEntity() entity.Post {
-	return entity.Post{
+func (r PostRequest) ToEntity() post.Post {
+	return post.Post{
 		Tweet:  r.Tweet,
 		Photo:  &r.Photo,
 		UserID: r.UserID,
 	}
 }
 
-func (r PostResponse) FromEntity(p entity.Post) PostResponse {
+func (r PostResponse) FromEntity(p post.Post) PostResponse {
 	r.ID = p.ID
 	r.Tweet = p.Tweet
 	if p.Photo != nil {
