@@ -1,24 +1,21 @@
 package router
 
 import (
-	"starter-gofiber/config"
-	"starter-gofiber/handler"
-	"starter-gofiber/middleware"
-	"starter-gofiber/repository"
-	"starter-gofiber/service"
+	"starter-gofiber/internal/config"
+	"starter-gofiber/internal/handler/http"
+	"starter-gofiber/internal/handler/middleware"
+	"starter-gofiber/internal/repository/postgres"
+	"starter-gofiber/internal/service/auth"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gofiber/fiber/v2"
 )
 
 func NewAuthentication(app fiber.Router, enforcer *casbin.Enforcer) {
-	userRepo := repository.NewUserRepository(config.DB)
-	refreshTokenRepo := repository.NewRefreshTokenRepository(config.DB)
-	passwordResetRepo := repository.NewPasswordResetRepository(config.DB)
-	emailVerifRepo := repository.NewEmailVerificationRepository(config.DB)
+	userRepo := postgres.NewUserRepository(config.DB)
 
-	s := service.NewAuthService(userRepo, refreshTokenRepo, passwordResetRepo, emailVerifRepo)
-	h := handler.NewAuthHandler(s)
+	s := auth.NewAuthService(userRepo)
+	h := http.NewAuthHandler(s)
 
 	// Public routes (no authentication required)
 	app.Post("/register", h.Register(enforcer))

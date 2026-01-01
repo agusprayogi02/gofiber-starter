@@ -1,14 +1,14 @@
 package router
 
 import (
-	"starter-gofiber/handler"
-	"starter-gofiber/middleware"
+	"starter-gofiber/internal/handler/http"
+	"starter-gofiber/internal/handler/middleware"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func SSERouter(app *fiber.App) {
-	sseHandler := handler.NewSSEHandler()
+	sseHandler := http.NewSSEHandler()
 
 	// SSE endpoint (requires authentication)
 	app.Get("/sse/stream", middleware.AuthMiddleware(), sseHandler.Connect)
