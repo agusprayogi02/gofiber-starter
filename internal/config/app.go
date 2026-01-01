@@ -3,8 +3,8 @@ package config
 import (
 	"time"
 
-	"starter-gofiber/pkg/dto"
 	"starter-gofiber/internal/handler/middleware"
+	"starter-gofiber/pkg/dto"
 	"starter-gofiber/variables"
 
 	"github.com/gofiber/fiber/v2"
@@ -14,7 +14,9 @@ import (
 
 func App(app *fiber.App) {
 	// HTTPS redirect (production only)
-	app.Use(middleware.HTTPSRedirectMiddleware())
+	if ENV.ENV_TYPE == "prod" {
+		app.Use(middleware.HTTPSRedirectMiddleware())
+	}
 
 	// Security headers (Helmet-like)
 	app.Use(middleware.SecurityHeadersMiddleware())

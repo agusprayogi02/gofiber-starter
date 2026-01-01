@@ -40,7 +40,15 @@ func GetPrivateKey() *rsa.PrivateKey {
 }
 
 func GetUserFromToken(c *fiber.Ctx) (*user.CustomClaims, error) {
-	token := c.Locals("user").(*jwt.Token)
+	// Check if user token exists in context
+	userToken, ok := c.Locals("user").(*jwt.Token)
+	if !ok || userToken == nil {
+		return nil, &apierror.UnauthorizedError{
+			Message: "User token not found in context",
+		}
+	}
+
+	token := userToken
 
 	if claim, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		data, err := user.CustomClaims{}.FromToken(claim)
