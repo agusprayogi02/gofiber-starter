@@ -1,0 +1,22 @@
+Verify Your Email Address
+
+Hello,
+
+Thank you for registering! Please verify your email address {{.Email}} to complete your registration.
+
+Click the link below to verify your email:
+{{.VerifyURL}}
+
+ℹ️ Important:
+- This verification link will expire in 24 hours
+- You won't be able to use all features until your email is verified
+- If you didn't create an account, you can safely ignore this email
+
+If you have any questions, feel free to contact our support team.
+
+Best regards,
+The Team
+
+---
+© 2026 Your Company. All rights reserved.
+This email was sent to {{.Email}}

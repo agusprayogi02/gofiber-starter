@@ -1,0 +1,22 @@
+Welcome to Our Platform!
+
+Hello {{.Name}},
+
+Thank you for joining our platform! We're excited to have you on board.
+
+Your account has been successfully created with the email: {{.Email}}
+
+Here are some things you can do to get started:
+- Complete your profile
+- Explore our features
+- Connect with other users
+- Check out our documentation
+
+If you have any questions or need assistance, feel free to reach out to our support team.
+
+Best regards,
+The Team
+
+---
+© 2026 Your Company. All rights reserved.
+This email was sent to {{.Email}}

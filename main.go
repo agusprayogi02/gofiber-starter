@@ -47,6 +47,11 @@ func main() {
 	}
 	defer helper.FlushSentry()
 
+	// Initialize email configuration
+	if err := helper.InitEmail(); err != nil {
+		helper.Warn("Failed to initialize email config", zap.Error(err))
+	}
+
 	config.LoadTimezone()
 	config.LoadPermissions()
 	config.LoadStorage()
@@ -150,7 +155,7 @@ func startWorkerServer() {
 	// Create task handler mux
 	mux := asynq.NewServeMux()
 
-	// Register task handlers
+	// Register task handlers (legacy)
 	mux.HandleFunc(helper.TaskSendEmail, jobs.HandleSendEmail)
 	mux.HandleFunc(helper.TaskSendVerificationCode, jobs.HandleSendVerificationEmail)
 	mux.HandleFunc(helper.TaskSendPasswordReset, jobs.HandleSendPasswordReset)
@@ -158,6 +163,12 @@ func startWorkerServer() {
 	mux.HandleFunc(helper.TaskCleanupOldFiles, jobs.HandleCleanupOldFiles)
 	mux.HandleFunc(helper.TaskGenerateReport, jobs.HandleGenerateReport)
 	mux.HandleFunc(helper.TaskSendNotification, jobs.HandleSendNotification)
+
+	// Register new email handlers (with templates & SMTP)
+	mux.HandleFunc(jobs.TypeEmailWelcome, jobs.HandleEmailWelcome)
+	mux.HandleFunc(jobs.TypeEmailPasswordReset, jobs.HandleEmailPasswordReset)
+	mux.HandleFunc(jobs.TypeEmailVerification, jobs.HandleEmailVerification)
+	mux.HandleFunc(jobs.TypeEmailCustom, jobs.HandleEmailCustom)
 
 	// Register periodic task handlers
 	mux.HandleFunc("system:health_check", jobs.HandleHealthCheck)

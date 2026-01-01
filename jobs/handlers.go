@@ -8,6 +8,7 @@ import (
 	"starter-gofiber/helper"
 
 	"github.com/hibiken/asynq"
+	"go.uber.org/zap"
 )
 
 // EmailPayload struktur data untuk email task
@@ -18,25 +19,32 @@ type EmailPayload struct {
 	Data    map[string]interface{} `json:"data,omitempty"`
 }
 
-// HandleSendEmail handler untuk task send email
+// HandleSendEmail handler untuk task send email (legacy - use email.go handlers instead)
 func HandleSendEmail(ctx context.Context, t *asynq.Task) error {
 	var payload EmailPayload
 	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
-		helper.Logger.Error(fmt.Sprintf("Failed to unmarshal email payload: %v", err))
+		helper.Error("Failed to unmarshal email payload", zap.Error(err))
 		return fmt.Errorf("json.Unmarshal failed: %w", err)
 	}
 
-	helper.Logger.Info(fmt.Sprintf("Sending email to: %s, subject: %s", payload.To, payload.Subject))
+	helper.Info("Sending email (legacy handler)",
+		zap.String("to", payload.To),
+		zap.String("subject", payload.Subject),
+	)
 
-	// TODO: Implement actual email sending logic
-	// Contoh: menggunakan SMTP, SendGrid, AWS SES, dll
-	// err := sendEmailViaSMTP(payload)
-	// if err != nil {
-	//     return err
-	// }
+	// Use new email service
+	err := helper.SendEmail(&helper.EmailOptions{
+		To:       []string{payload.To},
+		Subject:  payload.Subject,
+		HTMLBody: payload.Body,
+		TextBody: payload.Body,
+	})
+	if err != nil {
+		helper.Error("Failed to send email", zap.Error(err))
+		return err
+	}
 
-	// Simulate email sending
-	helper.Logger.Info(fmt.Sprintf("Email sent successfully to: %s", payload.To))
+	helper.Info("Email sent successfully", zap.String("to", payload.To))
 	return nil
 }
 
@@ -48,37 +56,17 @@ type VerificationEmailPayload struct {
 	URL   string `json:"url"`
 }
 
-// HandleSendVerificationEmail handler untuk verification email
+// HandleSendVerificationEmail handler untuk verification email (legacy - use email.go handlers instead)
 func HandleSendVerificationEmail(ctx context.Context, t *asynq.Task) error {
 	var payload VerificationEmailPayload
 	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
 		return fmt.Errorf("json.Unmarshal failed: %w", err)
 	}
 
-	helper.Logger.Info(fmt.Sprintf("Sending verification email to: %s", payload.Email))
+	helper.Info("Sending verification email (legacy handler)", zap.String("email", payload.Email))
 
-	// Build email content
-	emailBody := fmt.Sprintf(`
-		Hi %s,
-		
-		Please verify your email by clicking the link below:
-		%s
-		
-		This link will expire in 24 hours.
-		
-		If you didn't create an account, please ignore this email.
-	`, payload.Name, payload.URL)
-
-	emailPayload := EmailPayload{
-		To:      payload.Email,
-		Subject: "Verify Your Email Address",
-		Body:    emailBody,
-	}
-
-	// Send email (reuse HandleSendEmail logic)
-	taskData, _ := json.Marshal(emailPayload)
-	task := asynq.NewTask(helper.TaskSendEmail, taskData)
-	return HandleSendEmail(ctx, task)
+	// Use new email verification function
+	return helper.SendVerificationEmail(payload.Email, payload.Token)
 }
 
 // PasswordResetPayload untuk password reset email
@@ -89,35 +77,17 @@ type PasswordResetPayload struct {
 	URL   string `json:"url"`
 }
 
-// HandleSendPasswordReset handler untuk password reset email
+// HandleSendPasswordReset handler untuk password reset email (legacy - use email.go handlers instead)
 func HandleSendPasswordReset(ctx context.Context, t *asynq.Task) error {
 	var payload PasswordResetPayload
 	if err := json.Unmarshal(t.Payload(), &payload); err != nil {
 		return fmt.Errorf("json.Unmarshal failed: %w", err)
 	}
 
-	helper.Logger.Info(fmt.Sprintf("Sending password reset email to: %s", payload.Email))
+	helper.Info("Sending password reset email (legacy handler)", zap.String("email", payload.Email))
 
-	emailBody := fmt.Sprintf(`
-		Hi %s,
-		
-		You requested to reset your password. Click the link below to reset it:
-		%s
-		
-		This link will expire in 1 hour.
-		
-		If you didn't request this, please ignore this email.
-	`, payload.Name, payload.URL)
-
-	emailPayload := EmailPayload{
-		To:      payload.Email,
-		Subject: "Reset Your Password",
-		Body:    emailBody,
-	}
-
-	taskData, _ := json.Marshal(emailPayload)
-	task := asynq.NewTask(helper.TaskSendEmail, taskData)
-	return HandleSendEmail(ctx, task)
+	// Use new email password reset function
+	return helper.SendPasswordResetEmail(payload.Email, payload.Token)
 }
 
 // ExportPayload untuk export data task

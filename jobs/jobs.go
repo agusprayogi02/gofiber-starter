@@ -152,17 +152,58 @@ func SendEmailAtJob(to, subject, body string, processAt time.Time) error {
 	)
 }
 
+// === New Email Job Functions (Using new email service) ===
+
+// SendWelcomeEmailJob dispatch welcome email using new email service
+func SendWelcomeEmailJob(email, name string) error {
+	_, err := EnqueueEmailWelcome(email, name)
+	return err
+}
+
+// SendPasswordResetJob dispatch password reset email using new email service
+func SendPasswordResetJob(email, resetToken string) error {
+	_, err := EnqueueEmailPasswordReset(email, resetToken)
+	return err
+}
+
+// SendVerificationJob dispatch verification email using new email service
+func SendVerificationJob(email, verificationToken string) error {
+	_, err := EnqueueEmailVerification(email, verificationToken)
+	return err
+}
+
+// SendCustomEmailJob dispatch custom email using new email service
+func SendCustomEmailJob(to []string, subject, htmlBody, textBody string) error {
+	_, err := EnqueueEmailCustom(&EmailCustomPayload{
+		To:       to,
+		Subject:  subject,
+		HTMLBody: htmlBody,
+		TextBody: textBody,
+	})
+	return err
+}
+
+// SendTemplatedEmailJob dispatch templated email
+func SendTemplatedEmailJob(to []string, templateName string, data map[string]interface{}) error {
+	_, err := EnqueueEmailCustom(&EmailCustomPayload{
+		To:           to,
+		TemplateName: templateName,
+		TemplateData: data,
+	})
+	return err
+}
+
 // SendBulkEmails example for bulk email sending
 func SendBulkEmails(recipients []string, subject, body string) error {
 	for _, email := range recipients {
 		// Dispatch each email as separate job
 		if err := SendEmailJob(email, subject, body, nil); err != nil {
-			helper.Logger.Error(fmt.Sprintf("Failed to queue email for %s: %v", email, err))
+			helper.Error(fmt.Sprintf("Failed to queue email for %s", email))
 			continue
 		}
 	}
 
-	helper.Logger.Info(fmt.Sprintf("Queued %d emails successfully", len(recipients)))
+	helper.Info(fmt.Sprintf("Queued %d emails successfully", len(recipients)))
 	return nil
 }
 
