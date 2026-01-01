@@ -5,14 +5,15 @@ import (
 	"strings"
 	"time"
 
-	"starter-gofiber/entity"
-	"starter-gofiber/helper"
+	"starter-gofiber/internal/domain/post"
+	"starter-gofiber/internal/domain/user"
+	"starter-gofiber/pkg/database"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
+	gormLogger "gorm.io/gorm/logger"
 )
 
 var DB, DB2 *gorm.DB
@@ -51,14 +52,14 @@ func LoadDB() {
 		logConfig = &gorm.Config{
 			Logger: NewGormLogger(
 				200*time.Millisecond, // Slow query threshold
-				logger.Info,          // Log all queries in dev
+				gormLogger.Info,      // Log all queries in dev
 			),
 		}
 	} else {
 		logConfig = &gorm.Config{
 			Logger: NewGormLogger(
-				1*time.Second, // Slow query threshold for production
-				logger.Warn,   // Only log warnings and errors in production
+				1*time.Second,   // Slow query threshold for production
+				gormLogger.Warn, // Only log warnings and errors in production
 			),
 		}
 	}
@@ -77,15 +78,16 @@ func LoadDB() {
 		}
 
 		err = db.AutoMigrate(
-			entity.User{},
-			entity.Post{},
-			entity.RefreshToken{},
-			entity.PasswordReset{},
-			entity.EmailVerification{},
-			entity.APIKey{},
-			entity.AuditLog{},
-			entity.File{},
-			entity.FileVersion{},
+			&user.User{},
+			&post.Post{},
+			&user.RefreshToken{},
+			&user.PasswordReset{},
+			&user.EmailVerification{},
+			&user.APIKey{},
+			// TODO: Migrate AuditLog, File, FileVersion to their respective domains
+			// &audit.AuditLog{},
+			// &file.File{},
+			// &file.FileVersion{},
 		)
 		if err != nil {
 			panic(err)
@@ -114,7 +116,7 @@ func LoadDB() {
 	}
 
 	// Register audit log callbacks for automatic tracking
-	helper.RegisterAuditCallbacks(db)
+	database.RegisterAuditCallbacks(db)
 
 	DB = db
 }
@@ -142,14 +144,14 @@ func LoadDB2() {
 		logConfig = &gorm.Config{
 			Logger: NewGormLogger(
 				200*time.Millisecond,
-				logger.Info,
+				gormLogger.Info,
 			),
 		}
 	} else {
 		logConfig = &gorm.Config{
 			Logger: NewGormLogger(
 				1*time.Second,
-				logger.Warn,
+				gormLogger.Warn,
 			),
 		}
 	}
@@ -168,12 +170,12 @@ func LoadDB2() {
 		}
 
 		err = db.AutoMigrate(
-			entity.User{},
-			entity.Post{},
-			entity.RefreshToken{},
-			entity.PasswordReset{},
-			entity.EmailVerification{},
-			entity.APIKey{},
+			&user.User{},
+			&post.Post{},
+			&user.RefreshToken{},
+			&user.PasswordReset{},
+			&user.EmailVerification{},
+			&user.APIKey{},
 		)
 		if err != nil {
 			panic(err)

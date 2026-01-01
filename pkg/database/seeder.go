@@ -3,7 +3,8 @@ package database
 import (
 	"fmt"
 
-	"starter-gofiber/entity"
+	"starter-gofiber/internal/domain/post"
+	"starter-gofiber/internal/domain/user"
 	"starter-gofiber/pkg/crypto"
 	"starter-gofiber/pkg/logger"
 
@@ -54,7 +55,7 @@ func RunSeeder(db *gorm.DB, name string) error {
 
 // SeedUsers seeds sample users
 func SeedUsers(db *gorm.DB) error {
-	users := []entity.User{
+	users := []user.User{
 		{
 			Name:     "Admin User",
 			Email:    "admin@example.com",
@@ -72,18 +73,18 @@ func SeedUsers(db *gorm.DB) error {
 		},
 	}
 
-	for _, user := range users {
+	for _, usr := range users {
 		// Check if user already exists
-		var existing entity.User
-		result := db.Where("email = ?", user.Email).First(&existing)
+		var existing user.User
+		result := db.Where("email = ?", usr.Email).First(&existing)
 		if result.Error == gorm.ErrRecordNotFound {
 			// Create new user
-			if err := db.Create(&user).Error; err != nil {
+			if err := db.Create(&usr).Error; err != nil {
 				return err
 			}
-			logger.Info(fmt.Sprintf("Created user: %s", user.Email))
+			logger.Info(fmt.Sprintf("Created user: %s", usr.Email))
 		} else {
-			logger.Info(fmt.Sprintf("User already exists: %s", user.Email))
+			logger.Info(fmt.Sprintf("User already exists: %s", usr.Email))
 		}
 	}
 
@@ -93,45 +94,45 @@ func SeedUsers(db *gorm.DB) error {
 // SeedPosts seeds sample posts
 func SeedPosts(db *gorm.DB) error {
 	// Get first user
-	var user entity.User
-	if err := db.First(&user).Error; err != nil {
+	var usr user.User
+	if err := db.First(&usr).Error; err != nil {
 		return fmt.Errorf("no users found, run user seeder first")
 	}
 
-	posts := []entity.Post{
+	posts := []post.Post{
 		{
 			Tweet:  "Getting Started with Go - A comprehensive guide to getting started with Go programming language",
-			UserID: user.ID,
+			UserID: usr.ID,
 		},
 		{
 			Tweet:  "Building REST APIs with Fiber - Learn how to build fast and scalable REST APIs using Go Fiber framework",
-			UserID: user.ID,
+			UserID: usr.ID,
 		},
 		{
 			Tweet:  "Database Best Practices - Essential best practices for working with databases in Go applications",
-			UserID: user.ID,
+			UserID: usr.ID,
 		},
 		{
 			Tweet:  "Testing in Go - A deep dive into unit testing, integration testing, and benchmarking in Go",
-			UserID: user.ID,
+			UserID: usr.ID,
 		},
 		{
 			Tweet:  "Microservices Architecture - Design patterns and best practices for building microservices with Go",
-			UserID: user.ID,
+			UserID: usr.ID,
 		},
 	}
 
-	for _, post := range posts {
+	for _, p := range posts {
 		// Check if post already exists
-		var existing entity.Post
-		result := db.Where("tweet = ?", post.Tweet).First(&existing)
+		var existing post.Post
+		result := db.Where("tweet = ?", p.Tweet).First(&existing)
 		if result.Error == gorm.ErrRecordNotFound {
-			if err := db.Create(&post).Error; err != nil {
+			if err := db.Create(&p).Error; err != nil {
 				return err
 			}
-			logger.Info(fmt.Sprintf("Created post: %s", truncateText(post.Tweet, 50)))
+			logger.Info(fmt.Sprintf("Created post: %s", truncateText(p.Tweet, 50)))
 		} else {
-			logger.Info(fmt.Sprintf("Post already exists: %s", truncateText(post.Tweet, 50)))
+			logger.Info(fmt.Sprintf("Post already exists: %s", truncateText(p.Tweet, 50)))
 		}
 	}
 

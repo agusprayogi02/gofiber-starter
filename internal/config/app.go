@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"starter-gofiber/dto"
-	"starter-gofiber/middleware"
+	"starter-gofiber/internal/handler/middleware"
 	"starter-gofiber/variables"
 
 	"github.com/gofiber/fiber/v2"

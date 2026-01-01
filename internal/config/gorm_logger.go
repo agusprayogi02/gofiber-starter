@@ -3,21 +3,22 @@ package config
 import (
 	"context"
 	"fmt"
-	"starter-gofiber/helper"
 	"time"
 
+	"starter-gofiber/pkg/logger"
+
 	"go.uber.org/zap"
-	"gorm.io/gorm/logger"
+	gormLogger "gorm.io/gorm/logger"
 )
 
 // GormLogger implements gorm's logger.Interface with zap
 type GormLogger struct {
 	SlowThreshold time.Duration
-	LogLevel      logger.LogLevel
+	LogLevel      gormLogger.LogLevel
 }
 
 // NewGormLogger creates a new GORM logger
-func NewGormLogger(slowThreshold time.Duration, logLevel logger.LogLevel) *GormLogger {
+func NewGormLogger(slowThreshold time.Duration, logLevel gormLogger.LogLevel) *GormLogger {
 	return &GormLogger{
 		SlowThreshold: slowThreshold,
 		LogLevel:      logLevel,
@@ -25,7 +26,7 @@ func NewGormLogger(slowThreshold time.Duration, logLevel logger.LogLevel) *GormL
 }
 
 // LogMode sets log level
-func (l *GormLogger) LogMode(level logger.LogLevel) logger.Interface {
+func (l *GormLogger) LogMode(level gormLogger.LogLevel) gormLogger.Interface {
 	newLogger := *l
 	newLogger.LogLevel = level
 	return &newLogger
@@ -33,28 +34,28 @@ func (l *GormLogger) LogMode(level logger.LogLevel) logger.Interface {
 
 // Info logs info messages
 func (l *GormLogger) Info(ctx context.Context, msg string, data ...interface{}) {
-	if l.LogLevel >= logger.Info {
-		helper.Info(fmt.Sprintf(msg, data...))
+	if l.LogLevel >= gormLogger.Info {
+		logger.Info(fmt.Sprintf(msg, data...))
 	}
 }
 
 // Warn logs warning messages
 func (l *GormLogger) Warn(ctx context.Context, msg string, data ...interface{}) {
-	if l.LogLevel >= logger.Warn {
-		helper.Warn(fmt.Sprintf(msg, data...))
+	if l.LogLevel >= gormLogger.Warn {
+		logger.Warn(fmt.Sprintf(msg, data...))
 	}
 }
 
 // Error logs error messages
 func (l *GormLogger) Error(ctx context.Context, msg string, data ...interface{}) {
-	if l.LogLevel >= logger.Error {
-		helper.Error(fmt.Sprintf(msg, data...))
+	if l.LogLevel >= gormLogger.Error {
+		logger.Error(fmt.Sprintf(msg, data...))
 	}
 }
 
 // Trace logs SQL queries
 func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
-	if l.LogLevel <= logger.Silent {
+	if l.LogLevel <= gormLogger.Silent {
 		return
 	}
 
@@ -68,12 +69,12 @@ func (l *GormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	}
 
 	switch {
-	case err != nil && l.LogLevel >= logger.Error:
+	case err != nil && l.LogLevel >= gormLogger.Error:
 		fields = append(fields, zap.Error(err))
-		helper.Error("Database Query Error", fields...)
-	case elapsed > l.SlowThreshold && l.SlowThreshold != 0 && l.LogLevel >= logger.Warn:
-		helper.Warn("Slow Database Query", fields...)
-	case l.LogLevel >= logger.Info:
-		helper.Debug("Database Query", fields...)
+		logger.Error("Database Query Error", fields...)
+	case elapsed > l.SlowThreshold && l.SlowThreshold != 0 && l.LogLevel >= gormLogger.Warn:
+		logger.Warn("Slow Database Query", fields...)
+	case l.LogLevel >= gormLogger.Info:
+		logger.Debug("Database Query", fields...)
 	}
 }
