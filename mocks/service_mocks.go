@@ -1,8 +1,8 @@
 package mocks
 
 import (
-	"starter-gofiber/dto"
-	"starter-gofiber/entity"
+	postdomain "starter-gofiber/internal/domain/post"
+	"starter-gofiber/internal/domain/user"
 
 	"github.com/stretchr/testify/mock"
 )
@@ -12,32 +12,29 @@ type MockAuthService struct {
 	mock.Mock
 }
 
-func (m *MockAuthService) Register(req dto.RegisterRequest, enforcer interface{}) (*entity.User, error) {
-	args := m.Called(req, enforcer)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*entity.User), args.Error(1)
+func (m *MockAuthService) Register(req *user.RegisterRequest) error {
+	args := m.Called(req)
+	return args.Error(0)
 }
 
-func (m *MockAuthService) Login(req dto.LoginRequest, ipAddress, userAgent string) (*dto.LoginResponse, error) {
+func (m *MockAuthService) Login(req *user.LoginRequest, ipAddress, userAgent string) (*user.LoginResponse, error) {
 	args := m.Called(req, ipAddress, userAgent)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.LoginResponse), args.Error(1)
+	return args.Get(0).(*user.LoginResponse), args.Error(1)
 }
 
-func (m *MockAuthService) RefreshToken(req dto.RefreshTokenRequest) (*dto.RefreshTokenResponse, error) {
-	args := m.Called(req)
+func (m *MockAuthService) RefreshToken(req *user.RefreshTokenRequest, ipAddress, userAgent string) (*user.RefreshTokenResponse, error) {
+	args := m.Called(req, ipAddress, userAgent)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*dto.RefreshTokenResponse), args.Error(1)
+	return args.Get(0).(*user.RefreshTokenResponse), args.Error(1)
 }
 
-func (m *MockAuthService) Logout(userID uint, refreshToken string) error {
-	args := m.Called(userID, refreshToken)
+func (m *MockAuthService) Logout(refreshToken string) error {
+	args := m.Called(refreshToken)
 	return args.Error(0)
 }
 
@@ -46,37 +43,37 @@ func (m *MockAuthService) LogoutAll(userID uint) error {
 	return args.Error(0)
 }
 
-func (m *MockAuthService) ForgotPassword(req dto.ForgotPasswordRequest) error {
+func (m *MockAuthService) ForgotPassword(req *user.ForgotPasswordRequest) error {
 	args := m.Called(req)
 	return args.Error(0)
 }
 
-func (m *MockAuthService) ResetPassword(req dto.ResetPasswordRequest) error {
+func (m *MockAuthService) ResetPassword(req *user.ResetPasswordRequest) error {
 	args := m.Called(req)
 	return args.Error(0)
 }
 
-func (m *MockAuthService) ChangePassword(userID uint, req dto.ChangePasswordRequest) error {
+func (m *MockAuthService) ChangePassword(userID uint, req *user.ChangePasswordRequest) error {
 	args := m.Called(userID, req)
 	return args.Error(0)
 }
 
-func (m *MockAuthService) VerifyEmail(req dto.VerifyEmailRequest) error {
+func (m *MockAuthService) VerifyEmail(req *user.VerifyEmailRequest) error {
 	args := m.Called(req)
 	return args.Error(0)
 }
 
-func (m *MockAuthService) ResendVerificationEmail(userID uint) error {
-	args := m.Called(userID)
+func (m *MockAuthService) ResendVerificationEmail(email string) error {
+	args := m.Called(email)
 	return args.Error(0)
 }
 
-func (m *MockAuthService) GetActiveSessions(userID uint) ([]dto.SessionResponse, error) {
+func (m *MockAuthService) GetActiveSessions(userID uint) ([]user.SessionResponse, error) {
 	args := m.Called(userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]dto.SessionResponse), args.Error(1)
+	return args.Get(0).([]user.SessionResponse), args.Error(1)
 }
 
 func (m *MockAuthService) RevokeSession(sessionID, userID uint) error {
@@ -89,39 +86,47 @@ type MockPostService struct {
 	mock.Mock
 }
 
-func (m *MockPostService) All(page, perPage int) ([]entity.Post, dto.Pagination, error) {
-	args := m.Called(page, perPage)
+func (m *MockPostService) FindAll(page, limit int) ([]postdomain.PostResponse, *postdomain.PaginationMeta, error) {
+	args := m.Called(page, limit)
 	if args.Get(0) == nil {
-		return nil, args.Get(1).(dto.Pagination), args.Error(2)
+		return nil, args.Get(1).(*postdomain.PaginationMeta), args.Error(2)
 	}
-	return args.Get(0).([]entity.Post), args.Get(1).(dto.Pagination), args.Error(2)
+	return args.Get(0).([]postdomain.PostResponse), args.Get(1).(*postdomain.PaginationMeta), args.Error(2)
 }
 
-func (m *MockPostService) Create(post *dto.PostRequest) (*entity.Post, error) {
-	args := m.Called(post)
+func (m *MockPostService) Create(req *postdomain.PostRequest, userID uint) (*postdomain.PostResponse, error) {
+	args := m.Called(req, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entity.Post), args.Error(1)
+	return args.Get(0).(*postdomain.PostResponse), args.Error(1)
 }
 
-func (m *MockPostService) Find(id int) (*entity.Post, error) {
+func (m *MockPostService) FindByID(id uint) (*postdomain.PostResponse, error) {
 	args := m.Called(id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entity.Post), args.Error(1)
+	return args.Get(0).(*postdomain.PostResponse), args.Error(1)
 }
 
-func (m *MockPostService) Update(id int, post *dto.PostUpdateRequest) (*entity.Post, error) {
-	args := m.Called(id, post)
+func (m *MockPostService) Update(id uint, req *postdomain.PostUpdateRequest, userID uint) (*postdomain.PostResponse, error) {
+	args := m.Called(id, req, userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entity.Post), args.Error(1)
+	return args.Get(0).(*postdomain.PostResponse), args.Error(1)
 }
 
-func (m *MockPostService) Delete(id int) error {
-	args := m.Called(id)
+func (m *MockPostService) Delete(id uint, userID uint) error {
+	args := m.Called(id, userID)
 	return args.Error(0)
+}
+
+func (m *MockPostService) FindByUserID(userID uint, page, limit int) ([]postdomain.PostResponse, *postdomain.PaginationMeta, error) {
+	args := m.Called(userID, page, limit)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(*postdomain.PaginationMeta), args.Error(2)
+	}
+	return args.Get(0).([]postdomain.PostResponse), args.Get(1).(*postdomain.PaginationMeta), args.Error(2)
 }

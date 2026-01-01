@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"starter-gofiber/entity"
 	"starter-gofiber/pkg/apierror"
 	"time"
 
@@ -143,7 +142,7 @@ func CreateFile(db *gorm.DB, fileHeader *multipart.FileHeader, entityType string
 	}
 
 	// Create file version record
-	fileVersion := entity.FileVersion{
+	fileVersion := FileVersion{
 		FileID:         fileID,
 		Version:        1,
 		FileName:       fileName,
@@ -195,9 +194,9 @@ func CreateFile(db *gorm.DB, fileHeader *multipart.FileHeader, entityType string
 }
 
 // AddFileVersion adds a new version to an existing file
-func AddFileVersion(db *gorm.DB, fileID string, fileHeader *multipart.FileHeader, userID uint, userName string, dirPath string, config FileVersionConfig) (*entity.FileVersion, error) {
+func AddFileVersion(db *gorm.DB, fileID string, fileHeader *multipart.FileHeader, userID uint, userName string, dirPath string, config FileVersionConfig) (*FileVersion, error) {
 	// Get file record
-	var file entity.File
+	var file File
 	if err := db.First(&file, "id = ?", fileID).Error; err != nil {
 		return nil, &apierror.NotFoundError{
 			Message: "File not found",
@@ -212,7 +211,7 @@ func AddFileVersion(db *gorm.DB, fileID string, fileHeader *multipart.FileHeader
 	}
 
 	// Check if checksum already exists (duplicate version)
-	var existingVersion entity.FileVersion
+	var existingVersion FileVersion
 	if err := db.Where("file_id = ? AND checksum = ?", fileID, checksum).First(&existingVersion).Error; err == nil {
 		return &existingVersion, &apierror.UnprocessableEntityError{
 			Message: "Identical version already exists",
@@ -263,7 +262,7 @@ func AddFileVersion(db *gorm.DB, fileID string, fileHeader *multipart.FileHeader
 	}
 
 	// Mark previous latest version as not latest
-	if err := db.Model(&entity.FileVersion{}).Where("file_id = ? AND is_latest = ?", fileID, true).Update("is_latest", false).Error; err != nil {
+	if err := db.Model(&FileVersion{}).Where("file_id = ? AND is_latest = ?", fileID, true).Update("is_latest", false).Error; err != nil {
 		return nil, &apierror.InternalServerError{
 			Message: "Failed to update previous version",
 			Order:   "H-FileVer-Add-7",
@@ -271,7 +270,7 @@ func AddFileVersion(db *gorm.DB, fileID string, fileHeader *multipart.FileHeader
 	}
 
 	// Create new file version record
-	fileVersion := entity.FileVersion{
+	fileVersion := FileVersion{
 		FileID:         fileID,
 		Version:        newVersion,
 		FileName:       fileName,
@@ -322,8 +321,8 @@ func AddFileVersion(db *gorm.DB, fileID string, fileHeader *multipart.FileHeader
 }
 
 // GetFileVersions gets all versions of a file
-func GetFileVersions(db *gorm.DB, fileID string) ([]entity.FileVersion, error) {
-	var versions []entity.FileVersion
+func GetFileVersions(db *gorm.DB, fileID string) ([]FileVersion, error) {
+	var versions []FileVersion
 	if err := db.Where("file_id = ?", fileID).Order("version DESC").Find(&versions).Error; err != nil {
 		return nil, &apierror.InternalServerError{
 			Message: "Failed to get file versions",
@@ -334,8 +333,8 @@ func GetFileVersions(db *gorm.DB, fileID string) ([]entity.FileVersion, error) {
 }
 
 // GetFileVersion gets a specific version of a file
-func GetFileVersion(db *gorm.DB, fileID string, version int) (*entity.FileVersion, error) {
-	var fileVersion entity.FileVersion
+func GetFileVersion(db *gorm.DB, fileID string, version int) (*FileVersion, error) {
+	var fileVersion FileVersion
 	if err := db.Where("file_id = ? AND version = ?", fileID, version).First(&fileVersion).Error; err != nil {
 		return nil, &apierror.NotFoundError{
 			Message: "File version not found",
@@ -346,8 +345,8 @@ func GetFileVersion(db *gorm.DB, fileID string, version int) (*entity.FileVersio
 }
 
 // GetLatestVersion gets the latest version of a file
-func GetLatestVersion(db *gorm.DB, fileID string) (*entity.FileVersion, error) {
-	var fileVersion entity.FileVersion
+func GetLatestVersion(db *gorm.DB, fileID string) (*FileVersion, error) {
+	var fileVersion FileVersion
 	if err := db.Where("file_id = ? AND is_latest = ?", fileID, true).First(&fileVersion).Error; err != nil {
 		return nil, &apierror.NotFoundError{
 			Message: "Latest file version not found",
@@ -358,7 +357,7 @@ func GetLatestVersion(db *gorm.DB, fileID string) (*entity.FileVersion, error) {
 }
 
 // RestoreVersion restores a previous version as the latest
-func RestoreVersion(db *gorm.DB, fileID string, version int, userID uint, userName string) (*entity.FileVersion, error) {
+func RestoreVersion(db *gorm.DB, fileID string, version int, userID uint, userName string) (*FileVersion, error) {
 	// Get the version to restore
 	oldVersion, err := GetFileVersion(db, fileID, version)
 	if err != nil {
@@ -366,7 +365,7 @@ func RestoreVersion(db *gorm.DB, fileID string, version int, userID uint, userNa
 	}
 
 	// Get file record
-	var file entity.File
+	var file File
 	if err := db.First(&file, "id = ?", fileID).Error; err != nil {
 		return nil, &apierror.NotFoundError{
 			Message: "File not found",
@@ -392,7 +391,7 @@ func RestoreVersion(db *gorm.DB, fileID string, version int, userID uint, userNa
 	}
 
 	// Mark previous latest version as not latest
-	if err := db.Model(&entity.FileVersion{}).Where("file_id = ? AND is_latest = ?", fileID, true).Update("is_latest", false).Error; err != nil {
+	if err := db.Model(&FileVersion{}).Where("file_id = ? AND is_latest = ?", fileID, true).Update("is_latest", false).Error; err != nil {
 		return nil, &apierror.InternalServerError{
 			Message: "Failed to update previous version",
 			Order:   "H-FileVer-Restore-3",
@@ -400,7 +399,7 @@ func RestoreVersion(db *gorm.DB, fileID string, version int, userID uint, userNa
 	}
 
 	// Create new version record
-	newFileVersion := entity.FileVersion{
+	newFileVersion := FileVersion{
 		FileID:         fileID,
 		Version:        newVersion,
 		FileName:       newFileName,
@@ -440,7 +439,7 @@ func RestoreVersion(db *gorm.DB, fileID string, version int, userID uint, userNa
 
 // DeleteFileVersion deletes a specific version (soft delete)
 func DeleteFileVersion(db *gorm.DB, fileID string, version int) error {
-	var fileVersion entity.FileVersion
+	var fileVersion FileVersion
 	if err := db.Where("file_id = ? AND version = ?", fileID, version).First(&fileVersion).Error; err != nil {
 		return &apierror.NotFoundError{
 			Message: "File version not found",
@@ -468,7 +467,7 @@ func DeleteFileVersion(db *gorm.DB, fileID string, version int) error {
 
 // CleanupOldVersions removes old versions beyond the limit
 func CleanupOldVersions(db *gorm.DB, fileID string, maxVersions int) error {
-	var versions []entity.FileVersion
+	var versions []FileVersion
 	if err := db.Where("file_id = ?", fileID).Order("version DESC").Find(&versions).Error; err != nil {
 		return err
 	}
@@ -531,8 +530,8 @@ func CompareVersions(db *gorm.DB, fileID string, version1, version2 int) (map[st
 }
 
 // GetFileHistory gets the complete history of a file
-func GetFileHistory(db *gorm.DB, fileID string) (*entity.File, error) {
-	var file entity.File
+func GetFileHistory(db *gorm.DB, fileID string) (*File, error) {
+	var file File
 	if err := db.Preload("Versions", func(db *gorm.DB) *gorm.DB {
 		return db.Order("version DESC")
 	}).First(&file, "id = ?", fileID).Error; err != nil {
