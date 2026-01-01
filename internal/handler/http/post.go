@@ -3,7 +3,7 @@ package http
 import (
 	"strconv"
 
-	"starter-gofiber/dto"
+	"starter-gofiber/pkg/dto"
 	"starter-gofiber/internal/domain/post"
 	"starter-gofiber/internal/infrastructure/storage"
 	"starter-gofiber/pkg/apierror"

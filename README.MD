@@ -131,7 +131,7 @@ psql -U postgres -c "CREATE DATABASE starter_gofiber;"
 #### 7. Run Database Migrations
 ```bash
 # Buat table dan structure database
-go run main.go migrate up
+go run ./cmd/api/main.go migrate up
 
 # Atau menggunakan custom migration command jika ada
 # go run scripts/migrate.go up
@@ -205,7 +205,7 @@ DB_CHARSET=utf8mb4
 #### SQL Server
 Untuk SQL Server, perlu adjust enum data type di model:
 ```go
-// entity/user.go
+// internal/domain/user/entity.go
 type User struct {
     ID       uint     `gorm:"primaryKey;autoIncrement"`
     Name     string   `gorm:"type:varchar(200);not null"`
@@ -281,16 +281,6 @@ starter-gofiber/
 │   └── worker/                  # Background worker server
 │       └── main.go              # Worker server entry point (optional)
 │
-├── configs/                     # Configuration files (YAML, TOML, etc.)
-│   └── rbac/                    # RBAC configuration files
-│
-├── dto/                         # Data Transfer Objects (legacy - akan dipindahkan ke domain)
-│   ├── paginate.go              # Pagination DTO
-│   ├── post.go                  # Post-related DTOs
-│   ├── response.go              # Standard API responses
-│   ├── token.go                 # Token DTOs
-│   └── user.go                  # User-related DTOs
-│
 ├── docs/                        # Documentation files
 │   ├── API_AUTH.md              # Authentication API docs
 │   ├── API_FEATURES.md          # Advanced API features
@@ -307,16 +297,6 @@ starter-gofiber/
 │   ├── SSE.md                   # Server-Sent Events
 │   ├── TESTING.md               # Testing guide
 │   └── TEST_COVERAGE.md         # Test coverage reports
-│
-├── entity/                      # Database models (GORM) - Legacy, akan dipindahkan ke domain
-│   ├── apikey.go
-│   ├── audit_log.go
-│   ├── email_verification.go
-│   ├── file.go
-│   ├── password_reset.go
-│   ├── post.go
-│   ├── refresh_token.go
-│   └── user.go
 │
 ├── internal/                    # Private application code (tidak bisa diimport dari luar)
 │   ├── config/                  # Application configurations
@@ -428,6 +408,10 @@ starter-gofiber/
 │   │   ├── pagination.go       # Pagination helpers
 │   │   ├── seeder.go           # Database seeder
 │   │   └── soft_delete.go      # Soft delete utilities
+│   ├── dto/                     # Shared Data Transfer Objects
+│   │   ├── paginate.go         # Pagination DTO
+│   │   ├── response.go         # Standard API responses
+│   │   ├── token.go            # Token DTOs
 │   ├── logger/                  # Logging utilities
 │   │   ├── logger.go           # Zap logger wrapper
 │   │   └── sentry.go           # Sentry integration
@@ -480,12 +464,11 @@ starter-gofiber/
 ├── go.mod                       # Go module dependencies
 ├── go.sum                       # Dependency checksums
 ├── LICENSE                      # MIT License
-├── main.go                      # Legacy entry point (akan dihapus)
 ├── MINIO_SETUP.md              # MinIO setup guide
 └── README.MD                    # This file
 ```
 
-**Note:** Folder `config/`, `helper/`, `entity/`, `handler/`, `middleware/`, `jobs/`, `repository/`, dan `service/` di root adalah legacy files yang masih ada untuk backward compatibility. Semua code baru harus menggunakan struktur di `internal/` dan `pkg/`.
+**Note:** Semua code baru harus menggunakan struktur di `internal/` dan `pkg/`. Shared DTOs berada di `pkg/dto/` dan dapat digunakan oleh semua domain.
 
 ### Architecture Layers
 

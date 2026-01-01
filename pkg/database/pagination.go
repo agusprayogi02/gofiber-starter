@@ -3,7 +3,7 @@ package database
 import (
 	"math"
 
-	"starter-gofiber/dto"
+	"starter-gofiber/pkg/dto"
 
 	"gorm.io/gorm"
 )

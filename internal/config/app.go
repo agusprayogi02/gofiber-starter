@@ -3,7 +3,7 @@ package config
 import (
 	"time"
 
-	"starter-gofiber/dto"
+	"starter-gofiber/pkg/dto"
 	"starter-gofiber/internal/handler/middleware"
 	"starter-gofiber/variables"
 

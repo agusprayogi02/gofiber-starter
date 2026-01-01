@@ -266,7 +266,7 @@ import (
     "gorm.io/gorm"
     
     // Internal packages
-    "starter-gofiber/dto"
+    "starter-gofiber/pkg/dto"
     "starter-gofiber/entity"
     "starter-gofiber/helper"
 )

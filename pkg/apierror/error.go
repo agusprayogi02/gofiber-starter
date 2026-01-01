@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"starter-gofiber/dto"
+	"starter-gofiber/pkg/dto"
 	"starter-gofiber/variables"
 
 	"github.com/gofiber/fiber/v2"

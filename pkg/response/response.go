@@ -3,7 +3,7 @@ package response
 import (
 	"encoding/json"
 
-	"starter-gofiber/dto"
+	"starter-gofiber/pkg/dto"
 
 	"github.com/gofiber/fiber/v2"
 )
