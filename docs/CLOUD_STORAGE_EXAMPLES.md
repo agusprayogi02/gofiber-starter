@@ -304,7 +304,7 @@ package config
 
 import (
     "os"
-    "starter-gofiber/helper"
+    "starter-gofiber/pkg/apierror"
 )
 
 type StorageProvider string

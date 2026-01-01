@@ -1,7 +1,8 @@
 package mocks
 
 import (
-	"starter-gofiber/entity"
+	postdomain "starter-gofiber/internal/domain/post"
+	"starter-gofiber/internal/domain/user"
 
 	"github.com/stretchr/testify/mock"
 	"gorm.io/gorm"
@@ -12,28 +13,28 @@ type MockUserRepository struct {
 	mock.Mock
 }
 
-func (m *MockUserRepository) Create(user *entity.User) error {
+func (m *MockUserRepository) Create(user *user.User) error {
 	args := m.Called(user)
 	return args.Error(0)
 }
 
-func (m *MockUserRepository) FindByEmail(email string) (*entity.User, error) {
+func (m *MockUserRepository) FindByEmail(email string) (*user.User, error) {
 	args := m.Called(email)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entity.User), args.Error(1)
+	return args.Get(0).(*user.User), args.Error(1)
 }
 
-func (m *MockUserRepository) FindByID(id uint) (*entity.User, error) {
+func (m *MockUserRepository) FindByID(id uint) (*user.User, error) {
 	args := m.Called(id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entity.User), args.Error(1)
+	return args.Get(0).(*user.User), args.Error(1)
 }
 
-func (m *MockUserRepository) Update(user *entity.User) error {
+func (m *MockUserRepository) Update(user *user.User) error {
 	args := m.Called(user)
 	return args.Error(0)
 }
@@ -48,62 +49,65 @@ type MockPostRepository struct {
 	mock.Mock
 }
 
-func (m *MockPostRepository) All(page, perPage int) ([]entity.Post, int64, error) {
-	args := m.Called(page, perPage)
+func (m *MockPostRepository) FindAll(limit, offset int) ([]postdomain.Post, int64, error) {
+	args := m.Called(limit, offset)
 	if args.Get(0) == nil {
 		return nil, args.Get(1).(int64), args.Error(2)
 	}
-	return args.Get(0).([]entity.Post), args.Get(1).(int64), args.Error(2)
+	return args.Get(0).([]postdomain.Post), args.Get(1).(int64), args.Error(2)
 }
 
-func (m *MockPostRepository) Create(post *entity.Post) (*entity.Post, error) {
+func (m *MockPostRepository) Create(post *postdomain.Post) error {
 	args := m.Called(post)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*entity.Post), args.Error(1)
+	return args.Error(0)
 }
 
-func (m *MockPostRepository) Find(id int) (*entity.Post, error) {
+func (m *MockPostRepository) FindByID(id uint) (*postdomain.Post, error) {
 	args := m.Called(id)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entity.Post), args.Error(1)
+	return args.Get(0).(*postdomain.Post), args.Error(1)
 }
 
-func (m *MockPostRepository) Update(id int, post *entity.Post) (*entity.Post, error) {
-	args := m.Called(id, post)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*entity.Post), args.Error(1)
+func (m *MockPostRepository) Update(post *postdomain.Post) error {
+	args := m.Called(post)
+	return args.Error(0)
 }
 
-func (m *MockPostRepository) Delete(id int) error {
+func (m *MockPostRepository) Delete(id uint) error {
 	args := m.Called(id)
 	return args.Error(0)
 }
 
+func (m *MockPostRepository) FindByUserID(userID uint, limit, offset int) ([]postdomain.Post, int64, error) {
+	args := m.Called(userID, limit, offset)
+	if args.Get(0) == nil {
+		return nil, args.Get(1).(int64), args.Error(2)
+	}
+	return args.Get(0).([]postdomain.Post), args.Get(1).(int64), args.Error(2)
+}
+
 // MockRefreshTokenRepository is a mock implementation of RefreshTokenRepository
+// Note: RefreshToken operations are now part of user.Repository interface
 type MockRefreshTokenRepository struct {
 	mock.Mock
 }
 
-func (m *MockRefreshTokenRepository) Create(refreshToken *entity.RefreshToken) error {
-	args := m.Called(refreshToken)
+func (m *MockRefreshTokenRepository) CreateRefreshToken(token *user.RefreshToken) error {
+	args := m.Called(token)
 	return args.Error(0)
 }
 
-func (m *MockRefreshTokenRepository) FindByToken(token string) (*entity.RefreshToken, error) {
+func (m *MockRefreshTokenRepository) FindRefreshTokenByToken(token string) (*user.RefreshToken, error) {
 	args := m.Called(token)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entity.RefreshToken), args.Error(1)
+	return args.Get(0).(*user.RefreshToken), args.Error(1)
 }
 
-func (m *MockRefreshTokenRepository) RevokeToken(token string) error {
+func (m *MockRefreshTokenRepository) RevokeRefreshToken(token string) error {
 	args := m.Called(token)
 	return args.Error(0)
 }
@@ -113,102 +117,64 @@ func (m *MockRefreshTokenRepository) RevokeAllUserTokens(userID uint) error {
 	return args.Error(0)
 }
 
-func (m *MockRefreshTokenRepository) DeleteExpiredTokens() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
-func (m *MockRefreshTokenRepository) GetUserActiveSessions(userID uint) ([]entity.RefreshToken, error) {
+func (m *MockRefreshTokenRepository) FindUserRefreshTokens(userID uint) ([]user.RefreshToken, error) {
 	args := m.Called(userID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]entity.RefreshToken), args.Error(1)
+	return args.Get(0).([]user.RefreshToken), args.Error(1)
 }
 
-func (m *MockRefreshTokenRepository) RevokeSessionByID(id uint, userID uint) error {
-	args := m.Called(id, userID)
-	return args.Error(0)
-}
-
-func (m *MockRefreshTokenRepository) Delete(id uint) error {
-	args := m.Called(id)
+func (m *MockRefreshTokenRepository) RevokeSessionByID(sessionID uint, userID uint) error {
+	args := m.Called(sessionID, userID)
 	return args.Error(0)
 }
 
 // MockPasswordResetRepository is a mock implementation of PasswordResetRepository
+// Note: PasswordReset operations are now part of user.Repository interface
 type MockPasswordResetRepository struct {
 	mock.Mock
 }
 
-func (m *MockPasswordResetRepository) Create(reset *entity.PasswordReset) error {
+func (m *MockPasswordResetRepository) CreatePasswordReset(reset *user.PasswordReset) error {
 	args := m.Called(reset)
 	return args.Error(0)
 }
 
-func (m *MockPasswordResetRepository) FindByToken(token string) (*entity.PasswordReset, error) {
+func (m *MockPasswordResetRepository) FindPasswordResetByToken(token string) (*user.PasswordReset, error) {
 	args := m.Called(token)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entity.PasswordReset), args.Error(1)
+	return args.Get(0).(*user.PasswordReset), args.Error(1)
 }
 
-func (m *MockPasswordResetRepository) MarkAsUsed(id uint) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-
-func (m *MockPasswordResetRepository) DeleteUserResets(userID uint) error {
-	args := m.Called(userID)
-	return args.Error(0)
-}
-
-func (m *MockPasswordResetRepository) DeleteExpiredResets() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
-func (m *MockPasswordResetRepository) Delete(id uint) error {
-	args := m.Called(id)
+func (m *MockPasswordResetRepository) MarkPasswordResetAsUsed(token string) error {
+	args := m.Called(token)
 	return args.Error(0)
 }
 
 // MockEmailVerificationRepository is a mock implementation of EmailVerificationRepository
+// Note: EmailVerification operations are now part of user.Repository interface
 type MockEmailVerificationRepository struct {
 	mock.Mock
 }
 
-func (m *MockEmailVerificationRepository) Create(verification *entity.EmailVerification) error {
+func (m *MockEmailVerificationRepository) CreateEmailVerification(verification *user.EmailVerification) error {
 	args := m.Called(verification)
 	return args.Error(0)
 }
 
-func (m *MockEmailVerificationRepository) FindByToken(token string) (*entity.EmailVerification, error) {
+func (m *MockEmailVerificationRepository) FindEmailVerificationByToken(token string) (*user.EmailVerification, error) {
 	args := m.Called(token)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).(*entity.EmailVerification), args.Error(1)
+	return args.Get(0).(*user.EmailVerification), args.Error(1)
 }
 
-func (m *MockEmailVerificationRepository) MarkAsVerified(id uint) error {
-	args := m.Called(id)
-	return args.Error(0)
-}
-
-func (m *MockEmailVerificationRepository) DeleteUserVerifications(userID uint) error {
+func (m *MockEmailVerificationRepository) MarkEmailAsVerified(userID uint) error {
 	args := m.Called(userID)
-	return args.Error(0)
-}
-
-func (m *MockEmailVerificationRepository) DeleteExpiredVerifications() error {
-	args := m.Called()
-	return args.Error(0)
-}
-
-func (m *MockEmailVerificationRepository) Delete(id uint) error {
-	args := m.Called(id)
 	return args.Error(0)
 }
 

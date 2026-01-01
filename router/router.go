@@ -1,11 +1,11 @@
 package router
 
 import (
-	"starter-gofiber/config"
-	"starter-gofiber/dto"
-	"starter-gofiber/handler"
-	"starter-gofiber/helper"
-	"starter-gofiber/middleware"
+	"starter-gofiber/pkg/dto"
+	"starter-gofiber/internal/config"
+	"starter-gofiber/internal/handler/http"
+	"starter-gofiber/internal/handler/middleware"
+	"starter-gofiber/pkg/utils"
 	"starter-gofiber/variables"
 
 	"github.com/casbin/casbin/v2"
@@ -32,13 +32,13 @@ func AppRouter(app *fiber.App) {
 	}
 
 	// Health check endpoints
-	healthHandler := handler.NewHealthHandler()
+	healthHandler := http.NewHealthHandler()
 	app.Get("/health", healthHandler.Health)
 	app.Get("/health/ready", healthHandler.Ready)
 	app.Get("/health/live", healthHandler.Live)
 
 	// Metrics endpoint for Prometheus
-	metricsHandler := handler.NewMetricsHandler()
+	metricsHandler := http.NewMetricsHandler()
 	app.Get("/metrics", metricsHandler.Metrics)
 
 	// Ping endpoint (legacy)
@@ -46,7 +46,7 @@ func AppRouter(app *fiber.App) {
 		return c.Status(fiber.StatusOK).JSON(dto.SuccessResponse{
 			Code:      fiber.StatusOK,
 			Message:   "pong",
-			Timestamp: helper.TimeNow(),
+			Timestamp: utils.TimeNow(),
 		})
 	})
 

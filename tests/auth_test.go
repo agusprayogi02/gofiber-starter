@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	"starter-gofiber/dto"
+	"starter-gofiber/internal/domain/user"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -32,7 +32,7 @@ func (s *AuthTestSuite) SetupTest() {
 }
 
 func (s *AuthTestSuite) TestRegister_Success() {
-	payload := dto.RegisterRequest{
+	payload := user.RegisterRequest{
 		Name:     "John Doe",
 		Email:    "john@example.com",
 		Password: "Password123!",
@@ -51,7 +51,7 @@ func (s *AuthTestSuite) TestRegister_Success() {
 func (s *AuthTestSuite) TestRegister_DuplicateEmail() {
 	CreateTestUser(testDB, "existing@example.com", "hashed_password", "user")
 
-	payload := dto.RegisterRequest{
+	payload := user.RegisterRequest{
 		Name:     "Jane Doe",
 		Email:    "existing@example.com",
 		Password: "Password123!",
@@ -63,10 +63,10 @@ func (s *AuthTestSuite) TestRegister_DuplicateEmail() {
 }
 
 func (s *AuthTestSuite) TestLogin_Success() {
-	user := CreateTestUser(testDB, "test@example.com", "$2a$10$abcdefghijklmnopqrstuv", "user")
+	u := CreateTestUser(testDB, "test@example.com", "$2a$10$abcdefghijklmnopqrstuv", "user")
 
-	payload := dto.LoginRequest{
-		Email:    user.Email,
+	payload := user.LoginRequest{
+		Email:    u.Email,
 		Password: "Password123!",
 	}
 
@@ -85,7 +85,7 @@ func (s *AuthTestSuite) TestLogin_Success() {
 }
 
 func (s *AuthTestSuite) TestLogin_InvalidCredentials() {
-	payload := dto.LoginRequest{
+	payload := user.LoginRequest{
 		Email:    "nonexistent@example.com",
 		Password: "wrongpassword",
 	}
@@ -96,10 +96,10 @@ func (s *AuthTestSuite) TestLogin_InvalidCredentials() {
 }
 
 func (s *AuthTestSuite) TestRefreshToken_Success() {
-	user := CreateTestUser(testDB, "test@example.com", "hashed_password", "user")
+	u := CreateTestUser(testDB, "test@example.com", "hashed_password", "user")
 
-	loginPayload := dto.LoginRequest{
-		Email:    user.Email,
+	loginPayload := user.LoginRequest{
+		Email:    u.Email,
 		Password: "Password123!",
 	}
 
@@ -111,7 +111,7 @@ func (s *AuthTestSuite) TestRefreshToken_Success() {
 		data := loginResponse["data"].(map[string]interface{})
 		refreshToken := data["refresh_token"].(string)
 
-		refreshPayload := dto.RefreshTokenRequest{
+		refreshPayload := user.RefreshTokenRequest{
 			RefreshToken: refreshToken,
 		}
 
@@ -130,10 +130,10 @@ func (s *AuthTestSuite) TestRefreshToken_Success() {
 }
 
 func (s *AuthTestSuite) TestLogout_Success() {
-	user := CreateTestUser(testDB, "test@example.com", "hashed_password", "user")
+	u := CreateTestUser(testDB, "test@example.com", "hashed_password", "user")
 
-	loginPayload := dto.LoginRequest{
-		Email:    user.Email,
+	loginPayload := user.LoginRequest{
+		Email:    u.Email,
 		Password: "Password123!",
 	}
 
@@ -145,7 +145,7 @@ func (s *AuthTestSuite) TestLogout_Success() {
 		data := loginResponse["data"].(map[string]interface{})
 		refreshToken := data["refresh_token"].(string)
 
-		logoutPayload := dto.LogoutRequest{
+		logoutPayload := user.LogoutRequest{
 			RefreshToken: refreshToken,
 		}
 
@@ -164,7 +164,7 @@ func (s *AuthTestSuite) TestLogout_Success() {
 func (s *AuthTestSuite) TestForgotPassword_Success() {
 	CreateTestUser(testDB, "test@example.com", "hashed_password", "user")
 
-	payload := dto.ForgotPasswordRequest{
+	payload := user.ForgotPasswordRequest{
 		Email: "test@example.com",
 	}
 
@@ -180,10 +180,10 @@ func (s *AuthTestSuite) TestForgotPassword_Success() {
 }
 
 func (s *AuthTestSuite) TestChangePassword_Success() {
-	user := CreateTestUser(testDB, "test@example.com", "$2a$10$abcdefghijklmnopqrstuv", "user")
+	u := CreateTestUser(testDB, "test@example.com", "$2a$10$abcdefghijklmnopqrstuv", "user")
 
-	loginPayload := dto.LoginRequest{
-		Email:    user.Email,
+	loginPayload := user.LoginRequest{
+		Email:    u.Email,
 		Password: "Password123!",
 	}
 
@@ -195,7 +195,7 @@ func (s *AuthTestSuite) TestChangePassword_Success() {
 		data := loginResponse["data"].(map[string]interface{})
 		accessToken := data["access_token"].(string)
 
-		changePayload := dto.ChangePasswordRequest{
+		changePayload := user.ChangePasswordRequest{
 			OldPassword: "Password123!",
 			NewPassword: "NewPassword123!",
 		}

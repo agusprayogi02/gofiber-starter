@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"starter-gofiber/helper"
-	"starter-gofiber/jobs"
+	"starter-gofiber/internal/infrastructure/email"
+	"starter-gofiber/internal/worker"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -41,7 +41,7 @@ func (s *EmailTestSuite) SetupSuite() {
 	os.Setenv("APP_URL", "http://localhost:3000")
 
 	// Initialize email config
-	helper.InitEmail()
+	email.InitEmail()
 }
 
 func (s *EmailTestSuite) TearDownSuite() {
@@ -58,12 +58,12 @@ func (s *EmailTestSuite) TearDownSuite() {
 
 // Test Email Configuration
 func (s *EmailTestSuite) TestEmailConfigInitialization() {
-	s.NotNil(helper.Email, "Email config should be initialized")
-	s.Equal("localhost", helper.Email.Host)
-	s.Equal(1025, helper.Email.Port)
-	s.Equal("test@example.com", helper.Email.From)
-	s.Equal("Test App", helper.Email.FromName)
-	s.False(helper.Email.UseTLS)
+	s.NotNil(email.Email, "Email config should be initialized")
+	s.Equal("localhost", email.Email.Host)
+	s.Equal(1025, email.Email.Port)
+	s.Equal("test@example.com", email.Email.From)
+	s.Equal("Test App", email.Email.FromName)
+	s.False(email.Email.UseTLS)
 }
 
 // Test Email Template Loading
@@ -74,7 +74,7 @@ func (s *EmailTestSuite) TestLoadEmailTemplate_Welcome() {
 		"Subject": "Welcome to Our App",
 	}
 
-	template, err := helper.LoadEmailTemplate("../templates/email", "welcome", data)
+	template, err := email.LoadEmailTemplate("../templates/email", "welcome", data)
 	s.NoError(err, "Should load welcome template successfully")
 	s.NotNil(template)
 	s.Equal("Welcome to Our App", template.Subject)
@@ -92,7 +92,7 @@ func (s *EmailTestSuite) TestLoadEmailTemplate_PasswordReset() {
 		"Subject":  "Reset Your Password",
 	}
 
-	template, err := helper.LoadEmailTemplate("../templates/email", "reset-password", data)
+	template, err := email.LoadEmailTemplate("../templates/email", "reset-password", data)
 	s.NoError(err, "Should load reset-password template successfully")
 	s.NotNil(template)
 	s.Equal("Reset Your Password", template.Subject)
@@ -110,7 +110,7 @@ func (s *EmailTestSuite) TestLoadEmailTemplate_EmailVerification() {
 		"Subject":   "Verify Your Email",
 	}
 
-	template, err := helper.LoadEmailTemplate("../templates/email", "verify-email", data)
+	template, err := email.LoadEmailTemplate("../templates/email", "verify-email", data)
 	s.NoError(err, "Should load verify-email template successfully")
 	s.NotNil(template)
 	s.Equal("Verify Your Email", template.Subject)
@@ -125,22 +125,22 @@ func (s *EmailTestSuite) TestLoadEmailTemplate_NonExistent() {
 		"Subject": "Test",
 	}
 
-	template, err := helper.LoadEmailTemplate("../templates/email", "non-existent-template", data)
+	template, err := email.LoadEmailTemplate("../templates/email", "non-existent-template", data)
 	s.Error(err, "Should return error for non-existent template")
 	s.Nil(template)
 }
 
 // Test Email Task Type Constants
 func (s *EmailTestSuite) TestEmailTaskTypeConstants() {
-	s.Equal("email:welcome", jobs.TypeEmailWelcome)
-	s.Equal("email:password_reset", jobs.TypeEmailPasswordReset)
-	s.Equal("email:verification", jobs.TypeEmailVerification)
-	s.Equal("email:custom", jobs.TypeEmailCustom)
+	s.Equal("email:welcome", worker.TypeEmailWelcome)
+	s.Equal("email:password_reset", worker.TypeEmailPasswordReset)
+	s.Equal("email:verification", worker.TypeEmailVerification)
+	s.Equal("email:custom", worker.TypeEmailCustom)
 }
 
 // Test Email Payload Structures
 func (s *EmailTestSuite) TestEmailWelcomePayload() {
-	payload := jobs.EmailWelcomePayload{
+	payload := worker.EmailWelcomePayload{
 		Email: "test@example.com",
 		Name:  "Test User",
 	}
@@ -149,7 +149,7 @@ func (s *EmailTestSuite) TestEmailWelcomePayload() {
 }
 
 func (s *EmailTestSuite) TestEmailPasswordResetPayload() {
-	payload := jobs.EmailPasswordResetPayload{
+	payload := worker.EmailPasswordResetPayload{
 		Email:      "test@example.com",
 		ResetToken: "reset-token-123",
 	}
@@ -158,7 +158,7 @@ func (s *EmailTestSuite) TestEmailPasswordResetPayload() {
 }
 
 func (s *EmailTestSuite) TestEmailVerificationPayload() {
-	payload := jobs.EmailVerificationPayload{
+	payload := worker.EmailVerificationPayload{
 		Email:             "test@example.com",
 		VerificationToken: "verify-token-456",
 	}
@@ -167,7 +167,7 @@ func (s *EmailTestSuite) TestEmailVerificationPayload() {
 }
 
 func (s *EmailTestSuite) TestEmailCustomPayload() {
-	payload := &jobs.EmailCustomPayload{
+	payload := &worker.EmailCustomPayload{
 		To:       []string{"recipient@example.com"},
 		Subject:  "Custom Email",
 		HTMLBody: "<h1>Custom</h1>",
@@ -184,9 +184,9 @@ func (s *EmailTestSuite) TestEmailCustomPayload() {
 func (s *EmailTestSuite) TestEmailClientInitialized() {
 	// Email client is created internally when sending emails
 	// We test that Email config is properly initialized
-	s.NotNil(helper.Email)
-	s.NotEmpty(helper.Email.Host)
-	s.NotEmpty(helper.Email.From)
+	s.NotNil(email.Email)
+	s.NotEmpty(email.Email.Host)
+	s.NotEmpty(email.Email.From)
 }
 
 // Test Template Data Binding
@@ -198,7 +198,7 @@ func (s *EmailTestSuite) TestTemplateDataBinding_MultipleVariables() {
 		"CustomVar": "Custom Value",
 	}
 
-	template, err := helper.LoadEmailTemplate("../templates/email", "welcome", data)
+	template, err := email.LoadEmailTemplate("../templates/email", "welcome", data)
 	s.NoError(err)
 	s.Contains(template.HTMLBody, "John Doe")
 	s.Contains(template.HTMLBody, "john@example.com")
@@ -213,12 +213,12 @@ func (s *EmailTestSuite) TestFullEmailFlow_WelcomeEmail() {
 		"Subject": "Welcome!",
 	}
 
-	template, err := helper.LoadEmailTemplate("../templates/email", "welcome", data)
+	template, err := email.LoadEmailTemplate("../templates/email", "welcome", data)
 	s.NoError(err)
 	s.NotNil(template)
 
 	// 2. Prepare email options
-	opts := &helper.EmailOptions{
+	opts := &email.EmailOptions{
 		To:       []string{"integration@example.com"},
 		Subject:  template.Subject,
 		HTMLBody: template.HTMLBody,
@@ -244,7 +244,7 @@ func (s *EmailTestSuite) TestFullEmailFlow_PasswordReset() {
 		"Subject":  "Reset Your Password",
 	}
 
-	template, err := helper.LoadEmailTemplate("../templates/email", "reset-password", data)
+	template, err := email.LoadEmailTemplate("../templates/email", "reset-password", data)
 	s.NoError(err)
 
 	// 3. Validate template contains token

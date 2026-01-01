@@ -1,0 +1,16 @@
+package post
+
+import (
+	"starter-gofiber/internal/domain/user"
+
+	"gorm.io/gorm"
+)
+
+type Post struct {
+	ID     uint    `gorm:"primaryKey;autoIncrement"`
+	Tweet  string  `gorm:"type:varchar(500)"`
+	Photo  *string `gorm:"type:varchar(150)"`
+	UserID uint
+	User   *user.User `gorm:"foreignKey:UserID"`
+	gorm.Model
+}

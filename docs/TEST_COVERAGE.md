@@ -63,10 +63,10 @@ firefox coverage.html  # atau browser lain
 ### Terminal Output Example
 
 ```bash
-starter-gofiber/handler/auth.go:22:     Register        77.8%
-starter-gofiber/handler/auth.go:43:     Login           77.8%
-starter-gofiber/handler/auth.go:68:     RefreshToken    0.0%
-starter-gofiber/service/auth.go:33:     Register        81.8%
+starter-gofiber/internal/handler/http/auth.go:22:     Register        77.8%
+starter-gofiber/internal/handler/http/auth.go:43:     Login           77.8%
+starter-gofiber/internal/handler/http/auth.go:68:     RefreshToken    0.0%
+starter-gofiber/internal/service/auth.go:33:     Register        81.8%
 total:                                  (statements)    23.2%
 ```
 
@@ -134,7 +134,7 @@ go tool cover -func=coverage.out | grep "0.0%"
 // tests/auth_test.go
 func (s *AuthTestSuite) TestRefreshToken_Success() {
     // 1. Login dulu untuk dapat refresh token
-    loginReq := dto.LoginRequest{
+    loginReq := user.LoginRequest{
         Email:    "test@example.com",
         Password: "password123",
     }
@@ -247,7 +247,7 @@ test:
    ```go
    tests := []struct {
        name    string
-       input   dto.LoginRequest
+       input   user.LoginRequest
        wantErr bool
    }{
        {"Valid credentials", validReq, false},

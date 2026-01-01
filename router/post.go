@@ -1,19 +1,19 @@
 package router
 
 import (
-	"starter-gofiber/config"
-	"starter-gofiber/handler"
-	"starter-gofiber/middleware"
-	"starter-gofiber/repository"
-	"starter-gofiber/service"
+	"starter-gofiber/internal/config"
+	"starter-gofiber/internal/handler/http"
+	"starter-gofiber/internal/handler/middleware"
+	"starter-gofiber/internal/repository/postgres"
+	"starter-gofiber/internal/service/post"
 
 	"github.com/gofiber/fiber/v2"
 )
 
 func NewPostRouter(app fiber.Router) {
-	repo := repository.NewPostRepository(config.DB)
-	s := service.NewPostService(repo)
-	h := handler.NewPostHandler(s)
+	repo := postgres.NewPostRepository(config.DB)
+	s := post.NewPostService(repo)
+	h := http.NewPostHandler(s)
 
 	posts := app.Group("/posts")
 

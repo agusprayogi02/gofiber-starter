@@ -77,7 +77,7 @@ Asynq otomatis terinisialisasi saat aplikasi start (jika Redis enabled):
 if config.ENV.REDIS_ENABLE {
     // Initialize Asynq client
     asynqClient := config.InitAsynqClient()
-    helper.SetAsynqClient(asynqClient)
+    worker.SetAsynqClient(asynqClient)
     
     // Initialize scheduler
     config.InitAsynqScheduler()
@@ -97,7 +97,7 @@ if config.ENV.REDIS_ENABLE {
 ### Dispatch Job (Laravel Style)
 
 ```go
-import "starter-gofiber/jobs"
+import "starter-gofiber/internal/worker"
 
 // Send email job
 err := jobs.SendEmailJob(
@@ -129,7 +129,7 @@ err := jobs.ProcessExportJob(
 ```go
 import (
     "time"
-    "starter-gofiber/jobs"
+    "starter-gofiber/internal/worker"
 )
 
 // Send email after 5 minutes
@@ -155,27 +155,27 @@ err := jobs.SendEmailAtJob(
 Jobs dapat dikirim ke queue dengan priority berbeda:
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Critical queue (highest priority)
-helper.EnqueueTaskToQueue(
-    helper.TaskSendEmail,
+worker.EnqueueTaskToQueue(
+    worker.TypeEmailWelcome,
     payload,
-    helper.QueueCritical,
+    worker.QueueCritical,
 )
 
 // Default queue (normal priority)
-helper.EnqueueTaskToQueue(
-    helper.TaskSendEmail,
+worker.EnqueueTaskToQueue(
+    worker.TypeEmailWelcome,
     payload,
-    helper.QueueDefault,
+    worker.QueueDefault,
 )
 
 // Low queue (lowest priority)
-helper.EnqueueTaskToQueue(
-    helper.TaskCleanupOldFiles,
+worker.EnqueueTaskToQueue(
+    worker.TypeCleanupOldFiles,
     payload,
-    helper.QueueLow,
+    worker.QueueLow,
 )
 ```
 
@@ -189,12 +189,12 @@ helper.EnqueueTaskToQueue(
 ```go
 import (
     "github.com/hibiken/asynq"
-    "starter-gofiber/helper"
+    "starter-gofiber/pkg/apierror"
 )
 
 // Custom retry count
-err := helper.EnqueueTaskWithRetry(
-    helper.TaskSendEmail,
+err := worker.EnqueueTaskWithRetry(
+    worker.TypeEmailWelcome,
     payload,
     5, // max 5 retries
 )
@@ -204,7 +204,7 @@ opts := []asynq.Option{
     asynq.MaxRetry(3),
     asynq.Timeout(2 * time.Minute),
 }
-err := helper.EnqueueTask(helper.TaskSendEmail, payload, opts...)
+err := worker.EnqueueTask(worker.TypeEmailWelcome, payload, opts...)
 ```
 
 ## Task Types
@@ -248,7 +248,7 @@ func HandleProcessVideo(ctx context.Context, t *asynq.Task) error {
         return fmt.Errorf("json.Unmarshal failed: %w", err)
     }
 
-    helper.Logger.Info(fmt.Sprintf("Processing video %d with quality %s", payload.VideoID, payload.Quality))
+    logger.Info(fmt.Sprintf("Processing video %d with quality %s", payload.VideoID, payload.Quality))
 
     // TODO: Implement video processing
     // - Fetch video from storage
@@ -256,7 +256,7 @@ func HandleProcessVideo(ctx context.Context, t *asynq.Task) error {
     // - Save to output directory
     // - Update database
 
-    helper.Logger.Info("Video processing completed")
+    logger.Info("Video processing completed")
     return nil
 }
 ```
@@ -272,10 +272,10 @@ func ProcessVideoJob(videoID uint, quality, outputDir string) error {
         OutputDir: outputDir,
     }
 
-    return helper.EnqueueTaskToQueue(
-        helper.TaskProcessVideo,
+    return worker.EnqueueTaskToQueue(
+        worker.TypeProcessVideo,
         payload,
-        helper.QueueLow, // Heavy processing task
+        worker.QueueLow, // Heavy processing task
     )
 }
 ```
@@ -284,7 +284,7 @@ func ProcessVideoJob(videoID uint, quality, outputDir string) error {
 
 ```go
 // main.go - startWorkerServer()
-mux.HandleFunc(helper.TaskProcessVideo, jobs.HandleProcessVideo)
+mux.HandleFunc(worker.TypeProcessVideo, jobs.HandleProcessVideo)
 ```
 
 ## Scheduled Tasks
@@ -299,13 +299,13 @@ func RegisterPeriodicTasks(scheduler *asynq.Scheduler) error {
     // Daily cleanup - every day at 2 AM
     scheduler.Register(
         "@daily 2:00",
-        asynq.NewTask(helper.TaskCleanupOldFiles, payload),
+        asynq.NewTask(worker.TypeCleanupOldFiles, payload),
     )
     
     // Weekly report - every Monday at 8 AM
     scheduler.Register(
         "0 8 * * MON",
-        asynq.NewTask(helper.TaskGenerateReport, payload),
+        asynq.NewTask(worker.TaskGenerateReport, payload),
     )
     
     // Hourly health check
@@ -344,14 +344,14 @@ MonthlyOn(15, 12, 0)         // 15th of month at 12:00
 ```go
 import (
     "time"
-    "starter-gofiber/jobs"
-    "starter-gofiber/config"
+    "starter-gofiber/internal/worker"
+    "starter-gofiber/internal/config"
 )
 
 // Schedule one-time task
 executeAt := time.Now().Add(2 * time.Hour)
 err := jobs.ScheduleOneTimeTask(
-    helper.TaskSendEmail,
+    worker.TypeEmailWelcome,
     emailPayload,
     executeAt,
 )
@@ -378,7 +378,7 @@ func ScheduleDailyBackup(scheduler *asynq.Scheduler, hour, minute int) error {
     _, err := scheduler.Register(
         cronSpec,
         asynq.NewTask("backup:database", nil),
-        asynq.Queue(helper.QueueCritical),
+        asynq.Queue(worker.QueueCritical),
     )
     
     return err
@@ -393,10 +393,10 @@ jobs.ScheduleDailyBackup(config.AsynqScheduler, 3, 0) // Daily at 03:00
 ### Monitor Queue Statistics
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Get all queues
-queues, err := helper.ListAllQueues()
+queues, err := worker.ListAllQueues()
 for _, q := range queues {
     fmt.Printf("Queue: %s\n", q.Queue)
     fmt.Printf("  Pending: %d\n", q.Pending)
@@ -407,36 +407,36 @@ for _, q := range queues {
 }
 
 // Get specific queue stats
-queueInfo, err := helper.GetQueueStats("critical")
+queueInfo, err := worker.GetQueueStats("critical")
 ```
 
 ### Queue Control
 
 ```go
 // Pause queue (stop processing)
-err := helper.PauseQueue("low")
+err := worker.PauseQueue("low")
 
 // Resume queue
-err := helper.UnpauseQueue("low")
+err := worker.UnpauseQueue("low")
 
 // Delete all pending tasks
-count, err := helper.DeleteAllPendingTasks("low")
+count, err := worker.DeleteAllPendingTasks("low")
 
 // Archive all pending tasks
-count, err := helper.ArchiveAllPendingTasks("low")
+count, err := worker.ArchiveAllPendingTasks("low")
 ```
 
 ### Task Management
 
 ```go
 // Get task info
-taskInfo, err := helper.GetTaskInfo("default", "task-id-123")
+taskInfo, err := worker.GetTaskInfo("default", "task-id-123")
 
 // Retry failed task
-err := helper.RetryTask("default", "task-id-123")
+err := worker.RetryTask("default", "task-id-123")
 
 // Delete task
-err := helper.DeleteTask("default", "task-id-123")
+err := worker.DeleteTask("default", "task-id-123")
 ```
 
 ## API Endpoints
@@ -575,7 +575,7 @@ Return error untuk retry, atau return nil untuk skip:
 func HandleSendEmail(ctx context.Context, t *asynq.Task) error {
     // Permanent error - don't retry
     if invalidEmail {
-        helper.Logger.Error("Invalid email format")
+        logger.Error("Invalid email format")
         return nil // Skip retry
     }
     
@@ -598,7 +598,7 @@ opts := []asynq.Option{
     asynq.MaxRetry(3),
 }
 
-helper.EnqueueTask(helper.TaskProcessExport, payload, opts...)
+worker.EnqueueTask(helper.TaskProcessExport, payload, opts...)
 ```
 
 ### 4. Queue Selection
@@ -618,7 +618,7 @@ Monitor job statistics secara berkala:
 go func() {
     ticker := time.NewTicker(5 * time.Minute)
     for range ticker.C {
-        queues, _ := helper.ListAllQueues()
+        queues, _ := worker.ListAllQueues()
         for _, q := range queues {
             // Send metrics to monitoring system
             sendMetric("queue.pending", q.Pending, q.Queue)
@@ -639,7 +639,7 @@ Asynq server sudah handle graceful shutdown otomatis:
 
 // Shutdown Asynq server
 if config.AsynqServer != nil {
-    helper.Info("Shutting down Asynq worker server...")
+    logger.Info("Shutting down Asynq worker server...")
     config.AsynqServer.Shutdown() // Wait for running tasks to finish
 }
 ```
@@ -674,7 +674,7 @@ if config.AsynqServer != nil {
 **Solutions**:
 1. Check error logs
    ```go
-   helper.Logger.Error("Job failed", zap.Error(err))
+   logger.Error("Job failed", zap.Error(err))
    ```
 
 2. Increase timeout

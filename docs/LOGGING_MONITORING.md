@@ -36,13 +36,13 @@ Logging dikonfigurasi otomatis berdasarkan environment (`ENV_TYPE`):
 ### Penggunaan
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 import "go.uber.org/zap"
 
 // Basic logging
-helper.Info("User logged in")
+logger.Info("User logged in")
 helper.Warn("Cache miss")
-helper.Error("Database error", zap.Error(err))
+apierror.Error("Database error", zap.Error(err))
 helper.Debug("Variable value", zap.String("key", value))
 
 // Fatal (logs and exits)
@@ -137,7 +137,7 @@ Setiap HTTP request mendapatkan unique Request ID untuk tracing.
 // Di handler/service
 func (h *PostHandler) Create(c *fiber.Ctx) error {
     requestID := middleware.GetRequestID(c)
-    helper.Info("Creating post", 
+    logger.Info("Creating post", 
         zap.String("request_id", requestID),
         zap.String("user_id", userID),
     )
@@ -173,7 +173,7 @@ Jika `SENTRY_DSN` kosong, error tracking akan di-skip (tidak error).
 ### Manual Error Capture
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 // Capture error dengan context
 func (h *Handler) SomeMethod(c *fiber.Ctx) error {
@@ -440,14 +440,14 @@ Contoh slow query dan optimisasi:
 
 ```go
 // ❌ Slow: N+1 problem
-users := []entity.User{}
+users := []user.User{}
 db.Find(&users)
 for _, user := range users {
     db.Model(&user).Association("Posts").Find(&user.Posts)
 }
 
 // ✅ Fast: Eager loading
-users := []entity.User{}
+users := []user.User{}
 db.Preload("Posts").Find(&users)
 ```
 

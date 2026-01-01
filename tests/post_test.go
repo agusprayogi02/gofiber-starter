@@ -2,9 +2,9 @@ package tests
 
 import (
 	"fmt"
+	"starter-gofiber/internal/domain/post"
+	"starter-gofiber/internal/domain/user"
 	"testing"
-
-	"starter-gofiber/dto"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -31,11 +31,11 @@ func (s *PostTestSuite) SetupTest() {
 	testDB.Exec("DELETE FROM posts")
 	testDB.Exec("DELETE FROM users")
 
-	user := CreateTestUser(testDB, "testpost@example.com", "$2a$10$abcdefghijklmnopqrstuv", "user")
-	s.userID = user.ID
+	u := CreateTestUser(testDB, "testpost@example.com", "$2a$10$abcdefghijklmnopqrstuv", "user")
+	s.userID = u.ID
 
-	loginPayload := dto.LoginRequest{
-		Email:    user.Email,
+	loginPayload := user.LoginRequest{
+		Email:    u.Email,
 		Password: "Password123!",
 	}
 
@@ -54,7 +54,7 @@ func (s *PostTestSuite) TestCreatePost_Success() {
 		s.T().Skip("No access token available")
 	}
 
-	payload := dto.CreatePostRequest{
+	payload := post.CreatePostRequest{
 		Title:   "Test Post",
 		Content: "This is a test post content",
 	}
@@ -78,7 +78,7 @@ func (s *PostTestSuite) TestCreatePost_Success() {
 }
 
 func (s *PostTestSuite) TestCreatePost_Unauthorized() {
-	payload := dto.CreatePostRequest{
+	payload := post.CreatePostRequest{
 		Title:   "Test Post",
 		Content: "This is a test post content",
 	}
@@ -104,7 +104,7 @@ func (s *PostTestSuite) TestGetPostByID_Success() {
 		s.T().Skip("No access token available")
 	}
 
-	createPayload := dto.CreatePostRequest{
+	createPayload := post.CreatePostRequest{
 		Title:   "Test Post",
 		Content: "This is a test post content",
 	}
@@ -140,7 +140,7 @@ func (s *PostTestSuite) TestUpdatePost_Success() {
 		s.T().Skip("No access token available")
 	}
 
-	createPayload := dto.CreatePostRequest{
+	createPayload := post.CreatePostRequest{
 		Title:   "Original Title",
 		Content: "Original Content",
 	}
@@ -157,7 +157,7 @@ func (s *PostTestSuite) TestUpdatePost_Success() {
 		postData := createResponse["data"].(map[string]interface{})
 		postID := postData["id"].(float64)
 
-		updatePayload := dto.UpdatePostRequest{
+		updatePayload := post.UpdatePostRequest{
 			Title:   "Updated Title",
 			Content: "Updated Content",
 		}
@@ -182,7 +182,7 @@ func (s *PostTestSuite) TestDeletePost_Success() {
 		s.T().Skip("No access token available")
 	}
 
-	createPayload := dto.CreatePostRequest{
+	createPayload := post.CreatePostRequest{
 		Title:   "Test Post",
 		Content: "This will be deleted",
 	}

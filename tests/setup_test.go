@@ -6,11 +6,14 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
-	"starter-gofiber/config"
-	"starter-gofiber/entity"
-	"starter-gofiber/helper"
+	"starter-gofiber/internal/config"
+	"starter-gofiber/internal/domain/post"
+	"starter-gofiber/internal/domain/user"
+	"starter-gofiber/pkg/apierror"
+	"starter-gofiber/pkg/crypto"
 	"starter-gofiber/router"
 
 	"github.com/casbin/casbin/v2"
@@ -32,11 +35,11 @@ func SetupTestDB() *gorm.DB {
 	}
 
 	err = db.AutoMigrate(
-		&entity.User{},
-		&entity.Post{},
-		&entity.RefreshToken{},
-		&entity.PasswordReset{},
-		&entity.EmailVerification{},
+		&user.User{},
+		&post.Post{},
+		&user.RefreshToken{},
+		&user.PasswordReset{},
+		&user.EmailVerification{},
 	)
 	if err != nil {
 		panic("failed to migrate test database: " + err.Error())
@@ -56,9 +59,16 @@ func SetupTestApp() *fiber.App {
 			LOCATION_CERT: "../assets/certs/certificate.pem",
 		}
 	}
+	// Set environment variable for middleware detection
+	os.Setenv("ENV_TYPE", "test")
+
+	// Initialize private key for JWT
+	if err := crypto.InitPrivateKey(config.ENV.LOCATION_CERT); err != nil {
+		panic("failed to initialize private key: " + err.Error())
+	}
 
 	app := fiber.New(fiber.Config{
-		ErrorHandler: helper.ErrorHelper,
+		ErrorHandler: apierror.ErrorHelper,
 	})
 
 	enforcer, err := casbin.NewEnforcer("../assets/rbac/model.conf", "../assets/rbac/policy.csv")
@@ -108,16 +118,16 @@ func ParseJSON(t *testing.T, data []byte, v interface{}) {
 	assert.NoError(t, err, "Failed to parse JSON response")
 }
 
-func CreateTestUser(db *gorm.DB, email, password, role string) *entity.User {
-	user := &entity.User{
+func CreateTestUser(db *gorm.DB, email, password, role string) *user.User {
+	usr := &user.User{
 		Name:          "Test User",
 		Email:         email,
 		Password:      password,
-		Role:          entity.UserRole(role),
+		Role:          user.UserRole(role),
 		EmailVerified: true,
 	}
-	db.Create(user)
-	return user
+	db.Create(usr)
+	return usr
 }
 
 func AssertSuccessResponse(t *testing.T, resp *http.Response, expectedCode int) {

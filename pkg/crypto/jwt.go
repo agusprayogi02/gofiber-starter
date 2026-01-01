@@ -1,0 +1,115 @@
+package crypto
+
+import (
+	"crypto/rsa"
+	"errors"
+	"os"
+	"time"
+
+	"starter-gofiber/internal/domain/user"
+	"starter-gofiber/pkg/apierror"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/log"
+	"github.com/golang-jwt/jwt/v5"
+)
+
+var privateKey *rsa.PrivateKey
+
+// InitPrivateKey initializes the RSA private key
+func InitPrivateKey(certLocation string) error {
+	privateKeyData, err := os.ReadFile(certLocation)
+	if err != nil {
+		return err
+	}
+
+	pk, err := jwt.ParseRSAPrivateKeyFromPEM(privateKeyData)
+	if err != nil {
+		return err
+	}
+
+	privateKey = pk
+	return nil
+}
+
+func GetPrivateKey() *rsa.PrivateKey {
+	if privateKey == nil {
+		log.Fatal("Private key not initialized")
+	}
+	return privateKey
+}
+
+func GetUserFromToken(c *fiber.Ctx) (*user.CustomClaims, error) {
+	// Check if user token exists in context
+	userToken, ok := c.Locals("user").(*jwt.Token)
+	if !ok || userToken == nil {
+		return nil, &apierror.UnauthorizedError{
+			Message: "User token not found in context",
+		}
+	}
+
+	token := userToken
+
+	if claim, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		data, err := user.CustomClaims{}.FromToken(claim)
+		if err != nil {
+			return nil, &apierror.UnauthorizedError{
+				Message: "Invalid token claims: " + err.Error(),
+			}
+		}
+		return &data, nil
+	} else {
+		return nil, &apierror.UnauthorizedError{
+			Message: errors.New("Token Tidak Valid " + token.Raw).Error(),
+		}
+	}
+}
+
+func GenerateJWT(userClaims user.UserClaims) (string, error) {
+	// Create the Claims
+	claims := user.CustomClaims{
+		ID:    userClaims.ID,
+		Email: userClaims.Email,
+		Role:  userClaims.Role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 1)), // Short-lived: 1 hour
+			Issuer:    "Starter-Gofiber",
+		},
+	}
+
+	// Create token
+	token := jwt.NewWithClaims(jwt.SigningMethodPS256, claims)
+
+	// Generate encoded token and send it as response.
+	return token.SignedString(GetPrivateKey())
+}
+
+func GenerateRefreshToken(userClaims user.UserClaims) (string, error) {
+	// Create the Claims for refresh token
+	claims := user.CustomClaims{
+		ID:    userClaims.ID,
+		Email: userClaims.Email,
+		Role:  userClaims.Role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 30)), // Long-lived: 30 days
+			Issuer:    "Starter-Gofiber-Refresh",
+		},
+	}
+
+	// Create token
+	token := jwt.NewWithClaims(jwt.SigningMethodPS256, claims)
+
+	// Generate encoded token
+	return token.SignedString(GetPrivateKey())
+}
+
+func GenerateRandomToken() (string, error) {
+	// Create token with random claims
+	claims := jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
+		Issuer:    "Starter-Gofiber-Token",
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodPS256, claims)
+	return token.SignedString(GetPrivateKey())
+}

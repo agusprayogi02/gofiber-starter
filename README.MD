@@ -8,8 +8,7 @@ Backend Golang With Fiber Framework
 
 Sebelum menjalankan project ini, pastikan sistem Anda telah memiliki:
 
-#### Required
-- **Go 1.20 or higher** - [Download Go](https://golang.org/dl/)
+#### Required or higher** - [Download Go](https://golang.org/dl/)
 - **PostgreSQL 14+** atau **MySQL 8+** atau **SQL Server 2019+** - Database utama
 - **Redis 6+** - Untuk caching dan background job queue (Asynq)
 - **OpenSSL** - Untuk generate RSA key pair (JWT signing)
@@ -131,7 +130,7 @@ psql -U postgres -c "CREATE DATABASE starter_gofiber;"
 #### 7. Run Database Migrations
 ```bash
 # Buat table dan structure database
-go run main.go migrate up
+go run ./cmd/api/main.go migrate up
 
 # Atau menggunakan custom migration command jika ada
 # go run scripts/migrate.go up
@@ -139,26 +138,28 @@ go run main.go migrate up
 
 #### 8. (Optional) Seed Database
 ```bash
-# Populate database dengan sample data untuk development
-go run scripts/seeder.go
+# Seeders akan dijalankan secara otomatis jika dikonfigurasi
+# Atau bisa menggunakan pkg/database seeder secara manual
 ```
 
 #### 9. Run Application
 
-**Development Mode (dengan live reload):**
+**Development Mode (dengan Air - Live Reload):**
 ```bash
+# Air akan otomatis build dan run dari cmd/api/main.go
 air
 ```
 
 **Standard Mode:**
 ```bash
-go run main.go
+# Run langsung tanpa build
+go run ./cmd/api/main.go
 ```
 
 **Build dan Run Binary:**
 ```bash
 # Build binary
-go build -o bin/app
+go build -o bin/app ./cmd/api
 
 # Run binary
 ./bin/app
@@ -203,7 +204,7 @@ DB_CHARSET=utf8mb4
 #### SQL Server
 Untuk SQL Server, perlu adjust enum data type di model:
 ```go
-// entity/user.go
+// internal/domain/user/entity.go
 type User struct {
     ID       uint     `gorm:"primaryKey;autoIncrement"`
     Name     string   `gorm:"type:varchar(200);not null"`
@@ -218,13 +219,13 @@ type User struct {
 
 ```bash
 # Build image
-docker build -t starter-gofiber .
+docker build -f assets/docker/Dockerfile -t starter-gofiber .
 
 # Run with docker-compose
-docker-compose up -d
+docker-compose -f assets/docker/docker-compose.yml up -d
 
 # Check logs
-docker-compose logs -f app
+docker-compose -f assets/docker/docker-compose.yml logs -f app
 ```
 
 ### Troubleshooting
@@ -258,26 +259,49 @@ docker run -d -p 6379:6379 redis:7-alpine
 
 ## Project Structure
 
+Project ini menggunakan **Go Standard Layout** dengan **Domain-Driven Design** dan **Clean Architecture**:
+
 ```
 starter-gofiber/
 ├── assets/                      # Static assets dan files
 │   ├── certs/                   # SSL certificates dan private keys (JWT)
 │   ├── docker/                  # Docker configurations
+│   │   ├── Dockerfile           # Default Dockerfile
+│   │   ├── Dockerfile.optimized # Optimized multi-stage Dockerfile
+│   │   ├── docker-compose.yml   # Default docker-compose
+│   │   ├── docker-compose.minio.yml  # MinIO S3 storage setup
 │   │   ├── dev/                 # Development docker setup
+│   │   │   ├── docker-compose.yml
+│   │   │   └── Dockerfile
 │   │   └── prod/                # Production docker setup
+│   │       ├── docker-compose.yml
+│   │       └── Dockerfile
 │   └── rbac/                    # Casbin RBAC policy files
 │       ├── model.conf           # RBAC model definition
 │       └── policy.csv           # Role-permission mappings
 │
 ├── backups/                     # Database backups (auto-generated)
 │
-├── config/                      # Application configurations
-│   ├── app.go                   # App config (port, name, version)
-│   ├── config.go                # Main config loader
-│   ├── database.go              # Database connection config
-│   ├── permission.go            # Casbin permission init
-│   ├── storage.go               # S3/MinIO storage config
-│   └── timezone.go              # Timezone configuration
+├── cmd/                         # Application entry points
+│   ├── api/                     # Main API server
+│   │   └── main.go              # API server entry point
+│   └── worker/                  # Background worker server
+│       └── main.go              # Worker server entry point
+│
+├── migrations/                  # Database migration files
+│   ├── README.md                # Migration documentation
+│   ├── 000003_add_user_profile_fields.up.sql
+│   └── 000003_add_user_profile_fields.down.sql
+│
+├── migrations/                  # Database migration files
+│   ├── 000003_add_user_profile_fields.up.sql
+│   └── 000003_add_user_profile_fields.down.sql
+│
+├── cmd/                         # Application entry points
+│   ├── api/                     # Main API server
+│   │   └── main.go              # API server entry point
+│   └── worker/                  # Background worker server
+│       └── main.go              # Worker server entry point (optional)
 │
 ├── docs/                        # Documentation files
 │   ├── API_AUTH.md              # Authentication API docs
@@ -286,81 +310,158 @@ starter-gofiber/
 │   ├── BACKGROUND_JOBS.md       # Background jobs & Asynq
 │   ├── CACHING.md               # Redis caching guide
 │   ├── DATABASE.md              # Database management
+│   ├── DEVOPS.md                # DevOps & CI/CD guide
 │   ├── DEPLOYMENT.md            # Deployment guide
 │   ├── EMAIL.md                 # Email system docs
 │   ├── FILE_MANAGEMENT.md       # File upload & storage
 │   ├── LOGGING_MONITORING.md    # Logging & monitoring
 │   ├── METRICS_MONITORING.md    # Metrics & health checks
+│   ├── MINIO_SETUP.md           # MinIO S3 storage setup guide
+│   ├── PERFORMANCE.md           # Performance optimization guide
 │   ├── SECURITY.md              # Security features
 │   ├── SSE.md                   # Server-Sent Events
 │   ├── TESTING.md               # Testing guide
 │   └── TEST_COVERAGE.md         # Test coverage reports
 │
-├── dto/                         # Data Transfer Objects
-│   ├── paginate.go              # Pagination DTO
-│   ├── post.go                  # Post-related DTOs
-│   ├── response.go              # Standard API responses
-│   ├── token.go                 # Token DTOs
-│   └── user.go                  # User-related DTOs
+├── internal/                    # Private application code (tidak bisa diimport dari luar)
+│   ├── config/                  # Application configurations
+│   │   ├── app.go               # App config (middleware setup)
+│   │   ├── asynq.go             # Asynq background jobs config
+│   │   ├── cloud_storage.go     # S3/MinIO storage config
+│   │   ├── config.go            # Main config loader
+│   │   ├── database.go          # Database connection config
+│   │   ├── gorm_logger.go       # GORM logger with Zap
+│   │   ├── permission.go        # Casbin permission init
+│   │   ├── permissions.go       # Permission definitions
+│   │   ├── read_replica.go      # Read replica config
+│   │   ├── redis.go             # Redis connection config
+│   │   ├── storage.go            # Storage config
+│   │   └── timezone.go          # Timezone configuration
+│   │
+│   ├── domain/                  # Domain layer (business entities & interfaces)
+│   │   ├── post/                # Post domain
+│   │   │   ├── dto.go           # Post DTOs (requests/responses)
+│   │   │   ├── entity.go        # Post entity (GORM model)
+│   │   │   ├── repository.go    # Post repository interface
+│   │   │   └── service.go       # Post service interface
+│   │   └── user/                # User domain
+│   │       ├── apikey.go        # API Key entity
+│   │       ├── dto.go           # User DTOs (requests/responses)
+│   │       ├── email_verification.go  # Email verification entity
+│   │       ├── entity.go        # User entity (GORM model)
+│   │       ├── password_reset.go      # Password reset entity
+│   │       ├── preferences.go   # User preferences entity
+│   │       ├── refresh_token.go       # Refresh token entity
+│   │       ├── repository.go    # User repository interface
+│   │       ├── service.go       # User service interface
+│   │       └── token_dto.go     # JWT token DTOs
+│   │
+│   ├── handler/                 # HTTP handlers (presentation layer)
+│   │   ├── http/                # HTTP handlers
+│   │   │   ├── auth.go          # Authentication & profile endpoints
+│   │   │   ├── auth_routes.go   # Auth route definitions
+│   │   │   ├── health.go        # Health check endpoints
+│   │   │   ├── jobs.go          # Job management endpoints
+│   │   │   ├── metrics.go       # Metrics endpoint
+│   │   │   ├── post.go          # Post CRUD endpoints
+│   │   │   ├── post_routes.go   # Post route definitions
+│   │   │   └── sse.go           # Server-Sent Events handler
+│   │   └── middleware/          # HTTP middlewares
+│   │       ├── apikey.go        # API Key authentication
+│   │       ├── auth.go          # JWT authentication
+│   │       ├── authz.go         # Casbin authorization
+│   │       ├── cache.go         # Response caching
+│   │       ├── compression.go   # Response compression
+│   │       ├── csrf.go          # CSRF protection
+│   │       ├── https.go         # HTTPS redirect
+│   │       ├── ip_filter.go     # IP filtering
+│   │       ├── logger.go         # Request logging
+│   │       ├── prometheus.go    # Prometheus metrics
+│   │       ├── rate_limiter.go   # Rate limiting
+│   │       ├── security.go      # Security headers
+│   │       └── sentry.go        # Sentry error tracking
+│   │
+│   ├── infrastructure/          # Infrastructure layer (external services)
+│   │   ├── auth/                # Authentication infrastructure
+│   │   │   └── apikey.go        # API Key management
+│   │   ├── cache/               # Caching infrastructure
+│   │   │   ├── redis.go         # Redis client wrapper
+│   │   │   └── strategy.go      # Cache strategy patterns
+│   │   ├── email/               # Email infrastructure
+│   │   │   ├── config.go        # Email configuration
+│   │   │   └── sender.go       # Email sender implementation
+│   │   └── storage/             # Storage infrastructure
+│   │       ├── handler.go       # File upload handler
+│   │       ├── image.go         # Image processing
+│   │       ├── s3.go            # S3 client wrapper
+│   │       ├── upload.go        # File upload utilities
+│   │       ├── validation.go    # File validation
+│   │       └── versioning.go     # File versioning
+│   │
+│   ├── repository/               # Data access layer
+│   │   └── postgres/            # PostgreSQL implementation
+│   │       ├── email_verification.go
+│   │       ├── password_reset.go
+│   │       ├── post.go          # Post repository implementation
+│   │       ├── refresh_token.go
+│   │       └── user.go          # User repository implementation (includes preferences)
+│   │
+│   ├── service/                 # Business logic layer
+│   │   ├── auth/                # Authentication service
+│   │   │   └── service.go       # Auth service implementation
+│   │   └── post/                # Post service
+│   │       └── service.go       # Post service implementation
+│   │
+│   └── worker/                  # Background worker (Asynq)
+│       ├── client.go            # Asynq client wrapper
+│       ├── email.go             # Email job handlers
+│       ├── handlers.go          # Job handler implementations
+│       ├── jobs.go              # Job definitions & enqueue functions
+│       └── scheduler.go         # Periodic task scheduler
 │
-├── entity/                      # Database models (GORM)
-│   ├── post.go                  # Post model
-│   └── user.go                  # User model + enums
-│
-├── handler/                     # HTTP request handlers (controllers)
-│   ├── auth.go                  # Authentication endpoints
-│   └── post.go                  # Post CRUD endpoints
-│
-├── helper/                      # Utility functions & helpers
-│   ├── database.go              # Database helpers (pagination)
-│   ├── date.go                  # Date/time utilities
-│   ├── email.go                 # Email service
-│   ├── email_config.go          # Email configuration
-│   ├── error.go                 # Custom error types
-│   ├── hash.go                  # Hashing utilities
-│   ├── jobs.go                  # Asynq job helpers
-│   ├── password.go              # Password utilities
-│   ├── response.go              # Response formatters
-│   ├── token.go                 # JWT token utilities
-│   ├── upload.go                # File upload helpers
-│   └── validation.go            # Input validation
-│
-├── jobs/                        # Background job handlers
-│   ├── email.go                 # Email job handlers
-│   ├── handlers.go              # Job handler implementations
-│   └── jobs.go                  # Job definitions
-│
-├── middleware/                  # HTTP middlewares
-│   ├── auth.go                  # JWT authentication
-│   └── authz.go                 # Casbin authorization
-│
-├── migrations/                  # Database migrations
-│   └── *.sql                    # Migration files
-│
-├── mocks/                       # Mock objects untuk testing
-│
-├── postman/                     # Postman collections
-│   └── *.json                   # API test collections
-│
-├── public/                      # Public static files
-│
-├── repository/                  # Database repository layer
-│   ├── post.go                  # Post repository
-│   ├── repository.go            # Base repository interface
-│   └── user.go                  # User repository
+├── pkg/                         # Public library code (bisa diimport dari luar)
+│   ├── apierror/                # API error types
+│   │   └── error.go            # Custom error definitions
+│   ├── crypto/                  # Cryptographic utilities
+│   │   ├── encryption.go       # AES encryption
+│   │   ├── hash.go             # Hashing utilities
+│   │   ├── jwt.go              # JWT token utilities
+│   │   └── password.go         # Password hashing (bcrypt)
+│   ├── database/                # Database utilities
+│   │   ├── audit.go            # Audit logging
+│   │   ├── bulk.go             # Bulk operations
+│   │   ├── indexing.go         # Database indexing utilities
+│   │   ├── migration.go        # Migration utilities
+│   │   ├── pagination.go       # Pagination helpers
+│   │   ├── seeder.go           # Database seeder
+│   │   └── soft_delete.go      # Soft delete utilities
+│   ├── dto/                     # Shared Data Transfer Objects
+│   │   ├── paginate.go         # Pagination DTO
+│   │   ├── response.go         # Standard API responses
+│   │   ├── token.go            # Token DTOs
+│   ├── logger/                  # Logging utilities
+│   │   ├── logger.go           # Zap logger wrapper
+│   │   └── sentry.go           # Sentry integration
+│   ├── pagination/              # Pagination utilities
+│   │   └── cursor.go           # Cursor-based pagination
+│   ├── response/                # Response utilities
+│   │   └── response.go         # Response formatters
+│   ├── utils/                   # General utilities
+│   │   ├── date.go             # Date/time utilities
+│   │   ├── export.go           # Data export utilities
+│   │   ├── filter.go           # Filtering utilities
+│   │   ├── metrics.go          # Metrics utilities
+│   │   ├── sort.go             # Sorting utilities
+│   │   └── sse.go              # SSE utilities
+│   └── validator/               # Validation utilities
+│       ├── sanitize.go         # Input sanitization
+│       └── validator.go        # Input validation
 │
 ├── router/                      # Route definitions
 │   ├── auth.go                  # Auth routes
 │   ├── post.go                  # Post routes
-│   └── router.go                # Main router setup
-│
-├── scripts/                     # Utility scripts
-│   ├── seeder.go                # Database seeder
-│   └── migrate.go               # Migration runner
-│
-├── service/                     # Business logic layer
-│   ├── auth.go                  # Authentication service
-│   └── post.go                  # Post service
+│   ├── router.go                # Main router setup
+│   └── sse.go                   # SSE routes
 │
 ├── templates/                   # HTML templates
 │   └── email/                   # Email templates
@@ -378,38 +479,62 @@ starter-gofiber/
 │   └── setup_test.go            # Test setup & helpers
 │
 ├── variables/                   # Global constants & variables
-│   └── constant.go              # App constants
+│   └── constant.go              # App constants (includes AVATAR_PATH)
 │
 ├── .air.toml                    # Air live reload config
 ├── .env.example                 # Environment variables template
 ├── .gitignore                   # Git ignore rules
+├── .golangci.yml                # golangci-lint configuration
+├── .pre-commit-config.yaml      # Pre-commit hooks configuration
 ├── CONTRIBUTING.md              # Contributing guidelines
-├── docker-compose.yml           # Docker Compose (main)
-├── docker-compose.minio.yml     # MinIO S3 storage setup
-├── Dockerfile                   # Docker build instructions
 ├── go.mod                       # Go module dependencies
 ├── go.sum                       # Dependency checksums
 ├── LICENSE                      # MIT License
-├── main.go                      # Application entry point
-├── MINIO_SETUP.md              # MinIO setup guide
-└── README.MD                    # This file
+├── Makefile                     # Automation tasks (build, test, migrate, etc.)
+├── README.MD                    # This file
+└── .github/                     # GitHub configuration
+    └── workflows/               # GitHub Actions workflows
+        └── ci.yml               # CI/CD pipeline
 ```
+
+**Note:** Semua code baru harus menggunakan struktur di `internal/` dan `pkg/`. Shared DTOs berada di `pkg/dto/` dan dapat digunakan oleh semua domain.
 
 ### Architecture Layers
 
-Project ini menggunakan **Clean Architecture** dengan layer separation:
+Project ini menggunakan **Clean Architecture** dengan **Domain-Driven Design**:
 
-1. **Entity Layer** (`entity/`) - Domain models
-2. **Repository Layer** (`repository/`) - Data access
-3. **Service Layer** (`service/`) - Business logic
-4. **Handler Layer** (`handler/`) - HTTP handlers
-5. **Router Layer** (`router/`) - Route definitions
+1. **Domain Layer** (`internal/domain/`) - Business entities, DTOs, dan interfaces
+   - Setiap domain memiliki: `entity.go`, `dto.go`, `repository.go`, `service.go`
+   - Domain tidak bergantung pada layer lain (pure business logic)
+
+2. **Repository Layer** (`internal/repository/`) - Data access implementations
+   - Implementasi dari interface yang didefinisikan di domain
+   - Menggunakan GORM untuk database operations
+
+3. **Service Layer** (`internal/service/`) - Business logic implementations
+   - Implementasi dari interface yang didefinisikan di domain
+   - Menggunakan repository untuk data access
+
+4. **Handler Layer** (`internal/handler/`) - HTTP request handlers
+   - HTTP handlers (`internal/handler/http/`)
+   - Middleware (`internal/handler/middleware/`)
+   - Menggunakan service untuk business logic
+
+5. **Infrastructure Layer** (`internal/infrastructure/`) - External services
+   - Email, Cache, Storage, Auth infrastructure
+   - Implementasi untuk external dependencies
+
+6. **Worker Layer** (`internal/worker/`) - Background jobs
+   - Asynq job handlers dan schedulers
+   - Background task processing
 
 **Data Flow:**
 ```
 Client Request → Router → Middleware → Handler → Service → Repository → Database
                                                     ↓
-                                            Helper/Jobs/Config
+                                    Infrastructure (Email, Cache, Storage)
+                                                    ↓
+                                            Worker (Background Jobs)
 ```
 
 ## Warning
@@ -539,7 +664,7 @@ Lihat [docs/DATABASE.md](docs/DATABASE.md) untuk dokumentasi lengkap database ma
 
 ### Dokumentasi
 - Lihat [docs/FILE_MANAGEMENT.md](docs/FILE_MANAGEMENT.md) untuk dokumentasi lengkap file management system
-- Lihat [Setup Minio](MINIO_SETUP.md) untuk panduan setup MinIO sebagai local S3-compatible storage
+- Lihat [Setup Minio](docs/MINIO_SETUP.md) untuk panduan setup MinIO sebagai local S3-compatible storage
 
 ### 9. API Features
 - [x] **Response Compression** - Gzip compression untuk response dengan 3 compression levels
@@ -554,8 +679,6 @@ Lihat [docs/API_FEATURES.md](docs/API_FEATURES.md) untuk dokumentasi lengkap API
 
 ### 10. Real-time Features
 - [x] **Server-Sent Events (SSE)** - Real-time push notifications dari server ke client dengan event types, user targeting, broadcast, dan auto keep-alive
-- [ ] **WebSocket Support** - Real-time bidirectional communication (belum diperlukan)
-- [ ] **Pub/Sub System** - Event-driven architecture (belum diperlukan)
 
 ### Dokumentasi
 Lihat [docs/SSE.md](docs/SSE.md) untuk dokumentasi lengkap SSE dengan contoh client implementation (JS, React, Vue)
@@ -584,89 +707,41 @@ Lihat [docs/BACKGROUND_JOBS.md](docs/BACKGROUND_JOBS.md) untuk dokumentasi lengk
 Lihat [docs/EMAIL.md](docs/EMAIL.md) untuk dokumentasi lengkap email notification system dengan contoh konfigurasi SMTP providers dan template customization
 
 ### 13. DevOps & CI/CD
-- [ ] **Makefile** - Common tasks automation
-- [ ] **GitHub Actions/GitLab CI** - Automated testing & deployment
-- [ ] **Docker Optimization** - Multi-stage build, smaller image size
-- [ ] **Docker Compose for Testing** - Separate compose untuk testing
-- [ ] **Kubernetes Manifests** - K8s deployment files
-- [ ] **Helm Charts** - Kubernetes package manager
-- [ ] **Pre-commit Hooks** - Automated checks sebelum commit
-- [ ] **Code Linting** - golangci-lint integration
-- [ ] **Code Formatting** - Automated formatting dengan gofmt/goimports
+- [x] **Makefile** - Automation untuk common tasks (build, test, migrate)
+- [x] **CI/CD Pipeline** - GitHub Actions untuk automated testing & deployment
+- [x] **Docker Optimization** - Multi-stage build untuk smaller image size (~90% reduction)
+- [x] **Pre-commit Hooks** - Automated checks sebelum commit (linting, formatting)
+
+### Dokumentasi
+Lihat [docs/DEVOPS.md](docs/DEVOPS.md) untuk dokumentasi lengkap DevOps & CI/CD setup
 
 ### 14. Performance
-- [ ] **Database Indexing** - Proper indexes untuk queries
-- [ ] **Query Optimization** - Analyze dan optimize slow queries
-- [ ] **Connection Pooling** - Optimize database connections
-- [ ] **Lazy Loading** - Load relations on demand
-- [ ] **Response Pagination** - Limit response size
-- [ ] **Request Timeout** - Timeout configuration untuk all requests
+- [x] **Database Indexing** - Proper indexes untuk optimize queries dengan utilities dan recommended indexes
+- [x] **Request Timeout** - Timeout configuration untuk all requests (ReadTimeout, WriteTimeout, IdleTimeout)
+- [x] **Graceful Shutdown** - Proper shutdown handling dengan timeout protection untuk zero-downtime deployment
+
+### Dokumentasi
+Lihat [docs/PERFORMANCE.md](docs/PERFORMANCE.md) untuk dokumentasi lengkap performance optimization
 
 ### 15. User Management
-- [ ] **User Profile** - Get/Update user profile
-- [ ] **Avatar Upload** - Profile picture management
-- [ ] **User Preferences** - Settings/preferences per user
-- [ ] **User Activity Log** - Track user activities
-- [ ] **User Roles & Permissions CRUD** - Manage roles via API
-- [ ] **User Impersonation** - Admin impersonate user (for support)
-- [ ] **Account Deactivation** - Soft delete user accounts
+- [x] **User Profile** - Get/Update user profile dengan avatar upload
+- [x] **User Preferences** - Settings/preferences per user (notifications, privacy, UI settings)
 
-### 16. Notification System
-- [ ] **In-app Notifications** - Notification center
-- [ ] **Push Notifications** - Firebase/OneSignal integration
-- [ ] **Email Notifications** - Automated email notifications
-- [ ] **SMS Notifications** - Twilio/Nexmo integration
-- [ ] **Notification Preferences** - User can choose notification channels
-
-### 17. Admin Panel Features
-- [ ] **Admin Dashboard** - Statistics dan metrics
-- [ ] **User Management** - CRUD users from admin
-- [ ] **Content Moderation** - Approve/reject user content
-- [ ] **System Settings** - Configurable settings via admin
-- [ ] **Audit Logs Viewer** - View system audit logs
-
-### 18. Internationalization (i18n)
-- [ ] **Multi-language Support** - Support multiple languages
-- [ ] **Translation Management** - Easy to add new translations
-- [ ] **Locale Detection** - Auto detect user locale
-- [ ] **Date/Time Localization** - Format based on locale
-
-### 19. Others
-- [ ] **Feature Flags** - Toggle features on/off without deployment
-- [ ] **A/B Testing Support** - Framework untuk A/B testing
-- [ ] **Analytics Integration** - Google Analytics, Mixpanel, dll
-- [ ] **Error Reporting** - Better error messages dengan codes
-- [ ] **Request Validation** - Comprehensive input validation
-- [ ] **GDPR Compliance** - Data export/delete for privacy compliance
-- [ ] **Graceful Shutdown** - Proper shutdown handling
+### Dokumentasi
+Lihat [docs/API_AUTH.md](docs/API_AUTH.md) untuk dokumentasi lengkap authentication endpoints
 
 ## Prioritas Implementasi (Rekomendasi)
 
-### High Priority (Harus Ada)
-1. Unit & Integration Tests
-2. API Documentation (Swagger)
-3. Refresh Token & Logout
-4. Database Migration System
-5. Structured Logging
-6. Health Check & Metrics
-7. Email Verification & Password Reset
-8. API Versioning
+### High Priority
+1. **API Documentation (Swagger)** - Auto-generated API docs
+2. **Graceful Shutdown** - Zero-downtime deployment support
+3. **Database Indexing** - Query performance optimization
 
-### Medium Priority (Sangat Direkomendasikan)
-1. Redis Caching
-2. Background Job Queue
-3. File Validation & Cloud Storage
-4. Database Seeder & Backup
-5. CI/CD Pipeline
-6. Error Tracking (Sentry)
-7. User Profile Management
-8. Advanced Search & Filtering
+### Medium Priority
+1. **CI/CD Pipeline** - Automated testing & deployment
+2. **Makefile** - Development automation
+3. **User Profile Management** - Basic user profile features
 
-### Low Priority (Nice to Have)
-1. WebSocket/Real-time features
-2. GraphQL Support
-3. Multi-language Support
-4. Social Login
-5. Admin Panel Features
-6. Feature Flags
-7. A/B Testing
+### Low Priority
+1. **API Versioning** - Backward compatibility management
+2. **Request Timeout** - Request timeout configuration

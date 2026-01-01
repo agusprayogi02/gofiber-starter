@@ -110,7 +110,7 @@ SMTP_USE_TLS=true
 #### Welcome Email
 
 ```go
-import "starter-gofiber/jobs"
+import "starter-gofiber/internal/worker"
 
 // Send welcome email (async via Asynq)
 info, err := jobs.EnqueueEmailWelcome("user@example.com", "John Doe")
@@ -149,7 +149,7 @@ The email will include a link: `{APP_URL}/verify-email?token=verify-token-456`
 #### Using EmailOptions
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 err := helper.SendEmail(&helper.EmailOptions{
     To:       []string{"user@example.com"},
@@ -217,7 +217,7 @@ You have {{.Count}} new notifications.
 #### Send Using Template
 
 ```go
-import "starter-gofiber/helper"
+import "starter-gofiber/pkg/apierror"
 
 template, err := helper.LoadEmailTemplate("custom-notification", map[string]interface{}{
     "Subject":  "New Notifications",
@@ -242,7 +242,7 @@ err = helper.SendEmail(&helper.EmailOptions{
 The email system integrates with Asynq for background processing:
 
 ```go
-import "starter-gofiber/jobs"
+import "starter-gofiber/internal/worker"
 
 // All emails are sent asynchronously with automatic retries
 
@@ -638,7 +638,7 @@ Enqueues a custom email with full control over content.
 func RegisterUser(c *fiber.Ctx) error {
     // ... validate and create user ...
     
-    user := &entity.User{
+    user := &user.User{
         Email: "newuser@example.com",
         Name:  "John Doe",
     }
@@ -669,7 +669,7 @@ func RequestPasswordReset(c *fiber.Ctx) error {
     email := c.FormValue("email")
     
     // Find user
-    var user entity.User
+    var user user.User
     if err := db.Where("email = ?", email).First(&user).Error; err != nil {
         // Return success even if user not found (security)
         return c.JSON(fiber.Map{"message": "If email exists, reset link sent"})
@@ -696,7 +696,7 @@ func RequestPasswordReset(c *fiber.Ctx) error {
 ### Email Verification Flow
 
 ```go
-func SendVerification(user *entity.User) error {
+func SendVerification(user *user.User) error {
     // Generate verification token
     token := helper.GenerateRandomString(32)
     user.VerificationToken = token
