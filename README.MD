@@ -482,6 +482,7 @@ starter-gofiber/
 │   └── constant.go              # App constants (includes AVATAR_PATH)
 │
 ├── .air.toml                    # Air live reload config
+├── .cursorrules                 # AI assistant rules & best practices guide
 ├── .env.example                 # Environment variables template
 ├── .gitignore                   # Git ignore rules
 ├── .golangci.yml                # golangci-lint configuration

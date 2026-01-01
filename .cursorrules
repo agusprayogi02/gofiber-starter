@@ -1,0 +1,1002 @@
+# Go Fiber Starter Kit - AI Assistant Rules
+
+This file guides AI assistants in generating code that follows the established patterns, architecture, and best practices of the Go Fiber Starter Kit project.
+
+## Project Context & Architecture
+
+### Architecture Overview
+
+This project uses **Clean Architecture** with **Domain-Driven Design (DDD)** principles. The architecture is organized into distinct layers with clear separation of concerns:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                        HTTP Layer                            │
+│                     (Fiber Framework)                        │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────────┐
+│                    Handler Layer                             │
+│              (Request/Response Handling)                     │
+│         - Validate Input                                     │
+│         - Call Service                                       │
+│         - Return Response                                    │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────────┐
+│                    Service Layer                             │
+│                  (Business Logic)                            │
+│         - Implement Use Cases                               │
+│         - Coordinate Repositories                            │
+│         - Handle Transactions                                │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────────┐
+│                  Repository Layer                            │
+│                 (Data Access Logic)                          │
+│         - CRUD Operations                                    │
+│         - Database Queries                                   │
+│         - ORM Abstraction                                    │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────────────────┐
+│                    Database Layer                            │
+│                   (PostgreSQL/MySQL)                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Layer Responsibilities
+
+1. **Domain Layer** (`internal/domain/`) - Pure business entities, DTOs, and interfaces
+   - No dependencies on other layers
+   - Contains: `entity.go`, `dto.go`, `repository.go`, `service.go`
+   - Example: `internal/domain/user/`
+
+2. **Repository Layer** (`internal/repository/postgres/`) - Data access implementations
+   - Implements domain repository interfaces
+   - Uses GORM for database operations
+   - Example: `internal/repository/postgres/user.go`
+
+3. **Service Layer** (`internal/service/`) - Business logic implementations
+   - Implements domain service interfaces
+   - Uses repositories for data access
+   - Returns DTOs, not entities
+   - Example: `internal/service/auth/service.go`
+
+4. **Handler Layer** (`internal/handler/http/`) - HTTP request handlers
+   - Parses and validates requests
+   - Calls service methods
+   - Returns formatted responses
+   - Example: `internal/handler/http/auth.go`
+
+5. **Infrastructure Layer** (`internal/infrastructure/`) - External services
+   - Email, Cache, Storage implementations
+   - Example: `internal/infrastructure/storage/`
+
+### Dependency Direction
+
+**CRITICAL**: Dependencies must flow in ONE direction only:
+- Handler → Service → Repository → Database
+- Domain layer has NO dependencies
+- Never reverse dependencies (e.g., Service → Handler)
+
+## Code Style & Conventions
+
+### Naming Conventions
+
+**Variables & Functions:**
+```go
+// ✅ Good - camelCase for private
+var userRepository user.Repository
+func getUserByEmail(email string) (*user.User, error) {}
+
+// ✅ Good - PascalCase for public/exported
+var UserService *AuthService
+func GetUserProfile(id uint) (*user.UserResponse, error) {}
+
+// ❌ Bad - NEVER use snake_case in Go
+var user_repository UserRepository
+func get_user_by_email(email string) {}
+```
+
+**Structs & Interfaces:**
+```go
+// ✅ Good - singular, descriptive, PascalCase
+type User struct {}
+type UserRepository interface {}
+type AuthService struct {}
+
+// ❌ Bad - plural, abbreviated
+type Users struct {}
+type UsrRepo interface {}
+type AuthSvc struct {}
+```
+
+**Constants:**
+```go
+// ✅ Good - PascalCase for exported
+const (
+    AdminR UserRole = "admin"
+    UserR  UserRole = "user"
+)
+
+const DefaultPageSize = 10
+
+// ✅ Good - camelCase for private
+const maxRetries = 3
+```
+
+**Files:**
+- Use lowercase with underscores: `user_repository.go`, `auth_handler.go`
+- Match package name: `postgres/user.go` (package postgres)
+
+### Import Organization
+
+**ALWAYS** organize imports in this order:
+```go
+import (
+    // 1. Standard library
+    "fmt"
+    "time"
+    "strconv"
+    
+    // 2. External packages
+    "github.com/gofiber/fiber/v2"
+    "gorm.io/gorm"
+    
+    // 3. Internal packages (group by domain)
+    "starter-gofiber/internal/domain/user"
+    "starter-gofiber/internal/domain/post"
+    "starter-gofiber/pkg/apierror"
+    "starter-gofiber/pkg/crypto"
+    "starter-gofiber/pkg/dto"
+    "starter-gofiber/pkg/response"
+)
+```
+
+### Error Handling
+
+**ALWAYS** use custom error types from `pkg/apierror/`:
+
+```go
+// ✅ Good - Custom error with Order tracking
+if err := s.userRepo.Create(user); err != nil {
+    return &apierror.InternalServerError{
+        Message: "Failed to create user",
+        Order:   "S1", // Track error location: S=Service, H=Handler, R=Repository
+    }
+}
+
+// ✅ Good - Check error immediately
+user, err := s.userRepo.FindByEmail(email)
+if err != nil {
+    return nil, &apierror.NotFoundError{
+        Message: "User not found",
+        Order:   "S1",
+    }
+}
+
+// ❌ Bad - NEVER ignore errors
+user, _ := s.userRepo.FindByEmail(email)
+
+// ❌ Bad - NEVER return raw errors without context
+if err != nil {
+    return nil, err
+}
+```
+
+**Available Error Types:**
+- `apierror.BadRequestError` - 400
+- `apierror.UnauthorizedError` - 401
+- `apierror.ForbiddenError` - 403
+- `apierror.NotFoundError` - 404
+- `apierror.UnprocessableEntityError` - 422
+- `apierror.InternalServerError` - 500
+- `apierror.TooManyRequestsError` - 429
+
+**Order Field Convention:**
+- `H1`, `H2` - Handler layer errors
+- `S1`, `S2` - Service layer errors
+- `R1`, `R2` - Repository layer errors
+- `S-Register-3` - Specific operation tracking
+
+## Architecture Patterns
+
+### Domain Layer Structure
+
+When creating a new domain (e.g., `product`, `order`), create this structure:
+
+```
+internal/domain/{domain_name}/
+├── entity.go      # GORM models (database entities)
+├── dto.go         # Request/Response DTOs
+├── repository.go  # Repository interface
+└── service.go     # Service interface
+```
+
+**Example: `internal/domain/user/entity.go`**
+```go
+package user
+
+import "gorm.io/gorm"
+
+type User struct {
+    ID            uint   `gorm:"primaryKey;autoIncrement"`
+    Name          string `gorm:"type:varchar(200);not null"`
+    Email         string `gorm:"type:varchar(200);uniqueIndex;not null"`
+    Password      string `gorm:"type:varchar(150);not null"`
+    EmailVerified bool   `gorm:"default:false"`
+    gorm.Model
+}
+```
+
+**Example: `internal/domain/user/dto.go`**
+```go
+package user
+
+type RegisterRequest struct {
+    Name     string `json:"name" binding:"required;min=3"`
+    Email    string `json:"email" binding:"required;email"`
+    Password string `json:"password" binding:"required;min=6"`
+}
+
+type UserResponse struct {
+    ID        uint   `json:"id"`
+    Name      string `json:"name"`
+    Email     string `json:"email"`
+    CreatedAt string `json:"created_at"`
+    UpdatedAt string `json:"updated_at"`
+}
+
+// Conversion methods
+func (r UserResponse) FromEntity(u User) UserResponse {
+    return UserResponse{
+        ID:        u.ID,
+        Name:      u.Name,
+        Email:     u.Email,
+        CreatedAt: u.CreatedAt.Format(time.RFC3339),
+        UpdatedAt: u.UpdatedAt.Format(time.RFC3339),
+    }
+}
+
+func (r RegisterRequest) ToEntity() User {
+    return User{
+        Name:     r.Name,
+        Email:    r.Email,
+        Password: r.Password,
+    }
+}
+```
+
+**Example: `internal/domain/user/repository.go`**
+```go
+package user
+
+type Repository interface {
+    Create(user *User) error
+    FindByEmail(email string) (*User, error)
+    FindByID(id uint) (*User, error)
+    Update(user *User) error
+    Delete(id uint) error
+}
+```
+
+**Example: `internal/domain/user/service.go`**
+```go
+package user
+
+type Service interface {
+    Register(req *RegisterRequest) error
+    Login(req *LoginRequest) (*LoginResponse, error)
+    GetProfile(userID uint) (*GetProfileResponse, error)
+}
+```
+
+### Implementation Structure
+
+**Repository Implementation: `internal/repository/postgres/user.go`**
+```go
+package postgres
+
+import (
+    "starter-gofiber/internal/domain/user"
+    "gorm.io/gorm"
+)
+
+type UserRepository struct {
+    db *gorm.DB
+}
+
+func NewUserRepository(d *gorm.DB) user.Repository {
+    return &UserRepository{db: d}
+}
+
+func (r *UserRepository) Create(m *user.User) error {
+    return r.db.Create(m).Error
+}
+
+func (r *UserRepository) FindByEmail(email string) (*user.User, error) {
+    var usr user.User
+    err := r.db.Where("email = ?", email).First(&usr).Error
+    if err != nil {
+        return nil, err
+    }
+    return &usr, nil
+}
+```
+
+**Service Implementation: `internal/service/auth/service.go`**
+```go
+package auth
+
+import (
+    "starter-gofiber/internal/domain/user"
+    "starter-gofiber/pkg/apierror"
+    "starter-gofiber/pkg/crypto"
+)
+
+type AuthService struct {
+    userRepo user.Repository
+}
+
+func NewAuthService(userRepo user.Repository) user.Service {
+    return &AuthService{userRepo: userRepo}
+}
+
+func (s *AuthService) Register(req *user.RegisterRequest) error {
+    // Business logic here
+    if err := s.userRepo.ExistEmail(req.Email); err == nil {
+        return &apierror.BadRequestError{
+            Message: "Email already exists",
+            Order:   "S1",
+        }
+    }
+    
+    password, err := crypto.HashPassword(req.Password)
+    if err != nil {
+        return &apierror.BadRequestError{
+            Message: "Failed to hash password",
+            Order:   "S2",
+        }
+    }
+    
+    userEntity := req.ToEntity()
+    userEntity.Password = password
+    
+    return s.userRepo.Create(&userEntity)
+}
+```
+
+**Handler Implementation: `internal/handler/http/auth.go`**
+```go
+package http
+
+import (
+    "starter-gofiber/internal/domain/user"
+    "starter-gofiber/pkg/apierror"
+    "starter-gofiber/pkg/dto"
+    "starter-gofiber/pkg/response"
+    "github.com/gofiber/fiber/v2"
+)
+
+type AuthHandler struct {
+    userS user.Service
+}
+
+func NewAuthHandler(s user.Service) *AuthHandler {
+    return &AuthHandler{userS: s}
+}
+
+func (h *AuthHandler) Register(c *fiber.Ctx) error {
+    var req *user.RegisterRequest
+    if err := c.BodyParser(&req); err != nil {
+        return &apierror.UnprocessableEntityError{
+            Message: err.Error(),
+            Order:   "H1",
+        }
+    }
+    
+    if err := h.userS.Register(req); err != nil {
+        return err
+    }
+    
+    return response.Response(dto.ResponseResult{
+        StatusCode: fiber.StatusCreated,
+        Message:    "User registered successfully",
+    }, c)
+}
+```
+
+## API Design Guidelines
+
+### Endpoint Conventions
+
+**RESTful Routes:**
+- Public endpoints: `/api/{resource}` (e.g., `/api/register`, `/api/login`)
+- Protected endpoints: `/api/auth/{resource}` (e.g., `/api/auth/profile`)
+- Resource endpoints: `/api/{resource}` or `/api/{resource}/:id`
+- Use proper HTTP methods: GET, POST, PUT, DELETE
+
+**Route Registration: `internal/handler/http/auth_routes.go`**
+```go
+func NewAuthentication(app fiber.Router, enforcer *casbin.Enforcer) {
+    userRepo := postgres.NewUserRepository(config.DB)
+    authService := auth.NewAuthService(userRepo)
+    authHandler := NewAuthHandler(authService)
+    
+    // Public routes
+    app.Post("/register", authHandler.Register(enforcer))
+    app.Post("/login", authHandler.Login)
+    
+    // Protected routes
+    authMiddleware := middleware.AuthMiddleware()
+    app.Get("/auth/profile", authMiddleware, authHandler.GetProfile)
+    app.Put("/auth/profile", authMiddleware, authHandler.UpdateProfile)
+}
+```
+
+### Request/Response Structure
+
+**Request DTOs:**
+```go
+type CreateRequest struct {
+    Name  string `json:"name" binding:"required,min=3"`
+    Email string `json:"email" binding:"required,email"`
+}
+```
+
+**Response Format:**
+```go
+// Success response
+{
+    "code": 200,
+    "status": "success",
+    "message": "Operation successful",
+    "data": {...},
+    "paginate": {...}  // Optional, for paginated responses
+}
+
+// Error response
+{
+    "code": 400,
+    "status": "error",
+    "message": "Error message",
+    "order": "S1",
+    "timestamp": "2026-01-01T00:00:00Z"
+}
+```
+
+**Response Helper Usage:**
+```go
+// With data
+return response.Response(dto.ResponseResult{
+    StatusCode: fiber.StatusOK,
+    Message:    "Success message",
+    Data:       responseData,
+}, c)
+
+// Without data
+return response.Response(dto.ResponseResult{
+    StatusCode: fiber.StatusCreated,
+    Message:    "Resource created",
+}, c)
+
+// With pagination
+return response.Response(dto.ResponseResult{
+    StatusCode: fiber.StatusOK,
+    Message:    "List retrieved",
+    Data:       items,
+    Paginate:   &paginationMeta,
+}, c)
+```
+
+## Database Patterns
+
+### GORM Best Practices
+
+**Entity Definition:**
+```go
+type User struct {
+    ID            uint   `gorm:"primaryKey;autoIncrement"`
+    Name          string `gorm:"type:varchar(200);not null"`
+    Email         string `gorm:"type:varchar(200);uniqueIndex;not null"`
+    Password      string `gorm:"type:varchar(150);not null"`
+    EmailVerified bool   `gorm:"default:false"`
+    gorm.Model  // Includes ID, CreatedAt, UpdatedAt, DeletedAt
+}
+```
+
+**Key Practices:**
+1. **Use Migrations**: Always create migration files in `migrations/` for schema changes
+2. **Define Indexes**: Use `uniqueIndex` or `index` tags in entity structs
+3. **Eager Loading**: Use `Preload()` to avoid N+1 queries
+4. **Soft Deletes**: Use `gorm.DeletedAt` for soft delete functionality
+5. **Transactions**: Use transactions for multi-step operations
+
+**Repository Pattern:**
+```go
+type Repository interface {
+    Create(entity *Entity) error
+    FindByID(id uint) (*Entity, error)
+    FindByEmail(email string) (*Entity, error)
+    Update(entity *Entity) error
+    Delete(id uint) error
+}
+```
+
+**Query Examples:**
+```go
+// Find with conditions
+func (r *UserRepository) FindByEmail(email string) (*user.User, error) {
+    var usr user.User
+    err := r.db.Where("email = ?", email).First(&usr).Error
+    if err != nil {
+        return nil, err
+    }
+    return &usr, nil
+}
+
+// Eager loading (avoid N+1)
+func (r *PostRepository) FindWithUser(id uint) (*post.Post, error) {
+    var p post.Post
+    err := r.db.Preload("User").Where("id = ?", id).First(&p).Error
+    return &p, err
+}
+
+// Pagination
+func (r *PostRepository) FindAll(page, pageSize int) ([]post.Post, int64, error) {
+    var posts []post.Post
+    var total int64
+    
+    offset := (page - 1) * pageSize
+    r.db.Model(&post.Post{}).Count(&total)
+    err := r.db.Offset(offset).Limit(pageSize).Find(&posts).Error
+    
+    return posts, total, err
+}
+```
+
+## Security Requirements
+
+### Authentication
+
+**JWT Token Handling:**
+```go
+// Extract user from token in handler
+userClaims, err := crypto.GetUserFromToken(c)
+if err != nil {
+    return err
+}
+
+// Use authenticated user ID (NEVER trust client-provided IDs)
+req.UserID = userClaims.ID
+```
+
+**Middleware Usage:**
+```go
+// Apply auth middleware to protected routes
+authMiddleware := middleware.AuthMiddleware()
+app.Get("/auth/profile", authMiddleware, authHandler.GetProfile)
+```
+
+**Security Rules:**
+- ✅ ALWAYS extract user from JWT token, never from request body
+- ✅ ALWAYS overwrite user ID from request with authenticated user ID
+- ✅ NEVER expose passwords in API responses
+- ✅ ALWAYS hash passwords before storing (use `crypto.HashPassword`)
+- ✅ Use HTTPS in production
+
+### Authorization
+
+**Casbin RBAC:**
+- Define policies in `assets/rbac/policy.csv`
+- Check permissions before sensitive operations
+- Verify ownership before update/delete operations
+
+**Ownership Check Example:**
+```go
+func (s *PostService) Update(postID uint, userID uint, req *post.PostUpdateRequest) error {
+    // First, verify ownership
+    existingPost, err := s.postRepo.FindByID(postID)
+    if err != nil {
+        return &apierror.NotFoundError{Message: "Post not found", Order: "S1"}
+    }
+    
+    // Check ownership
+    if existingPost.UserID != userID {
+        return &apierror.ForbiddenError{
+            Message: "You don't have permission to update this post",
+            Order:   "S2",
+        }
+    }
+    
+    // Proceed with update
+    // ...
+}
+```
+
+### Input Validation
+
+**Handler-Level Validation:**
+```go
+func (h *AuthHandler) Register(c *fiber.Ctx) error {
+    var req *user.RegisterRequest
+    if err := c.BodyParser(&req); err != nil {
+        return &apierror.UnprocessableEntityError{
+            Message: err.Error(),
+            Order:   "H1",
+        }
+    }
+    
+    // Additional validation if needed
+    // ...
+}
+```
+
+**File Upload Validation:**
+```go
+// Validate file type and size
+config := storage.FileValidationConfig{
+    AllowedTypes: []string{"image/jpeg", "image/png", "image/gif"},
+    MaxSize:      5 * 1024 * 1024, // 5MB
+}
+
+uploadResult, err := storage.UploadFileWithValidation(c, file, "/avatars/", config)
+if err != nil {
+    return err
+}
+```
+
+## Testing Guidelines
+
+### Test Structure
+
+**Test Naming Convention:**
+```go
+// Pattern: Test{FunctionName}_{Scenario}_{ExpectedResult}
+func TestRegister_ValidInput_Success(t *testing.T) {}
+func TestRegister_DuplicateEmail_ReturnsError(t *testing.T) {}
+func TestLogin_InvalidPassword_ReturnsUnauthorized(t *testing.T) {}
+```
+
+**Test Suite Pattern:**
+```go
+type UserTestSuite struct {
+    suite.Suite
+    app *fiber.App
+    db  *gorm.DB
+}
+
+func (s *UserTestSuite) SetupTest() {
+    s.db = SetupTestDB()
+    s.app = SetupTestApp(s.db)
+}
+
+func (s *UserTestSuite) TearDownTest() {
+    CleanupTestDB(s.db)
+}
+
+func (s *UserTestSuite) TestGetProfile_Success() {
+    // Arrange
+    user := createTestUser(s.db, "test@example.com")
+    
+    // Act
+    resp := s.MakeRequest("GET", "/api/auth/profile", nil)
+    
+    // Assert
+    s.AssertSuccessResponse(resp, 200)
+}
+
+func TestUserTestSuite(t *testing.T) {
+    suite.Run(t, new(UserTestSuite))
+}
+```
+
+**Coverage Requirements:**
+- Minimum: 60% overall
+- Critical paths: 80%+ (auth, payment, etc.)
+- New features: Must include tests
+- Bug fixes: Add regression tests
+
+## Common Patterns to Follow
+
+### Constructor Pattern
+
+**ALWAYS** use constructor functions:
+```go
+func NewService(repo Repository) Service {
+    return &serviceImpl{repo: repo}
+}
+
+func NewHandler(service Service) *Handler {
+    return &Handler{service: service}
+}
+
+func NewRepository(db *gorm.DB) Repository {
+    return &repositoryImpl{db: db}
+}
+```
+
+### Response Pattern
+
+**ALWAYS** use the response helper:
+```go
+return response.Response(dto.ResponseResult{
+    StatusCode: fiber.StatusOK,
+    Message:    "Success message",
+    Data:       responseData,
+}, c)
+```
+
+### Error Return Pattern
+
+**ALWAYS** return custom errors with Order:
+```go
+if err != nil {
+    return &apierror.InternalServerError{
+        Message: "Clear error message",
+        Order:   "S1",
+    }
+}
+```
+
+### File Upload Pattern
+
+```go
+// Get uploaded file
+file, err := c.FormFile("avatar")
+if err != nil {
+    return &apierror.BadRequestError{
+        Message: "File is required",
+        Order:   "H1",
+    }
+}
+
+// Validate and upload
+config := storage.FileValidationConfig{
+    AllowedTypes: []string{"image/jpeg", "image/png"},
+    MaxSize:      5 * 1024 * 1024,
+}
+
+uploadResult, err := storage.UploadFileWithValidation(c, file, "/avatars/", config)
+if err != nil {
+    return err
+}
+
+// Use uploadResult.URL in your entity
+```
+
+## Anti-Patterns to Avoid
+
+**CRITICAL - NEVER do these:**
+
+1. ❌ **Mix layers in one file** - Don't put handler, service, and repository logic together
+2. ❌ **Use snake_case** - Go uses camelCase/PascalCase, not snake_case
+3. ❌ **Ignore errors** - Never use `_` to ignore errors
+4. ❌ **Expose entities directly** - Always use DTOs for API responses
+5. ❌ **Store plain passwords** - Always hash passwords before storing
+6. ❌ **Skip authentication** - Never skip auth for sensitive endpoints
+7. ❌ **Hardcode values** - Use environment variables and config
+8. ❌ **Trust client IDs** - Always use authenticated user ID from JWT
+9. ❌ **Return raw errors** - Always wrap errors with context
+10. ❌ **Reverse dependencies** - Never make Service depend on Handler
+
+## File Creation Workflow
+
+When creating a new domain/feature (e.g., `product`):
+
+### Step 1: Domain Layer (`internal/domain/product/`)
+
+Create these files:
+- `entity.go` - Define GORM model
+- `dto.go` - Request/Response types with conversion methods
+- `repository.go` - Repository interface
+- `service.go` - Service interface
+
+### Step 2: Repository (`internal/repository/postgres/product.go`)
+
+- Implement repository interface
+- Use GORM for database operations
+- Return entities (not DTOs)
+
+### Step 3: Service (`internal/service/product/service.go`)
+
+- Implement business logic
+- Use repository for data access
+- Return DTOs (not entities)
+- Handle errors with custom error types
+
+### Step 4: Handler (`internal/handler/http/product.go`)
+
+- Parse and validate requests
+- Extract authenticated user from token
+- Call service methods
+- Return formatted responses
+
+### Step 5: Routes (`internal/handler/http/product_routes.go`)
+
+- Define route group
+- Apply middleware (auth, rate limit, etc.)
+- Register handlers
+
+### Step 6: Migration (`migrations/XXXX_create_product_table.up.sql`)
+
+- Create migration file for schema changes
+- Include rollback file (`down.sql`)
+
+### Step 7: Tests (`tests/product_test.go`)
+
+- Create test suite
+- Add integration tests
+- Test critical paths
+
+## Code Examples
+
+### Complete CRUD Example: User Profile
+
+**Handler:**
+```go
+func (h *AuthHandler) GetProfile(c *fiber.Ctx) error {
+    userClaims, err := crypto.GetUserFromToken(c)
+    if err != nil {
+        return err
+    }
+    
+    profile, err := h.userS.GetProfile(userClaims.ID)
+    if err != nil {
+        return err
+    }
+    
+    return response.Response(dto.ResponseResult{
+        StatusCode: fiber.StatusOK,
+        Message:    "Profile retrieved successfully",
+        Data:       profile,
+    }, c)
+}
+
+func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
+    userClaims, err := crypto.GetUserFromToken(c)
+    if err != nil {
+        return err
+    }
+    
+    var req user.UpdateProfileRequest
+    if err := c.BodyParser(&req); err != nil {
+        return &apierror.UnprocessableEntityError{
+            Message: err.Error(),
+            Order:   "H1",
+        }
+    }
+    
+    profile, err := h.userS.UpdateProfile(userClaims.ID, &req)
+    if err != nil {
+        return err
+    }
+    
+    return response.Response(dto.ResponseResult{
+        StatusCode: fiber.StatusOK,
+        Message:    "Profile updated successfully",
+        Data:       profile,
+    }, c)
+}
+```
+
+**Service:**
+```go
+func (s *AuthService) GetProfile(userID uint) (*user.GetProfileResponse, error) {
+    usr, err := s.userRepo.FindByID(userID)
+    if err != nil {
+        return nil, &apierror.NotFoundError{
+            Message: "User not found",
+            Order:   "S1",
+        }
+    }
+    
+    response := user.GetProfileResponse{}.FromEntity(*usr)
+    return &response, nil
+}
+
+func (s *AuthService) UpdateProfile(userID uint, req *user.UpdateProfileRequest) (*user.GetProfileResponse, error) {
+    usr, err := s.userRepo.FindByID(userID)
+    if err != nil {
+        return nil, &apierror.NotFoundError{
+            Message: "User not found",
+            Order:   "S1",
+        }
+    }
+    
+    if req.Name != "" {
+        usr.Name = req.Name
+    }
+    if req.Bio != "" {
+        usr.Bio = req.Bio
+    }
+    
+    if err := s.userRepo.Update(usr); err != nil {
+        return nil, &apierror.InternalServerError{
+            Message: err.Error(),
+            Order:   "S2",
+        }
+    }
+    
+    response := user.GetProfileResponse{}.FromEntity(*usr)
+    return &response, nil
+}
+```
+
+### Pagination Example
+
+```go
+// Service
+func (s *PostService) GetAll(page, pageSize int) (*post.PostListResponse, error) {
+    posts, total, err := s.postRepo.FindAll(page, pageSize)
+    if err != nil {
+        return nil, &apierror.InternalServerError{
+            Message: err.Error(),
+            Order:   "S1",
+        }
+    }
+    
+    totalPages := int(math.Ceil(float64(total) / float64(pageSize)))
+    
+    var responses []post.PostResponse
+    for _, p := range posts {
+        responses = append(responses, post.PostResponse{}.FromEntity(p))
+    }
+    
+    return &post.PostListResponse{
+        Posts: responses,
+        Meta: post.PaginationMeta{
+            Page:       page,
+            PageSize:   pageSize,
+            Total:      int(total),
+            TotalPages: totalPages,
+        },
+    }, nil
+}
+
+// Handler
+func (h *PostHandler) GetAll(c *fiber.Ctx) error {
+    page, _ := strconv.Atoi(c.Query("page", "1"))
+    pageSize, _ := strconv.Atoi(c.Query("per_page", "10"))
+    
+    resp, err := h.service.GetAll(page, pageSize)
+    if err != nil {
+        return err
+    }
+    
+    return response.Response(dto.ResponseResult{
+        StatusCode: fiber.StatusOK,
+        Message:    "Posts retrieved successfully",
+        Data:       resp.Posts,
+        Paginate:   &dto.Pagination{
+            Page:       resp.Meta.Page,
+            PerPage:    resp.Meta.PageSize,
+            Total:      resp.Meta.Total,
+            TotalPages: resp.Meta.TotalPages,
+        },
+    }, c)
+}
+```
+
+## Summary Checklist
+
+When generating code, ALWAYS ensure:
+
+- [ ] Follows Clean Architecture layers (Domain → Repository → Service → Handler)
+- [ ] Uses proper naming conventions (camelCase/PascalCase, no snake_case)
+- [ ] Imports organized (stdlib → external → internal)
+- [ ] Uses custom error types with Order field
+- [ ] Returns DTOs from service, not entities
+- [ ] Extracts user from JWT token, never trusts client ID
+- [ ] Uses response.Response() helper for all responses
+- [ ] Validates input at handler level
+- [ ] Includes proper error handling with context
+- [ ] Follows constructor pattern for all structs
+- [ ] Creates migration files for schema changes
+- [ ] Includes tests for new features
+- [ ] Comment the documentation above each function created with english language
+- [ ] Creates Postman collection for new features api documentation
+---
+
+**Remember**: This codebase follows Clean Architecture principles. Always maintain layer separation and dependency direction. When in doubt, refer to existing implementations in `internal/domain/user/` and `internal/service/auth/` as reference examples.
+
