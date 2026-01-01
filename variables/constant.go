@@ -8,6 +8,7 @@ import (
 var (
 	STATIC_PATH = "/storage"
 	POST_PATH   = "/post/"
+	AVATAR_PATH = "/avatars/"
 	FORMAT_TIME = time.RFC3339
 	ADMIN_ROLE  = "admin"
 	USER_ROLE   = "user"

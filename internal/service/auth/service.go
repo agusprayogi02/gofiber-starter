@@ -431,3 +431,211 @@ func (s *AuthService) RevokeSession(sessionID, userID uint) error {
 	}
 	return nil
 }
+
+// Profile operations
+func (s *AuthService) GetProfile(userID uint) (*user.GetProfileResponse, error) {
+	usr, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, &apierror.NotFoundError{
+			Message: "User not found",
+			Order:   "S1",
+		}
+	}
+
+	response := user.GetProfileResponse{}.FromEntity(*usr)
+	return &response, nil
+}
+
+func (s *AuthService) UpdateProfile(userID uint, req *user.UpdateProfileRequest) (*user.GetProfileResponse, error) {
+	usr, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, &apierror.NotFoundError{
+			Message: "User not found",
+			Order:   "S1",
+		}
+	}
+
+	// Update fields if provided
+	if req.Name != "" {
+		usr.Name = req.Name
+	}
+	if req.Bio != "" {
+		usr.Bio = req.Bio
+	}
+
+	if err := s.userRepo.Update(usr); err != nil {
+		return nil, &apierror.InternalServerError{
+			Message: err.Error(),
+			Order:   "S2",
+		}
+	}
+
+	response := user.GetProfileResponse{}.FromEntity(*usr)
+	return &response, nil
+}
+
+func (s *AuthService) UpdateAvatar(userID uint, avatarPath string) (*user.GetProfileResponse, error) {
+	usr, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, &apierror.NotFoundError{
+			Message: "User not found",
+			Order:   "S1",
+		}
+	}
+
+	// Delete old avatar if exists (optional - can be implemented later)
+	// storage.DeleteFile(&usr.Avatar, variables.AVATAR_PATH)
+
+	// Update avatar path
+	usr.Avatar = avatarPath
+
+	if err := s.userRepo.Update(usr); err != nil {
+		return nil, &apierror.InternalServerError{
+			Message: err.Error(),
+			Order:   "S2",
+		}
+	}
+
+	response := user.GetProfileResponse{}.FromEntity(*usr)
+	return &response, nil
+}
+
+// Preferences operations
+func (s *AuthService) GetPreferences(userID uint) (*user.GetPreferencesResponse, error) {
+	// Check if user exists
+	_, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, &apierror.NotFoundError{
+			Message: "User not found",
+			Order:   "S1",
+		}
+	}
+
+	// Get or create preferences
+	prefs, err := s.userRepo.FindPreferencesByUserID(userID)
+	if err != nil {
+		// Preferences not found, create default
+		defaultPrefs := &user.UserPreferences{
+			UserID: userID,
+		}
+		defaultData, _ := defaultPrefs.GetData()
+		defaultPrefs.SetData(defaultData)
+
+		if err := s.userRepo.CreatePreferences(defaultPrefs); err != nil {
+			return nil, &apierror.InternalServerError{
+				Message: err.Error(),
+				Order:   "S2",
+			}
+		}
+		prefs = defaultPrefs
+	}
+
+	data, err := prefs.GetData()
+	if err != nil {
+		return nil, &apierror.InternalServerError{
+			Message: err.Error(),
+			Order:   "S3",
+		}
+	}
+
+	return &user.GetPreferencesResponse{
+		Preferences: data,
+		UpdatedAt:   prefs.UpdatedAt.Format(time.RFC3339),
+	}, nil
+}
+
+func (s *AuthService) UpdatePreferences(userID uint, req *user.UpdatePreferencesRequest) (*user.GetPreferencesResponse, error) {
+	// Check if user exists
+	_, err := s.userRepo.FindByID(userID)
+	if err != nil {
+		return nil, &apierror.NotFoundError{
+			Message: "User not found",
+			Order:   "S1",
+		}
+	}
+
+	// Get or create preferences
+	prefs, err := s.userRepo.FindPreferencesByUserID(userID)
+	if err != nil {
+		// Preferences not found, create new
+		prefs = &user.UserPreferences{
+			UserID: userID,
+		}
+	}
+
+	// Get current preferences data
+	data, err := prefs.GetData()
+	if err != nil {
+		return nil, &apierror.InternalServerError{
+			Message: err.Error(),
+			Order:   "S2",
+		}
+	}
+
+	// Update fields if provided
+	if req.EmailNotifications != nil {
+		data.EmailNotifications = *req.EmailNotifications
+	}
+	if req.PushNotifications != nil {
+		data.PushNotifications = *req.PushNotifications
+	}
+	if req.SMSNotifications != nil {
+		data.SMSNotifications = *req.SMSNotifications
+	}
+	if req.ProfileVisibility != nil {
+		data.ProfileVisibility = *req.ProfileVisibility
+	}
+	if req.ShowEmail != nil {
+		data.ShowEmail = *req.ShowEmail
+	}
+	if req.ShowOnlineStatus != nil {
+		data.ShowOnlineStatus = *req.ShowOnlineStatus
+	}
+	if req.Theme != nil {
+		data.Theme = *req.Theme
+	}
+	if req.Language != nil {
+		data.Language = *req.Language
+	}
+	if req.Timezone != nil {
+		data.Timezone = *req.Timezone
+	}
+	if req.Custom != nil {
+		if data.Custom == nil {
+			data.Custom = make(map[string]interface{})
+		}
+		for k, v := range req.Custom {
+			data.Custom[k] = v
+		}
+	}
+
+	// Save preferences
+	if err := prefs.SetData(data); err != nil {
+		return nil, &apierror.InternalServerError{
+			Message: err.Error(),
+			Order:   "S3",
+		}
+	}
+
+	// Create or update preferences
+	if prefs.ID == 0 {
+		if err := s.userRepo.CreatePreferences(prefs); err != nil {
+			return nil, &apierror.InternalServerError{
+				Message: err.Error(),
+				Order:   "S4",
+			}
+		}
+	} else {
+		if err := s.userRepo.UpdatePreferences(prefs); err != nil {
+			return nil, &apierror.InternalServerError{
+				Message: err.Error(),
+				Order:   "S4",
+			}
+		}
+	}
+
+	return &user.GetPreferencesResponse{
+		Preferences: data,
+		UpdatedAt:   prefs.UpdatedAt.Format(time.RFC3339),
+	}, nil
+}

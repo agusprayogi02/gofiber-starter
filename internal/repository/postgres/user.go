@@ -153,3 +153,21 @@ func (u *UserRepository) FindAPIKeyByHash(hash string) (*user.APIKey, error) {
 func (u *UserRepository) UpdateAPIKey(apiKey *user.APIKey) error {
 	return u.db.Save(apiKey).Error
 }
+
+// Preferences operations
+func (u *UserRepository) CreatePreferences(prefs *user.UserPreferences) error {
+	return u.db.Create(prefs).Error
+}
+
+func (u *UserRepository) FindPreferencesByUserID(userID uint) (*user.UserPreferences, error) {
+	var prefs user.UserPreferences
+	err := u.db.Where("user_id = ?", userID).First(&prefs).Error
+	if err != nil {
+		return nil, err
+	}
+	return &prefs, nil
+}
+
+func (u *UserRepository) UpdatePreferences(prefs *user.UserPreferences) error {
+	return u.db.Save(prefs).Error
+}

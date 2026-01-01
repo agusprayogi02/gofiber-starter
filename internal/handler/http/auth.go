@@ -3,10 +3,11 @@ package http
 import (
 	"strconv"
 
-	"starter-gofiber/pkg/dto"
 	"starter-gofiber/internal/domain/user"
+	"starter-gofiber/internal/infrastructure/storage"
 	"starter-gofiber/pkg/apierror"
 	"starter-gofiber/pkg/crypto"
+	"starter-gofiber/pkg/dto"
 	"starter-gofiber/pkg/response"
 
 	"github.com/casbin/casbin/v2"
@@ -272,5 +273,138 @@ func (h *AuthHandler) RevokeSession(c *fiber.Ctx) error {
 	return response.Response(dto.ResponseResult{
 		StatusCode: fiber.StatusOK,
 		Message:    "Session revoked successfully",
+	}, c)
+}
+
+// Profile handlers
+func (h *AuthHandler) GetProfile(c *fiber.Ctx) error {
+	userClaims, err := crypto.GetUserFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	profile, err := h.userS.GetProfile(userClaims.ID)
+	if err != nil {
+		return err
+	}
+
+	return response.Response(dto.ResponseResult{
+		StatusCode: fiber.StatusOK,
+		Message:    "Profile retrieved successfully",
+		Data:       profile,
+	}, c)
+}
+
+func (h *AuthHandler) UpdateProfile(c *fiber.Ctx) error {
+	userClaims, err := crypto.GetUserFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	var req user.UpdateProfileRequest
+	if err := c.BodyParser(&req); err != nil {
+		return &apierror.UnprocessableEntityError{
+			Message: err.Error(),
+			Order:   "H1",
+		}
+	}
+
+	profile, err := h.userS.UpdateProfile(userClaims.ID, &req)
+	if err != nil {
+		return err
+	}
+
+	return response.Response(dto.ResponseResult{
+		StatusCode: fiber.StatusOK,
+		Message:    "Profile updated successfully",
+		Data:       profile,
+	}, c)
+}
+
+func (h *AuthHandler) UpdateAvatar(c *fiber.Ctx) error {
+	userClaims, err := crypto.GetUserFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	// Get uploaded file
+	file, err := c.FormFile("avatar")
+	if err != nil {
+		return &apierror.BadRequestError{
+			Message: "Avatar file is required",
+			Order:   "H1",
+		}
+	}
+
+	// Validate file (image only, max 5MB)
+	config := storage.FileValidationConfig{
+		AllowedTypes: []string{"image/jpeg", "image/png", "image/gif", "image/webp"},
+		MaxSize:      5 * 1024 * 1024, // 5MB
+	}
+
+	// Upload file with validation
+	avatarPath := "/avatars/"
+	uploadResult, err := storage.UploadFileWithValidation(c, file, avatarPath, config)
+	if err != nil {
+		return err
+	}
+
+	// Update user avatar
+	profile, err := h.userS.UpdateAvatar(userClaims.ID, uploadResult.URL)
+	if err != nil {
+		// Cleanup uploaded file if update fails
+		storage.DeleteFile(&uploadResult.FileName, avatarPath)
+		return err
+	}
+
+	return response.Response(dto.ResponseResult{
+		StatusCode: fiber.StatusOK,
+		Message:    "Avatar updated successfully",
+		Data:       profile,
+	}, c)
+}
+
+// Preferences handlers
+func (h *AuthHandler) GetPreferences(c *fiber.Ctx) error {
+	userClaims, err := crypto.GetUserFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	prefs, err := h.userS.GetPreferences(userClaims.ID)
+	if err != nil {
+		return err
+	}
+
+	return response.Response(dto.ResponseResult{
+		StatusCode: fiber.StatusOK,
+		Message:    "Preferences retrieved successfully",
+		Data:       prefs,
+	}, c)
+}
+
+func (h *AuthHandler) UpdatePreferences(c *fiber.Ctx) error {
+	userClaims, err := crypto.GetUserFromToken(c)
+	if err != nil {
+		return err
+	}
+
+	var req user.UpdatePreferencesRequest
+	if err := c.BodyParser(&req); err != nil {
+		return &apierror.UnprocessableEntityError{
+			Message: err.Error(),
+			Order:   "H1",
+		}
+	}
+
+	prefs, err := h.userS.UpdatePreferences(userClaims.ID, &req)
+	if err != nil {
+		return err
+	}
+
+	return response.Response(dto.ResponseResult{
+		StatusCode: fiber.StatusOK,
+		Message:    "Preferences updated successfully",
+		Data:       prefs,
 	}, c)
 }

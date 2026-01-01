@@ -286,6 +286,21 @@ starter-gofiber/
 │   ├── api/                     # Main API server
 │   │   └── main.go              # API server entry point
 │   └── worker/                  # Background worker server
+│       └── main.go              # Worker server entry point
+│
+├── migrations/                  # Database migration files
+│   ├── README.md                # Migration documentation
+│   ├── 000003_add_user_profile_fields.up.sql
+│   └── 000003_add_user_profile_fields.down.sql
+│
+├── migrations/                  # Database migration files
+│   ├── 000003_add_user_profile_fields.up.sql
+│   └── 000003_add_user_profile_fields.down.sql
+│
+├── cmd/                         # Application entry points
+│   ├── api/                     # Main API server
+│   │   └── main.go              # API server entry point
+│   └── worker/                  # Background worker server
 │       └── main.go              # Worker server entry point (optional)
 │
 ├── docs/                        # Documentation files
@@ -335,6 +350,7 @@ starter-gofiber/
 │   │       ├── email_verification.go  # Email verification entity
 │   │       ├── entity.go        # User entity (GORM model)
 │   │       ├── password_reset.go      # Password reset entity
+│   │       ├── preferences.go   # User preferences entity
 │   │       ├── refresh_token.go       # Refresh token entity
 │   │       ├── repository.go    # User repository interface
 │   │       ├── service.go       # User service interface
@@ -342,7 +358,7 @@ starter-gofiber/
 │   │
 │   ├── handler/                 # HTTP handlers (presentation layer)
 │   │   ├── http/                # HTTP handlers
-│   │   │   ├── auth.go          # Authentication endpoints
+│   │   │   ├── auth.go          # Authentication & profile endpoints
 │   │   │   ├── auth_routes.go   # Auth route definitions
 │   │   │   ├── health.go        # Health check endpoints
 │   │   │   ├── jobs.go          # Job management endpoints
@@ -388,7 +404,7 @@ starter-gofiber/
 │   │       ├── password_reset.go
 │   │       ├── post.go          # Post repository implementation
 │   │       ├── refresh_token.go
-│   │       └── user.go          # User repository implementation
+│   │       └── user.go          # User repository implementation (includes preferences)
 │   │
 │   ├── service/                 # Business logic layer
 │   │   ├── auth/                # Authentication service
@@ -463,7 +479,7 @@ starter-gofiber/
 │   └── setup_test.go            # Test setup & helpers
 │
 ├── variables/                   # Global constants & variables
-│   └── constant.go              # App constants
+│   └── constant.go              # App constants (includes AVATAR_PATH)
 │
 ├── .air.toml                    # Air live reload config
 ├── .env.example                 # Environment variables template
@@ -708,8 +724,11 @@ Lihat [docs/DEVOPS.md](docs/DEVOPS.md) untuk dokumentasi lengkap DevOps & CI/CD 
 Lihat [docs/PERFORMANCE.md](docs/PERFORMANCE.md) untuk dokumentasi lengkap performance optimization
 
 ### 15. User Management
-- [ ] **User Profile** - Get/Update user profile dengan avatar upload
-- [ ] **User Preferences** - Settings/preferences per user
+- [x] **User Profile** - Get/Update user profile dengan avatar upload
+- [x] **User Preferences** - Settings/preferences per user (notifications, privacy, UI settings)
+
+### Dokumentasi
+Lihat [docs/API_AUTH.md](docs/API_AUTH.md) untuk dokumentasi lengkap authentication endpoints
 
 ### 16. API Documentation
 - [ ] **Swagger/OpenAPI** - Auto-generated API documentation dengan Swagger UI

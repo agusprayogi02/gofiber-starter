@@ -14,4 +14,13 @@ type Service interface {
 	ResendVerificationEmail(email string) error
 	GetActiveSessions(userID uint) ([]SessionResponse, error)
 	RevokeSession(sessionID, userID uint) error
+
+	// Profile operations
+	GetProfile(userID uint) (*GetProfileResponse, error)
+	UpdateProfile(userID uint, req *UpdateProfileRequest) (*GetProfileResponse, error)
+	UpdateAvatar(userID uint, avatarPath string) (*GetProfileResponse, error)
+
+	// Preferences operations
+	GetPreferences(userID uint) (*GetPreferencesResponse, error)
+	UpdatePreferences(userID uint, req *UpdatePreferencesRequest) (*GetPreferencesResponse, error)
 }

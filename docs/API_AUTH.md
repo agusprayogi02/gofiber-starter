@@ -365,6 +365,209 @@ Authorization: Bearer <access_token>
 
 ---
 
+### 13. Get Profile
+**GET** `/api/auth/profile` 🔒
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response (200):**
+```json
+{
+  "code": 200,
+  "message": "Profile retrieved successfully",
+  "data": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "user",
+    "avatar": "/avatars/uuid.jpg",
+    "bio": "Software developer passionate about Go",
+    "email_verified": true,
+    "created_at": "2025-12-31T09:00:00Z",
+    "updated_at": "2025-12-31T13:00:00Z"
+  },
+  "timestamp": "2025-12-31T15:00:00Z"
+}
+```
+
+---
+
+### 14. Update Profile
+**PUT** `/api/auth/profile` 🔒
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Request Body:**
+```json
+{
+  "name": "John Updated",
+  "bio": "Updated bio text"
+}
+```
+
+**Response (200):**
+```json
+{
+  "code": 200,
+  "message": "Profile updated successfully",
+  "data": {
+    "id": 1,
+    "name": "John Updated",
+    "email": "john@example.com",
+    "role": "user",
+    "avatar": "/avatars/uuid.jpg",
+    "bio": "Updated bio text",
+    "email_verified": true,
+    "created_at": "2025-12-31T09:00:00Z",
+    "updated_at": "2025-12-31T15:30:00Z"
+  },
+  "timestamp": "2025-12-31T15:30:00Z"
+}
+```
+
+**Note:** Semua fields optional, hanya fields yang dikirim yang akan diupdate
+
+---
+
+### 15. Update Avatar
+**POST** `/api/auth/profile/avatar` 🔒
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+Content-Type: multipart/form-data
+```
+
+**Form Data:**
+- `avatar` (file): Image file (JPEG, PNG, GIF, WebP), max 5MB
+
+**Response (200):**
+```json
+{
+  "code": 200,
+  "message": "Avatar updated successfully",
+  "data": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "role": "user",
+    "avatar": "/avatars/uuid.jpg",
+    "bio": "Software developer",
+    "email_verified": true,
+    "created_at": "2025-12-31T09:00:00Z",
+    "updated_at": "2025-12-31T15:35:00Z"
+  },
+  "timestamp": "2025-12-31T15:35:00Z"
+}
+```
+
+**Note:** 
+- File akan di-upload ke `/public/avatars/`
+- Old avatar akan tetap ada (bisa di-cleanup manual jika diperlukan)
+- Supported formats: JPEG, PNG, GIF, WebP
+- Max file size: 5MB
+
+---
+
+### 16. Get Preferences
+**GET** `/api/auth/preferences` 🔒
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response (200):**
+```json
+{
+  "code": 200,
+  "message": "Preferences retrieved successfully",
+  "data": {
+    "preferences": {
+      "email_notifications": true,
+      "push_notifications": true,
+      "sms_notifications": false,
+      "profile_visibility": "public",
+      "show_email": false,
+      "show_online_status": true,
+      "theme": "auto",
+      "language": "en",
+      "timezone": "UTC",
+      "custom": {}
+    },
+    "updated_at": "2025-12-31T15:00:00Z"
+  },
+  "timestamp": "2025-12-31T15:40:00Z"
+}
+```
+
+**Note:** Jika preferences belum ada, akan return default preferences
+
+---
+
+### 17. Update Preferences
+**PUT** `/api/auth/preferences` 🔒
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Request Body:**
+```json
+{
+  "email_notifications": false,
+  "theme": "dark",
+  "language": "id",
+  "timezone": "Asia/Jakarta",
+  "custom": {
+    "newsletter": true,
+    "marketing_emails": false
+  }
+}
+```
+
+**Response (200):**
+```json
+{
+  "code": 200,
+  "message": "Preferences updated successfully",
+  "data": {
+    "preferences": {
+      "email_notifications": false,
+      "push_notifications": true,
+      "sms_notifications": false,
+      "profile_visibility": "public",
+      "show_email": false,
+      "show_online_status": true,
+      "theme": "dark",
+      "language": "id",
+      "timezone": "Asia/Jakarta",
+      "custom": {
+        "newsletter": true,
+        "marketing_emails": false
+      }
+    },
+    "updated_at": "2025-12-31T15:45:00Z"
+  },
+  "timestamp": "2025-12-31T15:45:00Z"
+}
+```
+
+**Note:** 
+- Semua fields optional, hanya fields yang dikirim yang akan diupdate
+- `profile_visibility` harus salah satu: `public`, `private`, `friends`
+- `theme` harus salah satu: `light`, `dark`, `auto`
+- `custom` field bisa digunakan untuk custom preferences
+
+---
+
 ## Notes
 
 🔒 = Requires authentication (Bearer token in Authorization header)

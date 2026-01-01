@@ -112,3 +112,57 @@ func (r SessionResponse) FromEntity(t RefreshToken) SessionResponse {
 	r.ExpiresAt = t.ExpiresAt.Format(variables.FORMAT_TIME)
 	return r
 }
+
+// Profile DTOs
+type GetProfileResponse struct {
+	ID            uint   `json:"id"`
+	Name          string `json:"name"`
+	Email         string `json:"email"`
+	Role          string `json:"role"`
+	Avatar        string `json:"avatar,omitempty"`
+	Bio           string `json:"bio,omitempty"`
+	EmailVerified bool   `json:"email_verified"`
+	CreatedAt     string `json:"created_at"`
+	UpdatedAt     string `json:"updated_at"`
+}
+
+func (r GetProfileResponse) FromEntity(u User) GetProfileResponse {
+	return GetProfileResponse{
+		ID:            u.ID,
+		Name:          u.Name,
+		Email:         u.Email,
+		Role:          u.Role.String(),
+		Avatar:        u.Avatar,
+		Bio:           u.Bio,
+		EmailVerified: u.EmailVerified,
+		CreatedAt:     u.CreatedAt.Format(variables.FORMAT_TIME),
+		UpdatedAt:     u.UpdatedAt.Format(variables.FORMAT_TIME),
+	}
+}
+
+type UpdateProfileRequest struct {
+	Name string `json:"name" binding:"omitempty,min=3"`
+	Bio  string `json:"bio" binding:"omitempty,max=500"`
+}
+
+type UpdateAvatarRequest struct {
+	Avatar string `json:"avatar"` // File path/URL after upload
+}
+
+type GetPreferencesResponse struct {
+	Preferences *PreferencesData `json:"preferences"`
+	UpdatedAt   string           `json:"updated_at"`
+}
+
+type UpdatePreferencesRequest struct {
+	EmailNotifications *bool                  `json:"email_notifications,omitempty"`
+	PushNotifications  *bool                  `json:"push_notifications,omitempty"`
+	SMSNotifications   *bool                  `json:"sms_notifications,omitempty"`
+	ProfileVisibility  *string                `json:"profile_visibility,omitempty" binding:"omitempty,oneof=public private friends"`
+	ShowEmail          *bool                  `json:"show_email,omitempty"`
+	ShowOnlineStatus   *bool                  `json:"show_online_status,omitempty"`
+	Theme              *string                `json:"theme,omitempty" binding:"omitempty,oneof=light dark auto"`
+	Language           *string                `json:"language,omitempty"`
+	Timezone           *string                `json:"timezone,omitempty"`
+	Custom             map[string]interface{} `json:"custom,omitempty"`
+}

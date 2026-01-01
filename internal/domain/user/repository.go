@@ -31,4 +31,9 @@ type Repository interface {
 	CreateAPIKey(apiKey *APIKey) error
 	FindAPIKeyByHash(hash string) (*APIKey, error)
 	UpdateAPIKey(apiKey *APIKey) error
+
+	// Preferences operations
+	CreatePreferences(prefs *UserPreferences) error
+	FindPreferencesByUserID(userID uint) (*UserPreferences, error)
+	UpdatePreferences(prefs *UserPreferences) error
 }
