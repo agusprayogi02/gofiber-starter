@@ -1,48 +1,26 @@
 package middleware
 
 import (
-	"time"
-
 	"starter-gofiber/helper"
 
+	"github.com/gofiber/contrib/fiberzap/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
-	"go.uber.org/zap"
 )
 
-// RequestLogger middleware logs all HTTP requests with structured logging
+// RequestLogger middleware logs all HTTP requests using fiberzap
 func RequestLogger() fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		// Generate request ID
+		// Generate request ID before fiberzap logging
 		requestID := uuid.New().String()
 		c.Locals("requestID", requestID)
 		c.Set("X-Request-ID", requestID)
 
-		// Record start time
-		start := time.Now()
-
-		// Process request
-		err := c.Next()
-
-		// Calculate duration
-		duration := time.Since(start)
-
-		// Get response status
-		status := c.Response().StatusCode()
-
-		// Log request
-		helper.LogRequest(
-			c.Method(),
-			c.Path(),
-			status,
-			duration,
-			zap.String("request_id", requestID),
-			zap.String("ip", c.IP()),
-			zap.String("user_agent", c.Get("User-Agent")),
-			zap.Int("body_size", len(c.Response().Body())),
-		)
-
-		return err
+		// Use fiberzap middleware for structured HTTP logging
+		return fiberzap.New(fiberzap.Config{
+			Logger: helper.Logger,
+			Fields: []string{"ip", "latency", "status", "method", "url", "error"},
+		})(c)
 	}
 }
 

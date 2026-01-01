@@ -10,6 +10,7 @@ import (
 var Logger *zap.Logger
 
 // InitLogger initializes the global logger instance
+// This logger is used both for application logging and Fiber HTTP logging via fiberzap
 func InitLogger(env string) error {
 	var config zap.Config
 
@@ -17,11 +18,15 @@ func InitLogger(env string) error {
 		config = zap.NewProductionConfig()
 		config.EncoderConfig.TimeKey = "timestamp"
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		config.EncoderConfig.MessageKey = "message"
+		config.EncoderConfig.LevelKey = "level"
 	} else {
 		config = zap.NewDevelopmentConfig()
 		config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 		config.EncoderConfig.TimeKey = "timestamp"
 		config.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+		config.EncoderConfig.MessageKey = "message"
+		config.EncoderConfig.LevelKey = "level"
 	}
 
 	// Set output paths

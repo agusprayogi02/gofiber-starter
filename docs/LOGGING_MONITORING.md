@@ -15,7 +15,7 @@ Dokumentasi lengkap untuk sistem logging dan monitoring pada aplikasi starter-go
 
 ## Structured Logging
 
-Aplikasi menggunakan **Zap** sebagai structured logging library dengan format JSON untuk production dan colored console untuk development.
+Aplikasi menggunakan **Zap** sebagai structured logging library dengan **fiberzap** middleware untuk Fiber HTTP logging integration. Format JSON untuk production dan colored console untuk development.
 
 ### Konfigurasi
 
@@ -60,6 +60,35 @@ helper.LogError(err, map[string]interface{}{
 // Database query logging (automatic via GORM logger)
 helper.LogDBQuery(sql, duration, rows, err)
 ```
+
+### HTTP Request Logging with fiberzap
+
+HTTP requests are automatically logged using the **fiberzap** middleware (official Fiber-Zap integration):
+
+```go
+// middleware/logger.go
+func RequestLogger() fiber.Handler {
+    return func(c *fiber.Ctx) error {
+        // Generate request ID before fiberzap logging
+        requestID := uuid.New().String()
+        c.Locals("requestID", requestID)
+        c.Set("X-Request-ID", requestID)
+
+        // Use fiberzap middleware for structured HTTP logging
+        return fiberzap.New(fiberzap.Config{
+            Logger: helper.Logger,
+            Fields: []string{"ip", "latency", "status", "method", "url", "error"},
+        })(c)
+    }
+}
+```
+
+**Benefits of fiberzap:**
+- ✅ Official Fiber integration for Zap
+- ✅ Consistent structured logging format
+- ✅ Automatic performance metrics (latency)
+- ✅ Request/response details captured
+- ✅ Error logging with stack traces
 
 ### Log Fields
 
