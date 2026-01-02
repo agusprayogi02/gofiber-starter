@@ -7,8 +7,7 @@ import (
 
 	"starter-gofiber/internal/domain/post"
 	"starter-gofiber/internal/domain/user"
-	// Uncomment to enable audit logging callbacks
-	// "starter-gofiber/pkg/database"
+	"starter-gofiber/pkg/database"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -78,16 +77,22 @@ func LoadDB() {
 			}
 		}
 
-		err = db.AutoMigrate(
+		migrateModels := []interface{}{
 			&user.User{},
 			&post.Post{},
 			&user.RefreshToken{},
 			&user.PasswordReset{},
 			&user.EmailVerification{},
 			&user.APIKey{},
-			// Note: AuditLog, File, FileVersion are defined in their respective packages
-			// (pkg/database/audit.go and internal/infrastructure/storage/versioning.go)
-		)
+			&user.UserPreferences{},
+		}
+
+		// Add AuditLog to migration if audit logging is enabled
+		if ENV.AUDIT_LOG_ENABLE {
+			migrateModels = append(migrateModels, &database.AuditLog{})
+		}
+
+		err = db.AutoMigrate(migrateModels...)
 		if err != nil {
 			panic(err)
 		}
@@ -116,8 +121,10 @@ func LoadDB() {
 
 	// Register audit log callbacks for automatic tracking
 	// Note: AuditLog is now defined in pkg/database/audit.go
-	// Uncomment the line below to enable automatic audit logging
-	// database.RegisterAuditCallbacks(db)
+	// Enable audit logging if configured
+	if ENV.AUDIT_LOG_ENABLE {
+		database.RegisterAuditCallbacks(db)
+	}
 
 	DB = db
 }
