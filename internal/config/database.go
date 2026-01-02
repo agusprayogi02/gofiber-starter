@@ -84,6 +84,7 @@ func LoadDB() {
 			&user.PasswordReset{},
 			&user.EmailVerification{},
 			&user.APIKey{},
+			&user.UserPreferences{},
 		}
 
 		// Add AuditLog to migration if audit logging is enabled
