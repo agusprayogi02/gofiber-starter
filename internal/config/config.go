@@ -43,6 +43,9 @@ type Config struct {
 	// Performance Configuration
 	REQUEST_TIMEOUT  int // Request timeout in seconds (default: 30)
 	SHUTDOWN_TIMEOUT int // Graceful shutdown timeout in seconds (default: 10)
+
+	// Audit Log Configuration
+	AUDIT_LOG_ENABLE bool // Enable/disable audit logging (default: false)
 }
 
 var ENV *Config
