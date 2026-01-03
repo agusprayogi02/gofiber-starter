@@ -68,16 +68,23 @@ This project uses **Clean Architecture** with **Domain-Driven Design (DDD)** pri
    - Returns formatted responses
    - Example: `internal/handler/http/auth.go`
 
-5. **Infrastructure Layer** (`internal/infrastructure/`) - External services
+5. **Router Layer** (`router/`) - Route definitions and registration
+   - Defines API routes and endpoints
+   - Applies middleware (auth, rate limit, etc.)
+   - Registers handlers from `internal/handler/http/`
+   - Example: `router/auth.go`, `router/post.go`
+
+6. **Infrastructure Layer** (`internal/infrastructure/`) - External services
    - Email, Cache, Storage implementations
    - Example: `internal/infrastructure/storage/`
 
 ### Dependency Direction
 
 **CRITICAL**: Dependencies must flow in ONE direction only:
-- Handler → Service → Repository → Database
+- Router → Handler → Service → Repository → Database
 - Domain layer has NO dependencies
-- Never reverse dependencies (e.g., Service → Handler)
+- Never reverse dependencies (e.g., Service → Handler, Handler → Router)
+- Router depends on Handler, but Handler does NOT depend on Router
 
 ## Code Style & Conventions
 
@@ -416,12 +423,25 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 - Resource endpoints: `/api/{resource}` or `/api/{resource}/:id`
 - Use proper HTTP methods: GET, POST, PUT, DELETE
 
-**Route Registration: `internal/handler/http/auth_routes.go`**
+**Route Registration: `router/auth.go`**
 ```go
+package router
+
+import (
+    "starter-gofiber/internal/config"
+    "starter-gofiber/internal/handler/http"
+    "starter-gofiber/internal/handler/middleware"
+    "starter-gofiber/internal/repository/postgres"
+    "starter-gofiber/internal/service/auth"
+    
+    "github.com/casbin/casbin/v2"
+    "github.com/gofiber/fiber/v2"
+)
+
 func NewAuthentication(app fiber.Router, enforcer *casbin.Enforcer) {
     userRepo := postgres.NewUserRepository(config.DB)
     authService := auth.NewAuthService(userRepo)
-    authHandler := NewAuthHandler(authService)
+    authHandler := http.NewAuthHandler(authService)
     
     // Public routes
     app.Post("/register", authHandler.Register(enforcer))
@@ -429,8 +449,19 @@ func NewAuthentication(app fiber.Router, enforcer *casbin.Enforcer) {
     
     // Protected routes
     authMiddleware := middleware.AuthMiddleware()
-    app.Get("/auth/profile", authMiddleware, authHandler.GetProfile)
-    app.Put("/auth/profile", authMiddleware, authHandler.UpdateProfile)
+    app.Get("/profile", authMiddleware, authHandler.GetProfile)
+    app.Put("/profile", authMiddleware, authHandler.UpdateProfile)
+}
+```
+
+**Router Setup: `router/router.go`**
+```go
+func AppRouter(app *fiber.App) {
+    // API routes
+    api := app.Group("/api")
+    auth := api.Group("/auth")
+    NewAuthentication(auth, config.Enforcer)
+    NewPostRouter(api)
 }
 ```
 
@@ -812,11 +843,54 @@ Create these files:
 - Call service methods
 - Return formatted responses
 
-### Step 5: Routes (`internal/handler/http/product_routes.go`)
+### Step 5: Routes (`router/product.go`)
 
+- Create route file in `router/` folder
 - Define route group
 - Apply middleware (auth, rate limit, etc.)
 - Register handlers
+- Import handlers from `internal/handler/http/`
+
+**Example: `router/product.go`**
+```go
+package router
+
+import (
+    "starter-gofiber/internal/config"
+    "starter-gofiber/internal/handler/http"
+    "starter-gofiber/internal/handler/middleware"
+    "starter-gofiber/internal/repository/postgres"
+    "starter-gofiber/internal/service/product"
+    
+    "github.com/gofiber/fiber/v2"
+)
+
+func NewProductRouter(app fiber.Router) {
+    repo := postgres.NewProductRepository(config.DB)
+    productService := product.NewProductService(repo)
+    productHandler := http.NewProductHandler(productService)
+    
+    products := app.Group("/products")
+    
+    // Public routes
+    products.Get("", productHandler.All)
+    products.Get("/:id", productHandler.GetByID)
+    
+    // Protected routes
+    authMiddleware := middleware.AuthMiddleware()
+    products.Post("", authMiddleware, productHandler.Create)
+    products.Put("/:id", authMiddleware, productHandler.Update)
+    products.Delete("/:id", authMiddleware, productHandler.Delete)
+}
+```
+
+**Then register in `router/router.go`:**
+```go
+func AppRouter(app *fiber.App) {
+    api := app.Group("/api")
+    NewProductRouter(api)
+}
+```
 
 ### Step 6: Migration (`migrations/XXXX_create_product_table.up.sql`)
 
@@ -998,5 +1072,16 @@ When generating code, ALWAYS ensure:
 - [ ] Creates Postman collection for new features api documentation
 ---
 
-**Remember**: This codebase follows Clean Architecture principles. Always maintain layer separation and dependency direction. When in doubt, refer to existing implementations in `internal/domain/user/` and `internal/service/auth/` as reference examples.
+**Remember**: This codebase follows Clean Architecture principles. Always maintain layer separation and dependency direction. 
+
+**Router Structure:**
+- All route definitions go in `router/` folder (e.g., `router/auth.go`, `router/post.go`)
+- Handlers remain in `internal/handler/http/` folder
+- Router imports handlers, not the other way around
+
+When in doubt, refer to existing implementations:
+- Domain: `internal/domain/user/`
+- Service: `internal/service/auth/service.go`
+- Handler: `internal/handler/http/auth.go`
+- Router: `router/auth.go`
 
