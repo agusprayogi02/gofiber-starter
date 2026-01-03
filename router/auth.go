@@ -33,4 +33,13 @@ func NewAuthentication(app fiber.Router, enforcer *casbin.Enforcer) {
 	app.Post("/change-password", authMiddleware, h.ChangePassword)
 	app.Get("/sessions", authMiddleware, h.GetActiveSessions)
 	app.Delete("/sessions/:sessionId", authMiddleware, h.RevokeSession)
+
+	// Profile routes
+	app.Get("/profile", authMiddleware, h.GetProfile)
+	app.Put("/profile", authMiddleware, h.UpdateProfile)
+	app.Post("/profile/avatar", authMiddleware, h.UpdateAvatar)
+
+	// Preferences routes
+	app.Get("/preferences", authMiddleware, h.GetPreferences)
+	app.Put("/preferences", authMiddleware, h.UpdatePreferences)
 }

@@ -359,12 +359,10 @@ starter-gofiber/
 │   ├── handler/                 # HTTP handlers (presentation layer)
 │   │   ├── http/                # HTTP handlers
 │   │   │   ├── auth.go          # Authentication & profile endpoints
-│   │   │   ├── auth_routes.go   # Auth route definitions
 │   │   │   ├── health.go        # Health check endpoints
 │   │   │   ├── jobs.go          # Job management endpoints
 │   │   │   ├── metrics.go       # Metrics endpoint
 │   │   │   ├── post.go          # Post CRUD endpoints
-│   │   │   ├── post_routes.go   # Post route definitions
 │   │   │   └── sse.go           # Server-Sent Events handler
 │   │   └── middleware/          # HTTP middlewares
 │   │       ├── apikey.go        # API Key authentication
