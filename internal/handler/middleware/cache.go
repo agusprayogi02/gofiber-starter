@@ -36,7 +36,7 @@ type CacheConfig struct {
 func DefaultCacheConfig() CacheConfig {
 	return CacheConfig{
 		Expiration:      5 * time.Minute,
-		ExcludePaths:    []string{"/health", "/metrics", "/admin"},
+		ExcludePaths:    []string{"/health", "/metrics", "/admin", "/api/auth/*"},
 		ExcludeMethods:  []string{"POST", "PUT", "PATCH", "DELETE"},
 		KeyPrefix:       "cache:",
 		ExcludeStatuses: []int{500, 502, 503, 504},

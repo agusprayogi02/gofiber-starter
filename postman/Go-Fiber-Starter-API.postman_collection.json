@@ -39,16 +39,17 @@
                             "mode": "raw",
                             "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\",\n  \"role\": \"user\"\n}"
                         },
-                        "url": {
-                            "raw": "{{base_url}}/api/register",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "register"
-                            ]
-                        }
+                            "url": {
+                                "raw": "{{base_url}}/api/auth/register",
+                                "host": [
+                                    "{{base_url}}"
+                                ],
+                                "path": [
+                                    "api",
+                                    "auth",
+                                    "register"
+                                ]
+                            }
                     },
                     "response": []
                 },
@@ -81,16 +82,17 @@
                             "mode": "raw",
                             "raw": "{\n  \"email\": \"john@example.com\",\n  \"password\": \"password123\"\n}"
                         },
-                        "url": {
-                            "raw": "{{base_url}}/api/login",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "login"
-                            ]
-                        }
+                            "url": {
+                                "raw": "{{base_url}}/api/auth/login",
+                                "host": [
+                                    "{{base_url}}"
+                                ],
+                                "path": [
+                                    "api",
+                                    "auth",
+                                    "login"
+                                ]
+                            }
                     },
                     "response": []
                 },
@@ -123,16 +125,17 @@
                             "mode": "raw",
                             "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
                         },
-                        "url": {
-                            "raw": "{{base_url}}/api/refresh-token",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "refresh-token"
-                            ]
-                        }
+                            "url": {
+                                "raw": "{{base_url}}/api/auth/refresh-token",
+                                "host": [
+                                    "{{base_url}}"
+                                ],
+                                "path": [
+                                    "api",
+                                    "auth",
+                                    "refresh-token"
+                                ]
+                            }
                     },
                     "response": []
                 },
@@ -154,16 +157,17 @@
                             "mode": "raw",
                             "raw": "{\n  \"refresh_token\": \"{{refresh_token}}\"\n}"
                         },
-                        "url": {
-                            "raw": "{{base_url}}/api/logout",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "logout"
-                            ]
-                        }
+                            "url": {
+                                "raw": "{{base_url}}/api/auth/logout",
+                                "host": [
+                                    "{{base_url}}"
+                                ],
+                                "path": [
+                                    "api",
+                                    "auth",
+                                    "logout"
+                                ]
+                            }
                     },
                     "response": []
                 },
@@ -177,16 +181,17 @@
                                 "value": "Bearer {{access_token}}"
                             }
                         ],
-                        "url": {
-                            "raw": "{{base_url}}/api/logout-all",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "logout-all"
-                            ]
-                        }
+                            "url": {
+                                "raw": "{{base_url}}/api/auth/logout-all",
+                                "host": [
+                                    "{{base_url}}"
+                                ],
+                                "path": [
+                                    "api",
+                                    "auth",
+                                    "logout-all"
+                                ]
+                            }
                     },
                     "response": []
                 },
@@ -204,16 +209,17 @@
                             "mode": "raw",
                             "raw": "{\n  \"email\": \"john@example.com\"\n}"
                         },
-                        "url": {
-                            "raw": "{{base_url}}/api/forgot-password",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "forgot-password"
-                            ]
-                        }
+                            "url": {
+                                "raw": "{{base_url}}/api/auth/forgot-password",
+                                "host": [
+                                    "{{base_url}}"
+                                ],
+                                "path": [
+                                    "api",
+                                    "auth",
+                                    "forgot-password"
+                                ]
+                            }
                     },
                     "response": []
                 },
@@ -231,16 +237,17 @@
                             "mode": "raw",
                             "raw": "{\n  \"token\": \"your-reset-token-here\",\n  \"password\": \"newpassword123\"\n}"
                         },
-                        "url": {
-                            "raw": "{{base_url}}/api/reset-password",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "reset-password"
-                            ]
-                        }
+                            "url": {
+                                "raw": "{{base_url}}/api/auth/reset-password",
+                                "host": [
+                                    "{{base_url}}"
+                                ],
+                                "path": [
+                                    "api",
+                                    "auth",
+                                    "reset-password"
+                                ]
+                            }
                     },
                     "response": []
                 },
@@ -262,16 +269,17 @@
                             "mode": "raw",
                             "raw": "{\n  \"old_password\": \"password123\",\n  \"new_password\": \"newpassword123\"\n}"
                         },
-                        "url": {
-                            "raw": "{{base_url}}/api/change-password",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "change-password"
-                            ]
-                        }
+                            "url": {
+                                "raw": "{{base_url}}/api/auth/change-password",
+                                "host": [
+                                    "{{base_url}}"
+                                ],
+                                "path": [
+                                    "api",
+                                    "auth",
+                                    "change-password"
+                                ]
+                            }
                     },
                     "response": []
                 },
@@ -289,16 +297,17 @@
                             "mode": "raw",
                             "raw": "{\n  \"token\": \"your-verification-token-here\"\n}"
                         },
-                        "url": {
-                            "raw": "{{base_url}}/api/verify-email",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "verify-email"
-                            ]
-                        }
+                            "url": {
+                                "raw": "{{base_url}}/api/auth/verify-email",
+                                "host": [
+                                    "{{base_url}}"
+                                ],
+                                "path": [
+                                    "api",
+                                    "auth",
+                                    "verify-email"
+                                ]
+                            }
                     },
                     "response": []
                 },
@@ -312,16 +321,17 @@
                                 "value": "Bearer {{access_token}}"
                             }
                         ],
-                        "url": {
-                            "raw": "{{base_url}}/api/resend-verification",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "resend-verification"
-                            ]
-                        }
+                            "url": {
+                                "raw": "{{base_url}}/api/auth/resend-verification",
+                                "host": [
+                                    "{{base_url}}"
+                                ],
+                                "path": [
+                                    "api",
+                                    "auth",
+                                    "resend-verification"
+                                ]
+                            }
                     },
                     "response": []
                 },
@@ -335,16 +345,17 @@
                                 "value": "Bearer {{access_token}}"
                             }
                         ],
-                        "url": {
-                            "raw": "{{base_url}}/api/sessions",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "sessions"
-                            ]
-                        }
+                            "url": {
+                                "raw": "{{base_url}}/api/auth/sessions",
+                                "host": [
+                                    "{{base_url}}"
+                                ],
+                                "path": [
+                                    "api",
+                                    "auth",
+                                    "sessions"
+                                ]
+                            }
                     },
                     "response": []
                 },
@@ -358,23 +369,24 @@
                                 "value": "Bearer {{access_token}}"
                             }
                         ],
-                        "url": {
-                            "raw": "{{base_url}}/api/sessions/:sessionId",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "api",
-                                "sessions",
-                                ":sessionId"
-                            ],
-                            "variable": [
-                                {
-                                    "key": "sessionId",
-                                    "value": "1"
-                                }
-                            ]
-                        }
+                            "url": {
+                                "raw": "{{base_url}}/api/auth/sessions/:sessionId",
+                                "host": [
+                                    "{{base_url}}"
+                                ],
+                                "path": [
+                                    "api",
+                                    "auth",
+                                    "sessions",
+                                    ":sessionId"
+                                ],
+                                "variable": [
+                                    {
+                                        "key": "sessionId",
+                                        "value": "1"
+                                    }
+                                ]
+                            }
                     },
                     "response": []
                 },
@@ -716,6 +728,440 @@
                         }
                     },
                     "response": []
+                }
+            ]
+        },
+        {
+            "name": "Portfolio Sections",
+            "description": "Dynamic Portfolio CMS API - Manage portfolio sections, items, and fields",
+            "item": [
+                {
+                    "name": "Public",
+                    "item": [
+                        {
+                            "name": "Get Public Sections",
+                            "request": {
+                                "method": "GET",
+                                "header": [],
+                                "url": {
+                                    "raw": "{{base_url}}/api/public/users/:userId/sections?section_code=hero&type=single",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "public",
+                                        "users",
+                                        ":userId",
+                                        "sections"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "section_code",
+                                            "value": "hero",
+                                            "description": "Filter by section code (optional)"
+                                        },
+                                        {
+                                            "key": "type",
+                                            "value": "single",
+                                            "description": "Filter by type: single or repeater (optional)"
+                                        }
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "userId",
+                                            "value": "1",
+                                            "description": "Portfolio owner's user ID"
+                                        }
+                                    ]
+                                },
+                                "description": "Fetch public sections for a specific user's portfolio. No authentication required."
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Admin - Sections",
+                    "item": [
+                        {
+                            "name": "List All Sections",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/sections",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "sections"
+                                    ]
+                                },
+                                "description": "List all sections for the authenticated user (includes inactive sections)"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Section by ID",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/sections/:id",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "sections",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "1"
+                                        }
+                                    ]
+                                },
+                                "description": "Get a specific section with ownership verification"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create Section",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"code\": \"hero\",\n  \"type\": \"single\",\n  \"title\": \"Hero Section\",\n  \"description\": \"Main hero section for portfolio\",\n  \"sort_order\": 1\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/sections",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "sections"
+                                    ]
+                                },
+                                "description": "Create a new section. user_id is automatically set from JWT token."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Section",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"title\": \"Updated Hero Section\",\n  \"description\": \"Updated description\",\n  \"sort_order\": 2,\n  \"is_active\": true\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/sections/:id",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "sections",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "1"
+                                        }
+                                    ]
+                                },
+                                "description": "Update a section with ownership verification"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Section",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/sections/:id",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "sections",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "1"
+                                        }
+                                    ]
+                                },
+                                "description": "Delete a section (cascades to items and fields)"
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Admin - Items",
+                    "item": [
+                        {
+                            "name": "Create Item",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"fields\": [\n    {\n      \"field_key\": \"headline\",\n      \"field_value\": \"Welcome to My Portfolio\",\n      \"field_type\": \"text\"\n    },\n    {\n      \"field_key\": \"subtitle\",\n      \"field_value\": \"Full Stack Developer\",\n      \"field_type\": \"text\"\n    },\n    {\n      \"field_key\": \"background_image\",\n      \"field_value\": \"https://cdn.example.com/hero-bg.jpg\",\n      \"field_type\": \"image_url\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/sections/:id/items",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "sections",
+                                        ":id",
+                                        "items"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "1"
+                                        }
+                                    ]
+                                },
+                                "description": "Add a content item to a section. Validates required fields based on section type."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Update Item",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"sort_order\": 1,\n  \"is_active\": true,\n  \"fields\": [\n    {\n      \"field_key\": \"headline\",\n      \"field_value\": \"Updated Headline\",\n      \"field_type\": \"text\"\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/items/:id",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "items",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "1"
+                                        }
+                                    ]
+                                },
+                                "description": "Update an item with ownership verification"
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Delete Item",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/items/:id",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "items",
+                                        ":id"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "1"
+                                        }
+                                    ]
+                                },
+                                "description": "Delete an item (cascades to fields)"
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Admin - Fields",
+                    "item": [
+                        {
+                            "name": "Update Field",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"field_value\": \"Updated Headline Text\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/items/:id/fields/:field_key",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "items",
+                                        ":id",
+                                        "fields",
+                                        ":field_key"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "1"
+                                        },
+                                        {
+                                            "key": "field_key",
+                                            "value": "headline"
+                                        }
+                                    ]
+                                },
+                                "description": "Update a specific field value. Field type validation is enforced (URLs must be HTTPS, emails must be valid format)."
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Admin - Reordering",
+                    "item": [
+                        {
+                            "name": "Reorder Items",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{access_token}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"items\": [\n    {\n      \"id\": 5,\n      \"sort_order\": 1\n    },\n    {\n      \"id\": 6,\n      \"sort_order\": 2\n    }\n  ]\n}"
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/admin/sections/:id/reorder",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "admin",
+                                        "sections",
+                                        ":id",
+                                        "reorder"
+                                    ],
+                                    "variable": [
+                                        {
+                                            "key": "id",
+                                            "value": "1"
+                                        }
+                                    ]
+                                },
+                                "description": "Update sort_order for multiple items in a section"
+                            },
+                            "response": []
+                        }
+                    ]
                 }
             ]
         }
