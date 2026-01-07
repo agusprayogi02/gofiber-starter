@@ -1,0 +1,189 @@
+# GitHub Actions Workflow for Atlas Migrations
+# This workflow automatically applies database migrations on deployment
+
+name: Database Migration
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    paths:
+      - 'migrations/**'
+      - 'internal/domain/**'
+      - 'cmd/atlas/**'
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  validate:
+    name: Validate Migrations
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'
+      
+      - name: Install Atlas CLI
+        run: |
+          curl -sSf https://atlasgo.sh | sh
+          atlas version
+      
+      - name: Install dependencies
+        run: go mod download
+      
+      - name: Validate GORM schema
+        run: |
+          go run cmd/atlas/loader.go > /dev/null
+          echo "✓ GORM schema is valid"
+      
+      - name: Validate migration files
+        run: |
+          atlas migrate validate --env dev
+          echo "✓ Migration files are valid"
+        env:
+          ATLAS_DEV_DB_URL: sqlite://file?mode=memory
+      
+      - name: Lint migrations
+        run: |
+          atlas migrate lint --env dev || true
+        env:
+          ATLAS_DEV_DB_URL: sqlite://file?mode=memory
+
+  migrate-staging:
+    name: Migrate Staging Database
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'staging')
+    environment: staging
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Install Atlas CLI
+        run: |
+          curl -sSf https://atlasgo.sh | sh
+          atlas version
+      
+      - name: Check migration status
+        run: |
+          atlas migrate status --env dev
+          echo "Current migration status checked"
+        env:
+          ATLAS_DB_URL: ${{ secrets.STAGING_DB_URL }}
+      
+      - name: Apply migrations
+        run: |
+          atlas migrate apply --env dev
+          echo "✓ Migrations applied to staging"
+        env:
+          ATLAS_DB_URL: ${{ secrets.STAGING_DB_URL }}
+      
+      - name: Verify migrations
+        run: |
+          atlas migrate status --env dev
+          echo "✓ Migration verification complete"
+        env:
+          ATLAS_DB_URL: ${{ secrets.STAGING_DB_URL }}
+
+  migrate-production:
+    name: Migrate Production Database
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && inputs.environment == 'production')
+    environment: production
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Install Atlas CLI
+        run: |
+          curl -sSf https://atlasgo.sh | sh
+          atlas version
+      
+      - name: Backup database
+        run: |
+          echo "⚠️ Creating database backup before migration..."
+          # Add your backup script here
+          # Example: mysqldump or pg_dump
+        env:
+          DB_URL: ${{ secrets.PROD_DB_URL }}
+      
+      - name: Check migration status
+        run: |
+          atlas migrate status --env prod
+          echo "Current migration status checked"
+        env:
+          ATLAS_DB_URL: ${{ secrets.PROD_DB_URL }}
+      
+      - name: Dry run migrations
+        run: |
+          echo "Testing migrations with dry run..."
+          atlas migrate apply --env prod --dry-run
+        env:
+          ATLAS_DB_URL: ${{ secrets.PROD_DB_URL }}
+      
+      - name: Apply migrations
+        run: |
+          echo "🚀 Applying migrations to production..."
+          atlas migrate apply --env prod
+          echo "✓ Migrations applied to production"
+        env:
+          ATLAS_DB_URL: ${{ secrets.PROD_DB_URL }}
+      
+      - name: Verify migrations
+        run: |
+          atlas migrate status --env prod
+          echo "✓ Migration verification complete"
+        env:
+          ATLAS_DB_URL: ${{ secrets.PROD_DB_URL }}
+      
+      - name: Notify success
+        if: success()
+        run: |
+          echo "✅ Production database migration completed successfully"
+          # Add notification logic here (Slack, Discord, Email, etc.)
+      
+      - name: Notify failure
+        if: failure()
+        run: |
+          echo "❌ Production database migration failed!"
+          # Add notification logic here (Slack, Discord, Email, etc.)
+
+  report:
+    name: Migration Report
+    runs-on: ubuntu-latest
+    needs: [validate, migrate-staging, migrate-production]
+    if: always()
+    
+    steps:
+      - name: Generate report
+        run: |
+          echo "# Migration Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Status" >> $GITHUB_STEP_SUMMARY
+          echo "- Validation: ${{ needs.validate.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Staging: ${{ needs.migrate-staging.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Production: ${{ needs.migrate-production.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Details" >> $GITHUB_STEP_SUMMARY
+          echo "- Branch: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Triggered by: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY

@@ -892,10 +892,44 @@ func AppRouter(app *fiber.App) {
 }
 ```
 
-### Step 6: Migration (`migrations/XXXX_create_product_table.up.sql`)
+### Step 6: Database Migration
 
-- Create migration file for schema changes
-- Include rollback file (`down.sql`)
+**IMPORTANT**: This project uses **Atlas** for database migrations, NOT golang-migrate!
+
+**Add Model to Migration System:**
+```go
+// internal/config/database.go
+func GetModelsForMigration() []interface{} {
+    models := []interface{}{
+        &user.User{},
+        &post.Post{},
+        &product.Product{}, // Add your new model here
+        // ...
+    }
+    return models
+}
+```
+
+**Generate & Apply Migration:**
+```bash
+# Generate migration from GORM schema
+make atlas-diff
+
+# Or with custom name
+make atlas-diff-name NAME=create_products_table
+
+# Review generated SQL
+cat migrations/[timestamp]_create_products_table.sql
+
+# Apply migration
+make atlas-apply
+```
+
+**Key Points:**
+- ✅ Register model ONCE in `GetModelsForMigration()` 
+- ✅ Both AutoMigrate (dev) and Atlas (prod) use same models
+- ✅ No manual SQL writing needed - Atlas generates from GORM
+- ✅ Single source of truth for all models
 
 ### Step 7: Tests (`tests/product_test.go`)
 
@@ -1085,3 +1119,434 @@ When in doubt, refer to existing implementations:
 - Handler: `internal/handler/http/auth.go`
 - Router: `router/auth.go`
 
+---
+
+## Database Migration System (Atlas)
+
+### Why Atlas?
+
+This project uses **Atlas with GORM Provider** instead of golang-migrate for automatic schema migrations.
+
+**Benefits:**
+- ✅ Auto-generate migrations from GORM models
+- ✅ No manual SQL writing needed
+- ✅ Type-safe migrations from Go code
+- ✅ Single source of truth for models
+- ✅ Version control friendly
+- ✅ CI/CD ready
+
+### Single Source of Truth
+
+**All models are defined in ONE place:**
+
+```go
+// internal/config/database.go
+func GetModelsForMigration() []interface{} {
+    models := []interface{}{
+        &user.User{},
+        &post.Post{},
+        &user.RefreshToken{},
+        &user.PasswordReset{},
+        &user.EmailVerification{},
+        &user.APIKey{},
+        &user.UserPreferences{},
+    }
+
+    // Add AuditLog if enabled
+    if ENV.AUDIT_LOG_ENABLE {
+        models = append(models, &database.AuditLog{})
+    }
+
+    return models
+}
+```
+
+**This function is used by:**
+1. **AutoMigrate** (Development: `DB_GEN=true`) - Auto-sync schema on startup
+2. **Atlas Loader** (Production: `DB_GEN=false`) - Generate migration files
+
+### Migration Workflow
+
+#### Development Mode (Fast Iteration)
+
+```bash
+# Set in .env
+DB_GEN=true
+
+# Run app - schema auto-syncs
+go run ./cmd/api
+```
+
+Schema changes applied automatically via `db.AutoMigrate()`.
+
+#### Production Mode (Controlled Migrations)
+
+```bash
+# Set in .env
+DB_GEN=false
+```
+
+**1. Add New Model:**
+```go
+// internal/domain/category/entity.go
+type Category struct {
+    ID   uint   `gorm:"primaryKey"`
+    Name string `gorm:"type:varchar(100);not null"`
+    gorm.Model
+}
+```
+
+**2. Register in Config:**
+```go
+// internal/config/database.go
+func GetModelsForMigration() []interface{} {
+    return []interface{}{
+        &user.User{},
+        &category.Category{}, // Add here
+    }
+}
+```
+
+**3. Generate Migration:**
+```bash
+make atlas-diff
+# or with custom name
+make atlas-diff-name NAME=add_categories_table
+```
+
+**4. Review Generated SQL:**
+```bash
+cat migrations/20260107120000_add_categories_table.sql
+```
+
+**5. Apply Migration:**
+```bash
+make atlas-apply  # development
+make atlas-apply-prod  # production (with confirmation)
+```
+
+### Makefile Commands
+
+All Atlas commands are integrated in main `Makefile`:
+
+```bash
+make atlas-install       # Install Atlas CLI
+make atlas-diff          # Generate migration
+make atlas-diff-name     # Generate with custom name
+make atlas-apply         # Apply migrations
+make atlas-status        # Check status
+make atlas-validate      # Validate migrations
+make atlas-inspect       # Inspect schema
+make atlas-migrate       # Full workflow (diff+validate+apply)
+make atlas-test          # Dry run
+
+# Legacy (deprecated, shows warnings)
+make migrate-up          # Alias for atlas-apply
+make migrate-status      # Alias for atlas-status
+```
+
+View all commands:
+```bash
+make help
+```
+
+### Atlas Configuration
+
+**Project Files:**
+- `atlas.hcl` - Atlas configuration
+- `cmd/atlas/main.go` - GORM schema loader
+- `internal/config/database.go` - Models definition (single source of truth)
+- `migrations/` - Generated migration files
+- `Makefile` - Atlas commands
+
+**Key Principle**: NEVER duplicate model lists. Always use `GetModelsForMigration()`.
+
+---
+
+## CMD Folder Convention
+
+### CRITICAL Rule: Each subfolder MUST have `main.go`
+
+**Structure:**
+```
+cmd/
+├── api/
+│   └── main.go       ✅ REQUIRED
+├── worker/
+│   └── main.go       ✅ REQUIRED
+└── atlas/
+    └── main.go       ✅ REQUIRED
+```
+
+### Why `main.go`?
+
+1. **Go Standard** - Official Go convention for executable programs
+2. **Easy to Run** - `go run ./cmd/<program>`
+3. **Easy to Build** - `go build -o bin/<name> ./cmd/<program>`
+4. **Clear Intent** - Immediately obvious it's an executable
+
+### ❌ WRONG
+
+```
+cmd/
+├── api/
+│   └── server.go     ❌ Should be main.go
+│   └── app.go        ❌ Should be main.go
+```
+
+### ✅ CORRECT
+
+```
+cmd/
+├── api/
+│   └── main.go       ✅ Entry point
+│   └── config.go     ✅ Helper files OK
+```
+
+### Running Programs
+
+```bash
+# Development
+go run ./cmd/api
+go run ./cmd/worker
+go run ./cmd/atlas
+
+# Production
+go build -o bin/api ./cmd/api
+go build -o bin/worker ./cmd/worker
+./bin/api
+```
+
+### Creating New Program
+
+```bash
+mkdir -p cmd/myprogram
+```
+
+```go
+// cmd/myprogram/main.go
+package main
+
+import "starter-gofiber/internal/config"
+
+func main() {
+    config.LoadConfig()
+    // Your logic here
+}
+```
+
+**Rules:**
+- ✅ MUST have `package main`
+- ✅ MUST have `func main()`
+- ✅ MUST be in file named `main.go`
+- ❌ ONE `main.go` per package only
+- ❌ NO business logic in main.go (keep it simple)
+
+---
+
+## Makefile Commands
+
+All automation tasks are in main `Makefile`:
+
+### Database & Migration
+
+```bash
+make atlas-install      # Install Atlas CLI
+make atlas-diff         # Generate migration
+make atlas-apply        # Apply migrations
+make atlas-status       # Check status
+make atlas-migrate      # Full workflow
+```
+
+### Build & Run
+
+```bash
+make build              # Build all
+make build-api          # Build API only
+make run                # Run API
+make run-air            # Run with live reload
+make run-worker         # Run worker
+```
+
+### Testing
+
+```bash
+make test               # Run all tests
+make test-coverage      # With coverage report
+make test-short         # Quick tests
+```
+
+### Code Quality
+
+```bash
+make fmt                # Format code
+make lint               # Run linter
+make vet                # Run go vet
+make mod-tidy           # Tidy dependencies
+```
+
+### Docker
+
+```bash
+make docker-build       # Build image
+make docker-up          # Start services
+make docker-down        # Stop services
+make docker-logs        # View logs
+```
+
+### Development
+
+```bash
+make dev-setup          # Full setup (tools + deps + Atlas)
+make install-tools      # Install dev tools
+make clean              # Clean artifacts
+```
+
+**View All Commands:**
+```bash
+make help
+```
+
+**Documentation:**
+- See [docs/MAKEFILE_COMMANDS.md](docs/MAKEFILE_COMMANDS.md) for complete reference
+- See [docs/MIGRATION_GUIDE.md](docs/MIGRATION_GUIDE.md) for Atlas migration guide
+
+---
+
+## Documentation Organization
+
+All documentation is organized in `docs/` folder:
+
+### Architecture & Setup
+- `docs/ARCHITECTURE.md` - Clean Architecture pattern
+- `docs/MIGRATION_GUIDE.md` - Atlas migration quick start (Bahasa Indonesia)
+- `docs/DATABASE.md` - Database management complete guide
+- `docs/MAKEFILE_COMMANDS.md` - Makefile commands reference
+- `cmd/README.md` - CMD folder conventions
+
+### Security & Auth
+- `docs/API_AUTH.md` - Authentication endpoints
+- `docs/SECURITY.md` - Security features overview
+- `docs/SECURITY_IMPLEMENTATION.md` - Security implementation details
+
+### API & Performance
+- `docs/API_FEATURES.md` - Advanced API features
+- `docs/PERFORMANCE.md` - Performance optimization
+- `docs/CACHING.md` - Redis caching system
+
+### Data & Storage
+- `docs/FILE_MANAGEMENT.md` - File upload & cloud storage
+- `docs/CLOUD_STORAGE_EXAMPLES.md` - Cloud storage examples
+- `docs/MINIO_SETUP.md` - MinIO local S3 setup
+
+### Background Jobs & Real-time
+- `docs/BACKGROUND_JOBS.md` - Asynq background jobs
+- `docs/SSE.md` - Server-Sent Events
+- `docs/EMAIL.md` - Email system
+
+### Monitoring & Testing
+- `docs/LOGGING_MONITORING.md` - Logging with Zap & Sentry
+- `docs/METRICS_MONITORING.md` - Metrics & health checks
+- `docs/TESTING.md` - Testing guidelines
+- `docs/TEST_COVERAGE.md` - Coverage reports
+
+### Deployment
+- `docs/DEPLOYMENT.md` - Deployment guide
+- `docs/DEVOPS.md` - CI/CD & DevOps setup
+
+**Always reference docs in comments and error messages when relevant.**
+
+---
+
+## Quick Reference
+
+### Adding New Feature (Complete Flow)
+
+1. **Create Domain** - `internal/domain/product/`
+   - `entity.go` - GORM model
+   - `dto.go` - Request/Response DTOs
+   - `repository.go` - Repository interface
+   - `service.go` - Service interface
+
+2. **Implement Repository** - `internal/repository/postgres/product.go`
+   - Implement repository interface
+   - Use GORM for DB operations
+
+3. **Implement Service** - `internal/service/product/service.go`
+   - Implement business logic
+   - Return DTOs, not entities
+
+4. **Implement Handler** - `internal/handler/http/product.go`
+   - Parse requests
+   - Call service
+   - Return responses
+
+5. **Register Routes** - `router/product.go`
+   - Define endpoints
+   - Apply middleware
+   - Register handlers
+
+6. **Add to Migration** - `internal/config/database.go`
+   ```go
+   func GetModelsForMigration() []interface{} {
+       return []interface{}{
+           &product.Product{}, // Add here
+       }
+   }
+   ```
+
+7. **Generate Migration**:
+   ```bash
+   make atlas-diff-name NAME=create_products_table
+   make atlas-apply
+   ```
+
+8. **Add Tests** - `tests/product_test.go`
+   - Integration tests
+   - Test critical paths
+
+### Common Commands
+
+```bash
+# Development
+make run-air            # Start with live reload
+make atlas-diff         # Generate migration
+make atlas-apply        # Apply migration
+make test               # Run tests
+
+# Production
+make build              # Build binaries
+make atlas-apply-prod   # Apply migrations (with confirm)
+./bin/api               # Run production binary
+```
+
+### File Naming Conventions
+
+- **Files**: lowercase_underscore.go (`user_repository.go`)
+- **Packages**: lowercase, single word (`postgres`, `auth`)
+- **Variables**: camelCase (`userRepo`, `authService`)
+- **Functions**: camelCase (private) or PascalCase (exported)
+- **Structs**: PascalCase (`User`, `UserRepository`)
+- **Constants**: PascalCase (`DefaultPageSize`)
+
+### Import Order
+
+```go
+import (
+    // 1. Standard library
+    "fmt"
+    "time"
+    
+    // 2. External packages
+    "github.com/gofiber/fiber/v2"
+    "gorm.io/gorm"
+    
+    // 3. Internal packages
+    "starter-gofiber/internal/domain/user"
+    "starter-gofiber/pkg/apierror"
+)
+```
+
+---
+
+**Remember**: Follow Clean Architecture, maintain single source of truth, and always reference documentation when needed!

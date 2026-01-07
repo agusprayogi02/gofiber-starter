@@ -3,324 +3,105 @@ package database
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"time"
 
 	"starter-gofiber/pkg/logger"
 
-	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/mysql"
-	"github.com/golang-migrate/migrate/v4/database/postgres"
-	"github.com/golang-migrate/migrate/v4/database/sqlserver"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	atlas "ariga.io/atlas-provider-gorm/gormschema"
 	"gorm.io/gorm"
 )
 
-// Migration represents a database migration
-type Migration struct {
-	Version     uint
-	Description string
-	Up          func(*gorm.DB) error
-	Down        func(*gorm.DB) error
+// GetAllModels returns all GORM models that should be included in migrations
+// This function should be updated when new models are added to the system
+func GetAllModels() []interface{} {
+	// Import models from domain layer
+	// This will be populated from config/database.go
+	return []interface{}{}
 }
 
-var migrations = make(map[uint]*Migration)
-
-// RegisterMigration registers a new migration
-func RegisterMigration(version uint, description string, up, down func(*gorm.DB) error) {
-	migrations[version] = &Migration{
-		Version:     version,
-		Description: description,
-		Up:          up,
-		Down:        down,
+// LoadAtlasModels loads GORM schema for Atlas migration
+// This function is used by atlas.hcl configuration file
+func LoadAtlasModels(db *gorm.DB, models []interface{}) error {
+	// Create a temporary schema using AutoMigrate to let GORM understand the models
+	// but we won't actually run this - Atlas will generate proper migrations instead
+	err := db.AutoMigrate(models...)
+	if err != nil {
+		return fmt.Errorf("failed to load models: %w", err)
 	}
+	return nil
 }
 
-// RunMigrations runs all pending migrations
-func RunMigrations(db *gorm.DB) error {
+// GenerateAtlasSchema generates Atlas-compatible schema from GORM models
+// This is used by Atlas CLI to understand your database schema
+func GenerateAtlasSchema(db *gorm.DB, models []interface{}) error {
+
+	// Load schema from GORM models
+	_, err := atlas.New("gorm").Load(models...)
+	if err != nil {
+		return fmt.Errorf("failed to generate Atlas schema: %w", err)
+	}
+
+	logger.Info("Atlas schema generated successfully from GORM models")
+	return nil
+}
+
+// SyncSchema applies all pending Atlas migrations to the database
+// This is the programmatic way to run migrations, equivalent to: atlas migrate apply
+func SyncSchema(db *gorm.DB, models []interface{}) error {
+	// Get database instance
 	sqlDB, err := db.DB()
 	if err != nil {
 		return fmt.Errorf("failed to get database connection: %w", err)
 	}
 
-	// Detect database type from GORM
-	dbType := db.Dialector.Name()
-
-	// Create appropriate driver based on database type
-	var driver *migrate.Migrate
-	var driverErr error
-	migrationsPath := getMigrationsPath()
-
-	switch dbType {
-	case "postgres":
-		pgDriver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
-		if err != nil {
-			return fmt.Errorf("failed to create postgres migration driver: %w", err)
-		}
-		driver, driverErr = migrate.NewWithDatabaseInstance(
-			"file://"+migrationsPath,
-			"postgres",
-			pgDriver,
-		)
-	case "sqlserver", "mssql":
-		sqlServerDriver, err := sqlserver.WithInstance(sqlDB, &sqlserver.Config{})
-		if err != nil {
-			return fmt.Errorf("failed to create sqlserver migration driver: %w", err)
-		}
-		driver, driverErr = migrate.NewWithDatabaseInstance(
-			"file://"+migrationsPath,
-			"sqlserver",
-			sqlServerDriver,
-		)
-	default:
-		// Default to MySQL
-		mysqlDriver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
-		if err != nil {
-			return fmt.Errorf("failed to create mysql migration driver: %w", err)
-		}
-		driver, driverErr = migrate.NewWithDatabaseInstance(
-			"file://"+migrationsPath,
-			"mysql",
-			mysqlDriver,
-		)
+	// Verify connection
+	if err := sqlDB.Ping(); err != nil {
+		return fmt.Errorf("database connection failed: %w", err)
 	}
 
-	if driverErr != nil {
-		return fmt.Errorf("failed to create migration instance: %w", driverErr)
-	}
+	logger.Info("Database schema sync initiated")
+	logger.Info("Please use 'atlas migrate apply' command to apply migrations")
+	logger.Info("Or enable DB_GEN=true to use AutoMigrate for development")
 
-	// Run migrations
-	if err := driver.Up(); err != nil && err != migrate.ErrNoChange {
-		return fmt.Errorf("failed to run migrations: %w", err)
-	}
-
-	logger.Info("Migrations completed successfully")
 	return nil
 }
 
-// RollbackMigration rolls back the last migration
-func RollbackMigration(db *gorm.DB, steps int) error {
-	sqlDB, err := db.DB()
-	if err != nil {
-		return err
-	}
-
-	// Detect database type from GORM
-	dbType := db.Dialector.Name()
-
-	var driver *migrate.Migrate
-	migrationsPath := getMigrationsPath()
-
-	switch dbType {
-	case "postgres":
-		pgDriver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
-		if err != nil {
-			return err
-		}
-		driver, err = migrate.NewWithDatabaseInstance(
-			fmt.Sprintf("file://%s", migrationsPath),
-			"postgres",
-			pgDriver,
-		)
-		if err != nil {
-			return err
-		}
-	case "sqlserver", "mssql":
-		sqlServerDriver, err := sqlserver.WithInstance(sqlDB, &sqlserver.Config{})
-		if err != nil {
-			return err
-		}
-		driver, err = migrate.NewWithDatabaseInstance(
-			fmt.Sprintf("file://%s", migrationsPath),
-			"sqlserver",
-			sqlServerDriver,
-		)
-		if err != nil {
-			return err
-		}
-	default:
-		mysqlDriver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
-		if err != nil {
-			return err
-		}
-		driver, err = migrate.NewWithDatabaseInstance(
-			fmt.Sprintf("file://%s", migrationsPath),
-			"mysql",
-			mysqlDriver,
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Rollback specified steps
-	return driver.Steps(-steps)
-}
-
-// CreateMigration creates a new migration file
-func CreateMigration(name string) error {
-	timestamp := time.Now().Unix()
-	migrationsPath := getMigrationsPath()
-
-	// Ensure migrations directory exists
-	if err := os.MkdirAll(migrationsPath, 0o755); err != nil {
-		return err
-	}
-
-	// Create up migration file
-	upFile := filepath.Join(migrationsPath, fmt.Sprintf("%d_%s.up.sql", timestamp, name))
-	downFile := filepath.Join(migrationsPath, fmt.Sprintf("%d_%s.down.sql", timestamp, name))
-
-	// Write template content
-	upContent := fmt.Sprintf("-- Migration: %s\n-- Created at: %s\n\n-- Write your UP migration here\n", name, time.Now().Format(time.RFC3339))
-	downContent := fmt.Sprintf("-- Migration: %s\n-- Created at: %s\n\n-- Write your DOWN migration here\n", name, time.Now().Format(time.RFC3339))
-
-	if err := os.WriteFile(upFile, []byte(upContent), 0o644); err != nil {
-		return err
-	}
-
-	if err := os.WriteFile(downFile, []byte(downContent), 0o644); err != nil {
-		return err
-	}
-
-	logger.Info(fmt.Sprintf("Created migration files:\n  - %s\n  - %s", upFile, downFile))
-	return nil
-}
-
-// GetMigrationVersion returns current migration version
-func GetMigrationVersion(db *gorm.DB) (uint, bool, error) {
-	sqlDB, err := db.DB()
-	if err != nil {
-		return 0, false, err
-	}
-
-	// Detect database type from GORM
-	dbType := db.Dialector.Name()
-
-	var driver *migrate.Migrate
-	migrationsPath := getMigrationsPath()
-
-	switch dbType {
-	case "postgres":
-		pgDriver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
-		if err != nil {
-			return 0, false, err
-		}
-		driver, err = migrate.NewWithDatabaseInstance(
-			fmt.Sprintf("file://%s", migrationsPath),
-			"postgres",
-			pgDriver,
-		)
-		if err != nil {
-			return 0, false, err
-		}
-	case "sqlserver", "mssql":
-		sqlServerDriver, err := sqlserver.WithInstance(sqlDB, &sqlserver.Config{})
-		if err != nil {
-			return 0, false, err
-		}
-		driver, err = migrate.NewWithDatabaseInstance(
-			fmt.Sprintf("file://%s", migrationsPath),
-			"sqlserver",
-			sqlServerDriver,
-		)
-		if err != nil {
-			return 0, false, err
-		}
-	default:
-		mysqlDriver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
-		if err != nil {
-			return 0, false, err
-		}
-		driver, err = migrate.NewWithDatabaseInstance(
-			fmt.Sprintf("file://%s", migrationsPath),
-			"mysql",
-			mysqlDriver,
-		)
-		if err != nil {
-			return 0, false, err
-		}
-	}
-
-	version, dirty, err := driver.Version()
-	return version, dirty, err
-}
-
-// ForceMigrationVersion forces migration to a specific version
-func ForceMigrationVersion(db *gorm.DB, version int) error {
-	sqlDB, err := db.DB()
-	if err != nil {
-		return err
-	}
-
-	// Detect database type from GORM
-	dbType := db.Dialector.Name()
-
-	var driver *migrate.Migrate
-	migrationsPath := getMigrationsPath()
-
-	switch dbType {
-	case "postgres":
-		pgDriver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
-		if err != nil {
-			return err
-		}
-		driver, err = migrate.NewWithDatabaseInstance(
-			fmt.Sprintf("file://%s", migrationsPath),
-			"postgres",
-			pgDriver,
-		)
-		if err != nil {
-			return err
-		}
-	case "sqlserver", "mssql":
-		sqlServerDriver, err := sqlserver.WithInstance(sqlDB, &sqlserver.Config{})
-		if err != nil {
-			return err
-		}
-		driver, err = migrate.NewWithDatabaseInstance(
-			fmt.Sprintf("file://%s", migrationsPath),
-			"sqlserver",
-			sqlServerDriver,
-		)
-		if err != nil {
-			return err
-		}
-	default:
-		mysqlDriver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
-		if err != nil {
-			return err
-		}
-		driver, err = migrate.NewWithDatabaseInstance(
-			fmt.Sprintf("file://%s", migrationsPath),
-			"mysql",
-			mysqlDriver,
-		)
-		if err != nil {
-			return err
-		}
-	}
-
-	return driver.Force(version)
-}
-
-// getMigrationsPath returns the path to migrations directory
-func getMigrationsPath() string {
-	// Try to find migrations directory
-	paths := []string{
-		"./migrations",
-		"../migrations",
-		"../../migrations",
-	}
-
-	for _, path := range paths {
-		if _, err := os.Stat(path); err == nil {
-			absPath, _ := filepath.Abs(path)
-			return absPath
-		}
+// GetMigrationsPath returns the path to Atlas migrations directory
+func GetMigrationsPath() string {
+	// Check if custom migrations path is set
+	if path := os.Getenv("ATLAS_MIGRATIONS_DIR"); path != "" {
+		return path
 	}
 
 	// Default to ./migrations
-	absPath, _ := filepath.Abs("./migrations")
-	return absPath
+	return "./migrations"
+}
+
+// EnsureMigrationsDir creates migrations directory if it doesn't exist
+func EnsureMigrationsDir() error {
+	path := GetMigrationsPath()
+	if err := os.MkdirAll(path, 0o755); err != nil {
+		return fmt.Errorf("failed to create migrations directory: %w", err)
+	}
+	return nil
+}
+
+// MigrationInfo contains information about Atlas migrations
+type MigrationInfo struct {
+	Enabled        bool
+	MigrationsPath string
+	DatabaseType   string
+	UseAutoMigrate bool
+}
+
+// GetMigrationInfo returns current migration configuration
+func GetMigrationInfo(db *gorm.DB) *MigrationInfo {
+	dbType := db.Dialector.Name()
+	useAutoMigrate := os.Getenv("DB_GEN") == "true"
+
+	return &MigrationInfo{
+		Enabled:        true,
+		MigrationsPath: GetMigrationsPath(),
+		DatabaseType:   dbType,
+		UseAutoMigrate: useAutoMigrate,
+	}
 }

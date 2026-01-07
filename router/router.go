@@ -1,10 +1,10 @@
 package router
 
 import (
-	"starter-gofiber/pkg/dto"
 	"starter-gofiber/internal/config"
 	"starter-gofiber/internal/handler/http"
 	"starter-gofiber/internal/handler/middleware"
+	"starter-gofiber/pkg/dto"
 	"starter-gofiber/pkg/utils"
 	"starter-gofiber/variables"
 

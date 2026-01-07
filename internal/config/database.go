@@ -18,6 +18,27 @@ import (
 
 var DB, DB2 *gorm.DB
 
+// GetModelsForMigration returns all GORM models that should be migrated
+// This is a single source of truth for both AutoMigrate and Atlas migrations
+func GetModelsForMigration() []interface{} {
+	models := []interface{}{
+		&user.User{},
+		&post.Post{},
+		&user.RefreshToken{},
+		&user.PasswordReset{},
+		&user.EmailVerification{},
+		&user.APIKey{},
+		&user.UserPreferences{},
+	}
+
+	// Add AuditLog to migration if audit logging is enabled
+	if ENV.AUDIT_LOG_ENABLE {
+		models = append(models, &database.AuditLog{})
+	}
+
+	return models
+}
+
 func createEnum(db *gorm.DB) error {
 	return db.Exec(`
         DO $$
@@ -69,6 +90,11 @@ func LoadDB() {
 		panic(err)
 	}
 
+	// Migration Strategy:
+	// 1. DB_GEN=true (Development): Uses GORM AutoMigrate for quick prototyping
+	// 2. DB_GEN=false (Production): Use Atlas migrations via CLI
+	//    - Generate: atlas migrate diff --env dev
+	//    - Apply: atlas migrate apply --env prod
 	if ENV.DB_GEN {
 		if ENV.DB_TYPE == "postgres" {
 			err = createEnum(db)
@@ -77,21 +103,10 @@ func LoadDB() {
 			}
 		}
 
-		migrateModels := []interface{}{
-			&user.User{},
-			&post.Post{},
-			&user.RefreshToken{},
-			&user.PasswordReset{},
-			&user.EmailVerification{},
-			&user.APIKey{},
-			&user.UserPreferences{},
-		}
+		// Get models from single source of truth
+		migrateModels := GetModelsForMigration()
 
-		// Add AuditLog to migration if audit logging is enabled
-		if ENV.AUDIT_LOG_ENABLE {
-			migrateModels = append(migrateModels, &database.AuditLog{})
-		}
-
+		// Use AutoMigrate for development
 		err = db.AutoMigrate(migrateModels...)
 		if err != nil {
 			panic(err)
@@ -177,14 +192,10 @@ func LoadDB2() {
 			}
 		}
 
-		err = db.AutoMigrate(
-			&user.User{},
-			&post.Post{},
-			&user.RefreshToken{},
-			&user.PasswordReset{},
-			&user.EmailVerification{},
-			&user.APIKey{},
-		)
+		// Get models from single source of truth
+		migrateModels := GetModelsForMigration()
+
+		err = db.AutoMigrate(migrateModels...)
 		if err != nil {
 			panic(err)
 		}

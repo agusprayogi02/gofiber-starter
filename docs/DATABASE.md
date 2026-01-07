@@ -2,11 +2,11 @@
 
 Dokumentasi lengkap untuk database management, migrations, seeding, backup, dan optimasi.
 
-**Supported Databases**: MySQL & PostgreSQL
+**Supported Databases**: MySQL, PostgreSQL & SQL Server
 
 ## Daftar Isi
 
-- [Migration System](#migration-system)
+- [Migration System (Atlas)](#migration-system-atlas)
 - [Database Seeder](#database-seeder)
 - [Backup & Restore](#backup--restore)
 - [Connection Pooling](#connection-pooling)
@@ -17,160 +17,453 @@ Dokumentasi lengkap untuk database management, migrations, seeding, backup, dan 
 
 ---
 
-## Migration System
+## Migration System (Atlas)
 
-Menggunakan **golang-migrate** untuk database schema versioning. Support untuk MySQL dan PostgreSQL.
+Menggunakan **Atlas with GORM Provider** untuk automatic schema migrations dari GORM entities. Atlas generate migrations otomatis dari perubahan GORM models, tidak perlu menulis SQL manual!
 
-### Database Type Detection
+### Why Atlas?
 
-Migration system otomatis mendeteksi database type dari `DB_TYPE` environment variable:
-- `mysql` - Menggunakan MySQL migration driver
-- `postgres` - Menggunakan PostgreSQL migration driver
+✅ **Auto-generate migrations** dari GORM models
+✅ **Type-safe** - Migrations dari Go code, bukan SQL manual
+✅ **Version control friendly** - Migration files di-commit ke git
+✅ **Database agnostic** - Support MySQL, PostgreSQL, SQL Server
+✅ **Smart diffing** - Hanya generate perubahan yang diperlukan
+✅ **Rollback support** - Automatic down migrations
+✅ **CI/CD ready** - CLI commands untuk automation
+
+### Installation
+
+**Install Atlas CLI**:
+
+```bash
+# Using curl (Linux/macOS)
+curl -sSf https://atlasgo.sh | sh
+
+# Using Homebrew (macOS)
+brew install ariga/tap/atlas
+
+# Using Go
+go install ariga.io/atlas@latest
+
+# Verify installation
+atlas version
+```
+
+**Or using Makefile**:
+```bash
+make atlas-install
+```
 
 ### Setup
 
-Migration files disimpan di folder `migrations/`:
+Project sudah dikonfigurasi dengan:
+- `atlas.hcl` - Atlas configuration file
+- `cmd/atlas/` - GORM schema loader (uses models from config)
+- `internal/config/database.go` - Single source of truth for models
+- `Makefile` - Atlas commands integrated in main Makefile
+- `migrations/` - Migration files directory
 
+### Environment Configuration
+
+Set database URL di `.env`:
+
+```bash
+# Development
+ATLAS_DEV_DB_URL=mysql://user:pass@localhost:3306/myapp_dev
+
+# Production
+ATLAS_DB_URL=mysql://user:pass@localhost:3306/myapp
 ```
-migrations/
-├── 000001_create_users_table.up.sql
-├── 000001_create_users_table.down.sql
-├── 000002_create_posts_table.up.sql
-└── 000002_create_posts_table.down.sql
+
+**PostgreSQL**:
+```bash
+ATLAS_DEV_DB_URL=postgres://user:pass@localhost:5432/myapp_dev?sslmode=disable
+ATLAS_DB_URL=postgres://user:pass@localhost:5432/myapp?sslmode=disable
 ```
 
-### Creating Migrations
+### Quick Start Workflow
 
-**Menggunakan Helper Function**:
+**1. Modify GORM Entity**:
+
 ```go
-import "starter-gofiber/pkg/apierror"
+// internal/domain/product/entity.go
+package product
 
-// Creates timestamped migration files
-helper.CreateMigration("create_comments_table")
+type Product struct {
+    ID          uint    `gorm:"primaryKey"`
+    Name        string  `gorm:"type:varchar(200);not null"`
+    Price       float64 `gorm:"type:decimal(10,2);not null"`
+    Description string  `gorm:"type:text"`
+    gorm.Model
+}
+```
+
+**2. Register Model** in `internal/config/database.go`:
+
+```go
+func GetModelsForMigration() []interface{} {
+    models := []interface{}{
+        &user.User{},
+        &post.Post{},
+        &product.Product{}, // Add new model here
+        // ... other models
+    }
+    return models
+}
+```
+
+**Note**: Single source of truth! Used by both AutoMigrate and Atlas.
+
+**3. Generate Migration**:
+
+```bash
+# Generate migration from schema changes
+atlas migrate diff create_products_table --env dev
 ```
 
 Output:
 ```
-Created migration files:
-  - migrations/1704153600_create_comments_table.up.sql
-  - migrations/1704153600_create_comments_table.down.sql
+Analyzing GORM models...
+Comparing with current database schema...
+Generated: migrations/20260107120000_create_products_table.sql
 ```
 
-**Menggunakan CLI**:
+**4. Review Migration**:
+
+```sql
+-- migrations/20260107120000_create_products_table.sql
+-- Create "products" table
+CREATE TABLE `products` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(200) NOT NULL,
+  `price` decimal(10,2) NOT NULL,
+  `description` text,
+  `created_at` datetime(3) NULL,
+  `updated_at` datetime(3) NULL,
+  `deleted_at` datetime(3) NULL,
+  PRIMARY KEY (`id`),
+  INDEX `idx_products_deleted_at` (`deleted_at`)
+) CHARSET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+```
+
+**5. Apply Migration**:
+
 ```bash
-migrate create -ext sql -dir migrations -seq create_users_table
+# Apply to development database
+atlas migrate apply --env dev
+
+# Or apply to production
+atlas migrate apply --env prod
 ```
 
-### Writing Migrations
+### Atlas Commands
 
-**UP Migration** (`*_up.sql`):
+**Generate Migrations**:
 
-**MySQL**:
-```sql
--- Migration: create_users_table
--- Created at: 2024-01-01T10:00:00Z
+```bash
+# Generate with auto-name
+atlas migrate diff --env dev
 
-CREATE TABLE IF NOT EXISTS users (
-    id BIGINT PRIMARY KEY AUTO_INCREMENT,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL,
-    INDEX idx_email (email),
-    INDEX idx_deleted_at (deleted_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+# Generate with custom name
+atlas migrate diff add_user_bio --env dev
+
+# Generate for specific environment
+atlas migrate diff --env prod
 ```
 
-**PostgreSQL**:
-```sql
--- Migration: create_users_table
--- Created at: 2024-01-01T10:00:00Z
+**Apply Migrations**:
 
-CREATE TABLE IF NOT EXISTS users (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    deleted_at TIMESTAMP NULL
-);
+```bash
+# Apply all pending migrations
+atlas migrate apply --env dev
 
-CREATE INDEX IF NOT EXISTS idx_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_deleted_at ON users(deleted_at);
+# Apply specific number of migrations
+atlas migrate apply --env dev --to-version 20260107120000
 
--- Trigger for updated_at
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
-    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+# Dry run (preview without applying)
+atlas migrate apply --env dev --dry-run
 ```
 
-**DOWN Migration** (`*_down.sql`):
-```sql
--- Migration: create_users_table
--- Created at: 2024-01-01T10:00:00Z
+**Migration Status**:
 
-DROP TABLE IF EXISTS users;
+```bash
+# Check current status
+atlas migrate status --env dev
+
+# Output:
+# Migration Status: OK
+# Current Version: 20260107120000
+# Next Version: 20260107130000
+# Pending Migrations: 1
 ```
 
-### Running Migrations
+**Inspect Schema**:
 
-**Programmatically**:
-```go
-import "starter-gofiber/pkg/apierror"
+```bash
+# Inspect current database schema
+atlas schema inspect --env dev
 
-// Run all pending migrations
-if err := helper.RunMigrations(config.DB); err != nil {
-    log.Fatal(err)
+# Inspect and save to file
+atlas schema inspect --env dev > schema.sql
+```
+
+**Validate Migrations**:
+
+```bash
+# Validate migration files
+atlas migrate validate --env dev
+
+# Lint migrations
+atlas migrate lint --env dev
+```
+
+### Makefile Commands
+
+All Atlas commands are integrated in main `Makefile`:
+
+```bash
+# Install Atlas CLI
+make atlas-install
+
+# Generate migration from GORM models
+make atlas-diff
+
+# Generate with custom name
+make atlas-diff-name NAME=add_user_bio
+
+# Apply migrations
+make atlas-apply
+
+# Check status
+make atlas-status
+
+# Validate migrations
+make atlas-validate
+
+# Inspect database
+make atlas-inspect
+
+# Full workflow (diff + validate + apply)
+make atlas-migrate
+
+# Test with dry-run
+make atlas-test
+
+# View all available commands
+make help
+```
+
+### Development Workflow
+
+**Option 1: AutoMigrate (Quick Prototyping)**
+
+Set `DB_GEN=true` di `.env` untuk development:
+
+```bash
+DB_GEN=true  # Use GORM AutoMigrate
+```
+
+Server akan otomatis sync schema saat startup menggunakan `db.AutoMigrate()`.
+
+⚠️ **Only for local development!** Jangan gunakan di production.
+
+**Option 2: Atlas Migrations (Recommended)**
+
+Set `DB_GEN=false` dan gunakan Atlas:
+
+```bash
+DB_GEN=false  # Use Atlas migrations
+```
+
+1. Modify GORM entities
+2. Generate migration: `make atlas-diff`
+3. Review generated SQL
+4. Apply migration: `make atlas-apply`
+
+### Production Workflow
+
+**1. Generate Migration (Local)**:
+
+```bash
+# Di environment development
+make atlas-diff-dev
+```
+
+**2. Commit Migration Files**:
+
+```bash
+git add migrations/
+git commit -m "Add products table migration"
+git push
+```
+
+**3. Apply in Production**:
+
+```bash
+# Deploy ke production server
+# Set production database URL
+export ATLAS_DB_URL="postgres://user:pass@prod-db:5432/myapp"
+
+# Apply migrations
+make atlas-apply-prod
+
+# Or using CLI
+atlas migrate apply --env prod
+```
+
+### Advanced Features
+
+**Multiple Databases**:
+
+```hcl
+// atlas.hcl
+env "db1" {
+  url = var.db1_url
+  migration {
+    dir = "file://migrations/db1"
+  }
+}
+
+env "db2" {
+  url = var.db2_url
+  migration {
+    dir = "file://migrations/db2"
+  }
 }
 ```
 
-**Using CLI**:
+**Migration Policies**:
 
-**MySQL**:
-```bash
-# Run all up migrations
-migrate -path ./migrations -database "mysql://user:pass@tcp(localhost:3306)/dbname" up
-
-# Rollback last migration
-migrate -path ./migrations -database "mysql://user:pass@tcp(localhost:3306)/dbname" down 1
-
-# Go to specific version
-migrate -path ./migrations -database "mysql://user:pass@tcp(localhost:3306)/dbname" goto 2
+```hcl
+// Prevent destructive changes in production
+env "prod" {
+  lint {
+    destructive {
+      error = true  // Block DROP operations
+    }
+  }
+  
+  diff {
+    skip {
+      drop_schema = true
+      drop_table  = true
+    }
+  }
+}
 ```
 
-**PostgreSQL**:
+**Custom Migration**:
+
+Jika perlu custom migration (data migration, complex logic):
+
 ```bash
-# Run all up migrations
-migrate -path ./migrations -database "postgres://user:pass@localhost:5432/dbname?sslmode=disable" up
-
-# Rollback last migration
-migrate -path ./migrations -database "postgres://user:pass@localhost:5432/dbname?sslmode=disable" down 1
-
-# Go to specific version
-migrate -path ./migrations -database "postgres://user:pass@localhost:5432/dbname?sslmode=disable" goto 2
+# Generate empty migration
+atlas migrate new custom_data_migration --env dev
 ```
 
-### Migration Commands
+Edit file dan tambahkan SQL manual:
+
+```sql
+-- migrations/20260107140000_custom_data_migration.sql
+-- Update existing records
+UPDATE users SET role = 'user' WHERE role IS NULL;
+
+-- Add constraint
+ALTER TABLE users ADD CONSTRAINT chk_role CHECK (role IN ('admin', 'user'));
+```
+
+### Troubleshooting
+
+**"Failed to connect to database"**:
+
+```bash
+# Check database URL
+echo $ATLAS_DB_URL
+
+# Test connection
+atlas schema inspect --env dev
+```
+
+**"Dirty database state"**:
+
+```bash
+# Check migration status
+atlas migrate status --env dev
+
+# Force to specific version (use with caution!)
+atlas migrate set 20260107120000 --env dev
+```
+
+**"Schema drift detected"**:
+
+Database schema berbeda dengan migrations:
+
+```bash
+# Inspect current state
+atlas schema inspect --env dev
+
+# Generate migration to fix drift
+atlas migrate diff fix_schema_drift --env dev
+```
+
+**Schema Not Updating**:
+
+Ensure model is registered in `internal/config/database.go`:
 
 ```go
-// Get current version
-version, dirty, err := helper.GetMigrationVersion(config.DB)
+func GetModelsForMigration() []interface{} {
+    models := []interface{}{
+        &user.User{},
+        &product.Product{}, // Make sure new model is here
+        // ... other models
+    }
+    return models
+}
+```
 
-// Rollback migrations
-err := helper.RollbackMigration(config.DB, 1) // Rollback 1 step
+This is the single source of truth used by both AutoMigrate and Atlas.
 
-// Force version (fix dirty state)
-err := helper.ForceMigrationVersion(config.DB, 2)
+### Migration Best Practices
+
+1. **Always Review Generated Migrations** - Check SQL before applying
+2. **Test Locally First** - Apply to dev database before production
+3. **Version Control** - Commit migration files to git
+4. **Backward Compatible** - Design migrations that won't break running app
+5. **Data Migrations** - Run separately from schema migrations
+6. **Rollback Plan** - Test down migrations before deploying
+7. **CI/CD Integration** - Automate migration testing in pipeline
+
+### CI/CD Integration
+
+**GitHub Actions Example**:
+
+```yaml
+name: Database Migration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'migrations/**'
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Install Atlas
+        run: curl -sSf https://atlasgo.sh | sh
+      
+      - name: Validate Migrations
+        run: atlas migrate validate --env dev
+        env:
+          ATLAS_DEV_DB_URL: ${{ secrets.DB_URL }}
+      
+      - name: Apply Migrations
+        run: atlas migrate apply --env prod
+        env:
+          ATLAS_DB_URL: ${{ secrets.PROD_DB_URL }}
 ```
 
 ---
