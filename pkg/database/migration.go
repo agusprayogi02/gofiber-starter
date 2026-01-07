@@ -11,6 +11,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/mysql"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+	"github.com/golang-migrate/migrate/v4/database/sqlserver"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"gorm.io/gorm"
 )
@@ -48,25 +49,35 @@ func RunMigrations(db *gorm.DB) error {
 	// Create appropriate driver based on database type
 	var driver *migrate.Migrate
 	var driverErr error
+	migrationsPath := getMigrationsPath()
 
-	if dbType == "postgres" {
+	switch dbType {
+	case "postgres":
 		pgDriver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 		if err != nil {
 			return fmt.Errorf("failed to create postgres migration driver: %w", err)
 		}
-		migrationsPath := getMigrationsPath()
 		driver, driverErr = migrate.NewWithDatabaseInstance(
 			"file://"+migrationsPath,
 			"postgres",
 			pgDriver,
 		)
-	} else {
+	case "sqlserver", "mssql":
+		sqlServerDriver, err := sqlserver.WithInstance(sqlDB, &sqlserver.Config{})
+		if err != nil {
+			return fmt.Errorf("failed to create sqlserver migration driver: %w", err)
+		}
+		driver, driverErr = migrate.NewWithDatabaseInstance(
+			"file://"+migrationsPath,
+			"sqlserver",
+			sqlServerDriver,
+		)
+	default:
 		// Default to MySQL
 		mysqlDriver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
 		if err != nil {
 			return fmt.Errorf("failed to create mysql migration driver: %w", err)
 		}
-		migrationsPath := getMigrationsPath()
 		driver, driverErr = migrate.NewWithDatabaseInstance(
 			"file://"+migrationsPath,
 			"mysql",
@@ -100,7 +111,8 @@ func RollbackMigration(db *gorm.DB, steps int) error {
 	var driver *migrate.Migrate
 	migrationsPath := getMigrationsPath()
 
-	if dbType == "postgres" {
+	switch dbType {
+	case "postgres":
 		pgDriver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 		if err != nil {
 			return err
@@ -113,7 +125,20 @@ func RollbackMigration(db *gorm.DB, steps int) error {
 		if err != nil {
 			return err
 		}
-	} else {
+	case "sqlserver", "mssql":
+		sqlServerDriver, err := sqlserver.WithInstance(sqlDB, &sqlserver.Config{})
+		if err != nil {
+			return err
+		}
+		driver, err = migrate.NewWithDatabaseInstance(
+			fmt.Sprintf("file://%s", migrationsPath),
+			"sqlserver",
+			sqlServerDriver,
+		)
+		if err != nil {
+			return err
+		}
+	default:
 		mysqlDriver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
 		if err != nil {
 			return err
@@ -175,7 +200,8 @@ func GetMigrationVersion(db *gorm.DB) (uint, bool, error) {
 	var driver *migrate.Migrate
 	migrationsPath := getMigrationsPath()
 
-	if dbType == "postgres" {
+	switch dbType {
+	case "postgres":
 		pgDriver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 		if err != nil {
 			return 0, false, err
@@ -188,7 +214,20 @@ func GetMigrationVersion(db *gorm.DB) (uint, bool, error) {
 		if err != nil {
 			return 0, false, err
 		}
-	} else {
+	case "sqlserver", "mssql":
+		sqlServerDriver, err := sqlserver.WithInstance(sqlDB, &sqlserver.Config{})
+		if err != nil {
+			return 0, false, err
+		}
+		driver, err = migrate.NewWithDatabaseInstance(
+			fmt.Sprintf("file://%s", migrationsPath),
+			"sqlserver",
+			sqlServerDriver,
+		)
+		if err != nil {
+			return 0, false, err
+		}
+	default:
 		mysqlDriver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
 		if err != nil {
 			return 0, false, err
@@ -220,7 +259,8 @@ func ForceMigrationVersion(db *gorm.DB, version int) error {
 	var driver *migrate.Migrate
 	migrationsPath := getMigrationsPath()
 
-	if dbType == "postgres" {
+	switch dbType {
+	case "postgres":
 		pgDriver, err := postgres.WithInstance(sqlDB, &postgres.Config{})
 		if err != nil {
 			return err
@@ -233,7 +273,20 @@ func ForceMigrationVersion(db *gorm.DB, version int) error {
 		if err != nil {
 			return err
 		}
-	} else {
+	case "sqlserver", "mssql":
+		sqlServerDriver, err := sqlserver.WithInstance(sqlDB, &sqlserver.Config{})
+		if err != nil {
+			return err
+		}
+		driver, err = migrate.NewWithDatabaseInstance(
+			fmt.Sprintf("file://%s", migrationsPath),
+			"sqlserver",
+			sqlServerDriver,
+		)
+		if err != nil {
+			return err
+		}
+	default:
 		mysqlDriver, err := mysql.WithInstance(sqlDB, &mysql.Config{})
 		if err != nil {
 			return err

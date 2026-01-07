@@ -34,6 +34,22 @@ require (
 )
 
 require (
+	github.com/Azure/go-autorest v14.2.0+incompatible // indirect
+	github.com/Azure/go-autorest/autorest/adal v0.9.24 // indirect
+	github.com/Azure/go-autorest/autorest/date v0.3.0 // indirect
+	github.com/Azure/go-autorest/logger v0.2.1 // indirect
+	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
+	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
+	github.com/golang-jwt/jwt/v4 v4.5.2 // indirect
+	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
+	github.com/rogpeppe/go-internal v1.14.1 // indirect
+	github.com/sagikazarmark/locafero v0.12.0 // indirect
+	github.com/subosito/gotenv v1.6.0 // indirect
+	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
+)
+
+require (
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/MicahParks/keyfunc/v2 v2.1.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.7.4 // indirect
@@ -64,10 +80,8 @@ require (
 	github.com/go-playground/locales v0.14.1 // indirect
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/go-sql-driver/mysql v1.9.3 // indirect
-	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/golang-sql/civil v0.0.0-20220223132316-b832511892a9 // indirect
 	github.com/golang-sql/sqlexp v0.1.0 // indirect
-	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/gorilla/css v1.0.1 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761 // indirect
@@ -75,32 +89,27 @@ require (
 	github.com/jackc/puddle/v2 v2.2.2 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/lib/pq v1.10.9 // indirect
-	github.com/mattn/go-sqlite3 v1.14.32 // indirect
+	github.com/mattn/go-sqlite3 v1.14.33 // indirect
 	github.com/microsoft/go-mssqldb v1.9.5 // indirect
-	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/richardlehane/mscfb v1.0.4 // indirect
+	github.com/richardlehane/mscfb v1.0.5 // indirect
 	github.com/richardlehane/msoleps v1.0.4 // indirect
 	github.com/robfig/cron/v3 v3.0.1 // indirect
-	github.com/sagikazarmark/locafero v0.12.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
 	github.com/spf13/afero v1.15.0 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/stretchr/objx v0.5.2 // indirect
-	github.com/subosito/gotenv v1.6.0 // indirect
-	github.com/tiendc/go-deepcopy v1.7.1 // indirect
+	github.com/stretchr/objx v0.5.3 // indirect
+	github.com/tiendc/go-deepcopy v1.7.2 // indirect
 	github.com/wneessen/go-mail v0.7.2
 	github.com/xuri/efp v0.0.1 // indirect
 	github.com/xuri/nfp v0.0.2-0.20250530014748-2ddeb826f9a9 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/image v0.25.0 // indirect
+	golang.org/x/image v0.34.0 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/text v0.32.0 // indirect
-	golang.org/x/time v0.12.0 // indirect
-	google.golang.org/protobuf v1.36.7 // indirect
+	golang.org/x/time v0.14.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
@@ -115,9 +124,9 @@ require (
 	github.com/mattn/go-runewidth v0.0.19 // indirect
 	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/spf13/viper v1.21.0
-	github.com/tinylib/msgp v1.6.2 // indirect
+	github.com/tinylib/msgp v1.6.3 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
-	github.com/valyala/fasthttp v1.68.0 // indirect
+	github.com/valyala/fasthttp v1.69.0 // indirect
 	golang.org/x/sys v0.39.0 // indirect
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.31.1
